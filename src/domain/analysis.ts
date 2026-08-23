@@ -3,6 +3,7 @@ import type { ScanChannel } from "./profile";
 
 export const MAX_PRODUCTS_PER_ANALYSIS = 6 as const;
 export const MAX_SERIALIZED_ANALYSIS_BYTES = 512 * 1024;
+export const ANALYSIS_SCHEMA_VERSION = "analysis-result.v1" as const;
 
 export const ANALYSIS_STATUSES = [
   "queued",
@@ -50,14 +51,14 @@ export interface Citation {
   publisher?: string;
   accessedAt?: string;
   /** Hosted-search citations must correspond to sources returned by the provider. */
-  providerSourceId?: string;
+  providerSourceId?: string | null;
 }
 
 export interface Evidence {
   id: string;
   origin: EvidenceOrigin;
   excerptOrObservation: string;
-  citationId?: string;
+  citationId?: string | null;
   visibleOnPackage?: boolean;
 }
 

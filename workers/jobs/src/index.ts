@@ -10,9 +10,9 @@ export interface DeliveryQueueMessage {
 
 export interface Env {
   ENVIRONMENT: string;
-  // Configure only as a Jobs Worker secret. It is intentionally unused until
-  // the provider integration phase.
   OPENAI_API_KEY?: string;
+  MODEL_ANALYSIS?: string;
+  TERRA_REASONING_EFFORT?: "low" | "medium" | "high";
 }
 
 function isQueueMessage(

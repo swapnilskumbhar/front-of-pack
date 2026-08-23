@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
+    "smoke:terra": "node scripts/smoke-terra.mjs",
+    "test": "node --test tests/*.test.mjs",
     "typecheck": "tsc --noEmit",
     "deploy": "wrangler deploy"
   },

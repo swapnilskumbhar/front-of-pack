@@ -1,4 +1,6 @@
 # Public OpenNext Worker local-secret template.
 # No public-Worker secret is required during the current local foundation phase.
 # Never place OPENAI_API_KEY here; it belongs only in workers/jobs/.dev.vars.
-# Phase 4 will add Meta webhook and profile-secret placeholders when implemented.
+# Copy this file to .dev.vars only when testing the WhatsApp webhook locally.
+WHATSAPP_VERIFY_TOKEN="replace-with-a-random-verification-token"
+WHATSAPP_APP_SECRET="replace-with-your-meta-app-secret"

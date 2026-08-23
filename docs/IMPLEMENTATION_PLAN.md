@@ -72,7 +72,7 @@ Tasks:
 - [x] Lock the Cloudflare-native HLD/LLD and one-call Terra boundary.
 - [x] Add ignored secret/environment patterns.
 - [ ] Revoke and rotate the Meta token exposed by the legacy n8n export; keep the old workflow disabled.
-- [ ] Create the fresh project-scoped OpenAI key and retain it securely until Phase 3.
+- [x] Configure the project-scoped OpenAI key in the ignored Jobs Worker `.dev.vars`; never expose it to the public Worker or repository.
 - [x] Reconcile Git/GitHub and scaffold-status markers in the execution/setup documents.
 
 Exit proof: clean secret scan, legacy-token incident closed, and a documented before/during-competition boundary.
@@ -112,28 +112,33 @@ Exit proof: a language set once is recovered on the next local request, and Queu
 
 ### Phase 3 — Web intake and the one-call Terra analyzer
 
-State: TODO
+State: IN PROGRESS — direct provider foundation verified; durable intake/cache integration remains
 
 Tasks:
 
 - [ ] Validate one image, supported MIME, 12 MB cap, dimensions, and one-to-six product contract.
 - [ ] Normalize metadata safely in the Workers runtime and compute a canonical image hash.
 - [ ] Store temporary media privately and enqueue identifiers plus attempt number only.
-- [ ] Implement the single `gpt-5.6-terra` Responses request with image input, structured output, and optional hosted web search.
+- [x] Implement the direct, Jobs-only `gpt-5.6-terra` Responses client with image input, strict structured output, and optional hosted web search inside the same request.
+- [x] Prove the client with a live synthetic smoke on 2026-08-23: one Responses request completed successfully with web search disabled.
+- [x] Enforce no automatic provider retry; another provider call requires an explicit new attempt.
 - [ ] Validate returned schema, evidence graph, provider citations, coverage IDs, service IDs, and wording.
 - [ ] Persist the validated result and render it without semantic rewriting.
 - [ ] Implement cache identity across image, language, model, prompt, schema, rules, and services versions.
-- [ ] Add explicit retry as a new attempt; never automatically repeat a provider-started call.
+- [ ] Wire explicit retry to durable attempt state; never automatically repeat a provider-started call.
+
+Current proof: 12 root unit/contract tests and 5 Jobs Worker tests pass, including the direct client and strict schema. The production build recognizes `/api/whatsapp` as a dynamic route. This is foundation proof, not an end-to-end product claim.
 
 Exit proof: instrumentation proves zero Terra calls on a fresh cache hit and exactly one on a cache miss.
 
 ### Phase 4 — Direct WhatsApp channel
 
-State: BLOCKED until legacy Meta credential rotation is complete
+State: ENDPOINT FOUNDATION DONE; full channel BLOCKED until legacy Meta credential rotation and durable intake/delivery wiring are complete
 
 Tasks:
 
-- [ ] Verify GET challenge token and POST raw-body Meta signature on `/api/whatsapp`.
+- [x] Implement and test GET challenge-token verification and POST raw-body HMAC verification on `/api/whatsapp`.
+- [ ] Replace the intentional signed-POST `503` response with durable D1 deduplication plus Queue dispatch before deployment.
 - [ ] Acknowledge quickly, deduplicate every inbound message ID, and enqueue IDs only.
 - [ ] Fetch media using fixed Meta Graph endpoints and validate type/size.
 - [ ] Encrypt short-lived recipient/media routing values in D1.
@@ -141,7 +146,9 @@ Tasks:
 - [ ] Render WhatsApp-safe output and retry delivery independently from semantic analysis.
 - [ ] Clear encrypted routing fields and temporary media after terminal processing.
 
-Exit proof: forged signatures fail; webhook replay and Queue redelivery cause zero duplicate Terra calls; a real image receives the localized stored result.
+Pre-deploy gate: signed POST currently returns `503` intentionally so Meta cannot receive a false acknowledgement before durable D1 and Queue dispatch exist. Do not configure the production Meta callback until this gate is complete.
+
+Exit proof: forged signatures fail; valid events are durably recorded and acknowledged only after Queue dispatch; webhook replay and Queue redelivery cause zero duplicate Terra calls; a real image receives the localized stored result.
 
 ### Phase 5 — Public-service and operational surfaces
 
@@ -202,8 +209,9 @@ No agent deploys, purchases a domain, creates paid resources, or receives a real
 
 ## 5. Immediate next tasks
 
-1. Finish the platform scripts, ignore rules, README, and mobile-first consumer UI patches.
-2. Run lint, typecheck, Next production build, Jobs Worker typecheck, and OpenNext preview locally.
-3. Implement and test D1 repositories, lifecycle transitions, and remembered language.
-4. Copy `workers/jobs/.dev.vars.example` to ignored `workers/jobs/.dev.vars` and add the fresh `OPENAI_API_KEY` only when local Terra integration begins.
-5. Keep Wrangler authentication, Cloudflare resources, production secrets, and deployment blocked until the local gates pass; keep WhatsApp blocked until the legacy Meta credential rotation is confirmed.
+1. Add local Cloudflare bindings for D1, private R2, and the Analysis/Delivery Queues; apply the initial migration locally.
+2. Implement web upload validation, Workers-safe normalization, hashing, temporary R2 storage, and durable analysis intake.
+3. Wire the Jobs consumer to exact-attempt claim, one Terra call, full runtime validation, persistence, delivery publish, and terminal media cleanup.
+4. Persist browser and WhatsApp language preferences through the D1 profile repositories.
+5. Wire `/api/whatsapp` signed POST to encrypted D1 deduplication and ID-only Queue dispatch before Meta configuration or deployment.
+6. Keep Cloudflare production resources, production secrets, and deployment blocked until the local gates pass; keep the full WhatsApp channel blocked until the legacy Meta credential rotation is confirmed.

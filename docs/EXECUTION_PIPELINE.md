@@ -4,7 +4,7 @@
 > **Created:** 23 August 2026
 > **Deadline:** 28 August 2026, 8:00 PM IST
 > **Submission target:** 28 August 2026, 12:00 PM IST
-> **Current repository state:** `main` tracks `origin/main`; documentation baseline `914ad7dc0ab57f13a0259417065052efb47d9ea4` is pushed; the local working tree now contains the uncommitted Next.js/OpenNext scaffold, domain contracts, initial D1 migration, and Jobs Worker shell; no Cloudflare deployment exists yet
+> **Current implementation state:** local Next.js/OpenNext and Jobs Worker foundations exist; the direct Terra client and `/api/whatsapp` verification route are tested; durable provider intake and WhatsApp dispatch are not complete; no Cloudflare deployment exists yet
 > **Scope authority:** [FINAL_PLAN.md](./FINAL_PLAN.md)
 > **Architecture:** [HLD.md](./HLD.md)
 > **Implementation contract:** [LLD.md](./LLD.md)
@@ -153,7 +153,7 @@ Additional critical findings:
 
 Removing the token from the JSON is insufficient. Revocation is required.
 
-No Front of Pack WhatsApp task may move past WA-001 until SEC-000 through SEC-004 are confirmed.
+The credential-free WA-001 route and signature-test foundation may be built locally. Do not add Meta credentials, connect the callback, or move into live intake/delivery beyond that foundation until SEC-000 through SEC-004 are confirmed.
 
 ---
 
@@ -466,13 +466,13 @@ Cut tiers:
 
 | ID | Depends on | Output | Acceptance/proof | Owner | Status | Cut |
 |---|---|---|---|---|---|---|
-| MODEL-001 | PLATFORM-002,QUEUE-001,MEDIA-001 | Terra image/schema spike in Jobs Worker | One clear R2 image, one Queue job, one Responses call, valid structured result; usage recorded | Codex | TODO | C0 |
-| MODEL-002 | MODEL-001 | Hosted-search spike | Name-only image returns tool-sourced URLs in the same response | Codex | TODO | C0 |
+| MODEL-001 | PLATFORM-002,QUEUE-001,MEDIA-001 | Terra image/schema spike in Jobs Worker | Direct Jobs-only client and strict schema exist; a live synthetic smoke succeeded on 2026-08-23 with exactly one Responses request and web search disabled; R2/Queue integration and usage evidence remain | Codex | IN_PROGRESS | C0 |
+| MODEL-002 | MODEL-001 | Hosted-search spike | Optional in-call web-search configuration exists; name-only image must still prove tool-sourced URLs in the same response | Codex | IN_PROGRESS | C0 |
 | RULES-001 | ELIG-003 | Verified food rule pack | Build rejects missing source/status/units | Codex | TODO | C0 |
 | RULES-002 | RULES-001 | Cosmetics/general-pack baseline | Golden cosmetic and general-pack fixtures pass coverage policy | Codex | TODO | C1 |
 | SERVICES-001 | ELIG-003 | Allow-listed service directory | FSSAI/FoSCoS, BIS Care, NCH routes have official source and category constraints | Codex | TODO | C0 |
-| CORE-001 | MODEL-001,RULES-001,SERVICES-001 | Strict AnalysisResult schema | Single, multi, unknown, label_only fixtures validate | Codex | TODO | C0 |
-| CORE-002 | CORE-001,MODEL-002 | Unified prompt and only call site | Static search confirms one Responses call site | Codex | TODO | C0 |
+| CORE-001 | MODEL-001,RULES-001,SERVICES-001 | Strict AnalysisResult schema | Provider strict schema exists and is covered by Jobs tests; full single, multi, unknown and label_only fixtures remain | Codex | IN_PROGRESS | C0 |
+| CORE-002 | CORE-001,MODEL-002 | Unified prompt and only call site | Direct Responses call site exists in the Jobs Worker with no automatic retry; durable one-attempt integration remains | Codex | IN_PROGRESS | C0 |
 | CORE-003 | CORE-001 | Contract validator | Orphan citations/rules/routes, food panel on non-food, and prohibited wording fail | Codex | TODO | C0 |
 | CORE-004 | CORE-002,CORE-003,DATA-001,QUEUE-001,MEDIA-001 | One-call queued analysis/cache | Miss=1, hit=0, invalid=1+failure, stale/redelivered attempts=0, explicit retry only | Codex | TODO | C0 |
 | EVAL-001 | CORE-003 | Golden evaluation set | All required food/non-food/failure fixtures have assertions | Codex | TODO | C0 |
@@ -493,7 +493,7 @@ Cut tiers:
 
 | ID | Depends on | Output | Acceptance/proof | Owner | Status | Cut |
 |---|---|---|---|---|---|---|
-| WA-001 | SEC-000..004,PLATFORM-002,DATA-001,QUEUE-001 | Direct Cloudflare Meta webhook | GET token and raw POST signature tests; D1 unique event + Queue publish + immediate 200 | Codex | TODO | C0 |
+| WA-001 | SEC-000..004,PLATFORM-002,DATA-001,QUEUE-001 | Direct Cloudflare Meta webhook | GET token and raw POST HMAC tests pass; valid POST intentionally returns 503 until D1 unique-event persistence and Queue publish are durable | Codex | IN_PROGRESS | C0 |
 | WA-002 | WA-001,MEDIA-001 | Secure Graph media/R2 flow | Media-ID metadata lookup, allow-listed host/MIME/size, normalized private R2 object and terminal deletion | Codex | TODO | C0 |
 | WA-003 | WA-002,PROFILE-001 | Language and commands | First contact, change language, delete data, image-before-language all pass | Codex | TODO | C0 |
 | WA-004 | WA-002,CORE-004 | Idempotent Analysis/Delivery Queue flow | One real image returns localized result; webhook replay/analysis redelivery make zero duplicate Terra calls | Codex | TODO | C0 |
@@ -547,6 +547,8 @@ The scaffold must expose these stable commands so later agents do not invent dif
 | npm run evidence:release | Generate a redacted test/dependency/reuse summary from actual outputs |
 
 Until a script exists, the owning task cannot be DONE. CI runs lint, typecheck, tests and build on every release candidate.
+
+Current local verification snapshot (2026-08-23): 12 root unit/contract tests and 5 Jobs Worker tests pass. The production build emits `/api/whatsapp` as a dynamic route. These checks prove foundations only; they do not satisfy G1, G3, or G4 end to end.
 
 ---
 
@@ -815,7 +817,7 @@ A category can fall back to label_only rather than block the release.
 | Cloudflare Wrangler/account authorization | CF-001 | Authenticate locally without sharing an API token in chat/docs | BLOCKED_USER |
 | Workers Paid/Standard active and credits apply | CF-001 | Confirm in billing before relying on 5-minute CPU configuration | BLOCKED_USER |
 | Custom domain choice/purchase | DOMAIN-001 | Buy separately; Registrar is excluded from credits; keep `workers.dev` fallback | BLOCKED_USER |
-| OpenAI project key/model access | MODEL-001 | Server-side project key; never paste into chat/docs | BLOCKED_USER |
+| OpenAI project key/model access | MODEL-001 | Configured locally in the ignored Jobs Worker secret file; never paste into chat/docs or expose to the public Worker | CONFIRMED_LOCAL |
 | Meta app/test-number secrets after rotation | WA-001 | Add directly as scoped Workers Secrets | BLOCKED_USER |
 | Ownership of WhatsApp icon and product image | Before reuse | Do not reuse until proven | BLOCKED_USER |
 | Human reviewers for hi/mr/ur | I18N-002 | Owner plus one fluent reviewer each where possible | TODO |
@@ -838,7 +840,7 @@ Web, Cloudflare platform, model, rules and profile work may proceed while the us
 
 The next safe execution focus is:
 
-> **Complete the local OpenNext, D1/domain, and Jobs Worker foundations; validate them locally before Wrangler authentication, resource provisioning, secrets, or deployment.**
+> **Connect the verified Terra and WhatsApp route foundations to durable D1/R2/Queue state, then validate the complete local flows before Wrangler authentication, resource provisioning, or deployment.**
 
 ---
 
