@@ -4,7 +4,7 @@
 > **Created:** 23 August 2026
 > **Deadline:** 28 August 2026, 8:00 PM IST
 > **Submission target:** 28 August 2026, 12:00 PM IST
-> **Current repository state:** documents only; no Git repository, package manifest, application source, database, or deployment exists yet
+> **Current repository state:** `main` tracks `origin/main`; documentation baseline `914ad7dc0ab57f13a0259417065052efb47d9ea4` is pushed; the local working tree now contains the uncommitted Next.js/OpenNext scaffold, domain contracts, initial D1 migration, and Jobs Worker shell; no Cloudflare deployment exists yet
 > **Scope authority:** [FINAL_PLAN.md](./FINAL_PLAN.md)
 > **Architecture:** [HLD.md](./HLD.md)
 > **Implementation contract:** [LLD.md](./LLD.md)
@@ -55,7 +55,7 @@ A verbal claim, screenshot without context, or successful demo once is not proof
 |---|---|---|
 | E:\projects\labelsensei | Git HEAD 22d1cb339913c08b0fbd5f2a454935df792b09d1 | Static LabelSensei marketing site |
 | D:\Wedding Video\whatsapp_workflow (2).json | SHA-256 B222D5993F267A272FF400394A01FC9E373E3D2D70DB788376AB6753C54E8B19 | Active-marked n8n WhatsApp/Gemini workflow |
-| E:\projects\front-of-pack | No Git repository as of this audit | HLD, LLD, final plan, and this pipeline only |
+| E:\projects\front-of-pack | Baseline commit 914ad7dc0ab57f13a0259417065052efb47d9ea4 on `main`, pushed to `origin/main` | New hackathon repository; the baseline commit contains documentation and `.gitignore` only |
 
 The path originally supplied for the n8n export did not exist exactly. The audited file is directly under D:\Wedding Video and has no leading underscore.
 
@@ -381,8 +381,8 @@ Submission disclosure template—use only after replacing planned items with the
 
 ~~~text
 ELIG-001 baseline snapshot [DONE]
-    → ELIG-002 initialize new Git repo
-    → ELIG-003 baseline commit
+    → ELIG-002 initialize new Git repo [DONE]
+    → ELIG-003 baseline commit + origin/main [DONE]
     → ARCH-001 lock Cloudflare architecture
     → CF-001 confirm Workers Paid/account access
           ├→ PLATFORM-001 OpenNext/workerd/public Worker
@@ -438,9 +438,9 @@ Cut tiers:
 | ID | Depends on | Output | Acceptance/proof | Owner | Status | Cut |
 |---|---|---|---|---|---|---|
 | ELIG-001 | None | Baseline facts and hashes in this document | LabelSensei HEAD and n8n SHA recorded; no secret copied | Codex | DONE | C0 |
-| ELIG-002 | ELIG-001 | New Git repository | git status succeeds in front-of-pack; no predecessor history | Codex | READY | C0 |
-| ELIG-003 | ELIG-002 | Baseline commit | Commit contains docs only and predates any copied asset | Codex | TODO | C0 |
-| ELIG-004 | ELIG-003 | Reuse log mechanism | Every copied predecessor item requires ledger entry | Codex | TODO | C0 |
+| ELIG-002 | ELIG-001 | New Git repository | `git status` succeeds on `main`; no predecessor history | Codex | DONE | C0 |
+| ELIG-003 | ELIG-002 | Baseline commit and remote backup | Commit `914ad7dc0ab57f13a0259417065052efb47d9ea4` contains docs and `.gitignore` only and is pushed to `origin/main` | Codex | DONE | C0 |
+| ELIG-004 | ELIG-003 | Reuse log mechanism | Every copied predecessor item requires ledger entry | Codex | DONE | C0 |
 | SEC-000..004 | User action | Rotated and reviewed Meta setup | Redacted confirmation set | User | BLOCKED_USER | C0 |
 | SEC-005 | SEC-000..004 | Secret scan baseline | Repository/Cloudflare configs scan clean; raw workflow absent | Codex | TODO | C0 |
 | DEC-001 | SEC-001 | Test-number decision | Separate number selected, or reuse rollback documented | User | BLOCKED_USER | C0 |
@@ -451,11 +451,11 @@ Cut tiers:
 |---|---|---|---|---|---|---|
 | ARCH-001 | ELIG-001 | Reconciled Cloudflare target and predecessor boundary | All four docs agree on OpenNext Workers, D1, private R2, two Queues, one Jobs Worker, direct Meta webhook and no n8n | Codex | DONE | C0 |
 | CF-001 | ELIG-003 | Cloudflare platform access | Wrangler authentication works; Workers Paid/Standard and startup-credit billing coverage confirmed without storing account token | User + Codex | BLOCKED_USER | C0 |
-| PLATFORM-001 | CF-001 | OpenNext full-stack shell | `npm run preview` passes in workerd; public `workers.dev` skeleton opens | Codex | TODO | C0 |
+| PLATFORM-001 | CF-001 | OpenNext full-stack shell | Next.js 16/OpenNext scaffold exists locally; completion requires `npm run preview` in workerd and a public `workers.dev` skeleton | Codex | IN_PROGRESS | C0 |
 | PLATFORM-002 | PLATFORM-001 | Least-privilege Wrangler binding/secret contract | App/Jobs types generated; each Worker lacks the other's unnecessary secrets | Codex | TODO | C0 |
-| DATA-001 | CF-001 | Compact D1 migration | Local and remote D1 migrate; schema matches LLD; JSON/row caps tested | Codex | TODO | C0 |
+| DATA-001 | CF-001 | Compact D1 migration | Initial migration and domain contracts exist locally; completion requires local/remote migration and JSON/row-cap proof | Codex | TODO | C0 |
 | DATA-002 | DATA-001 | D1 seed loader | Rules/services/synthetic data load reproducibly | Codex | TODO | C0 |
-| QUEUE-001 | CF-001,DATA-001 | Private R2 + Analysis/Delivery Queues + Jobs Worker | Two round trips; batch one; ID+attempt payloads; DLQ configured; pre/post-publish crash and duplicate-message tests pass | Codex | TODO | C0 |
+| QUEUE-001 | CF-001,DATA-001 | Private R2 + Analysis/Delivery Queues + Jobs Worker | Jobs Worker shell exists locally; completion requires two round trips, batch one, ID+attempt payloads, DLQ, crash and duplicate-message proof | Codex | TODO | C0 |
 | MEDIA-001 | PLATFORM-001,QUEUE-001 | Workers-runtime image normalizer/R2 lifecycle | Max image MIME/dimensions/EXIF/hash pass in workerd; R2 terminal deletion passes | Codex | TODO | C0 |
 | CLEANUP-001 | DATA-001,QUEUE-001 | Hourly/lazy expiry cleanup | Expired ciphertext/nonces cleared, orphan R2 removed, operation idempotent | Codex | TODO | C0 |
 | DOMAIN-001 | PLATFORM-001 | Stable TLS hostname | Custom domain works without Access; `workers.dev` remains release fallback | User + Codex | BLOCKED_USER | C1 |
@@ -718,7 +718,7 @@ Evidence rules:
 Target: G0, G0.5 and G1.
 
 - user completes SEC-000 through SEC-004;
-- initialize Git and baseline commit;
+- preserve the completed Git/GitHub baseline and build locally;
 - confirm Workers Paid/Standard, authenticate Wrangler and deploy the OpenNext `workers.dev` skeleton;
 - migrate D1; create private R2, both Queues and the Jobs Worker; run `workerd`/round-trip gates;
 - run the R2-backed Terra/schema/search spikes;
@@ -826,19 +826,19 @@ User-only blockers do not authorize storing credentials in the repository. Confi
 
 ## 15. Definition of execution-ready
 
-The implementation may start when:
+Implementation has started locally because:
 
 - this pipeline, HLD, LLD, and final plan have no architectural contradiction;
-- ELIG-002 is authorized as the next task;
+- ELIG-002 and ELIG-003 are DONE at baseline commit `914ad7dc0ab57f13a0259417065052efb47d9ea4`, pushed to `origin/main`;
 - Cloudflare account/Workers Paid access and OpenAI access are available or explicitly scheduled;
 - no raw n8n export is inside the workspace;
 - the first READY task is unambiguous.
 
 Web, Cloudflare platform, model, rules and profile work may proceed while the user completes the P0 Meta actions. No WhatsApp webhook connection or Meta credential use may begin until SEC-000 through SEC-004 are confirmed.
 
-The next safe task after documentation is:
+The next safe execution focus is:
 
-> **ELIG-002 — initialize a new Git repository in E:\projects\front-of-pack, then ELIG-003 — commit the documentation-only baseline before importing or generating application code.**
+> **Complete the local OpenNext, D1/domain, and Jobs Worker foundations; validate them locally before Wrangler authentication, resource provisioning, secrets, or deployment.**
 
 ---
 

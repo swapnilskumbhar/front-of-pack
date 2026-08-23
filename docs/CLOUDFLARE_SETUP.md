@@ -79,17 +79,17 @@ Verified on this machine:
 | npm | 11.16.0 |
 | Git | 2.39.2 |
 | GitHub CLI | Not installed |
-| Front of Pack Git repository | Not initialized |
-| Front of Pack application | Not scaffolded |
-| Current workspace | Documentation and supporting files only |
+| Front of Pack Git repository | Initialized on `main`; baseline `914ad7dc0ab57f13a0259417065052efb47d9ea4` pushed to `origin/main` |
+| Front of Pack application | Next.js 16/OpenNext scaffold exists locally |
+| Current workspace | Scaffold, domain contracts, initial D1 migration, Jobs Worker shell, and documentation; not deployed |
 
-A GitHub repository is not required for the first Cloudflare deployment. Wrangler deploys the local project directly.
+The GitHub remote is `https://github.com/swapnilskumbhar/front-of-pack`. Local Wrangler deployment remains the release mechanism; connecting Cloudflare Builds is optional.
 
 ---
 
 ## 3. Safe setup order
 
-Do not scaffold application code before the documentation-only baseline commit. That commit is eligibility evidence showing Front of Pack began as a new hackathon repository.
+The documentation-only baseline and GitHub push are complete. Commit `914ad7dc0ab57f13a0259417065052efb47d9ea4` is the eligibility boundary; subsequent implementation remains local-first and deployment-last.
 
 ### Phase 0 — secure the predecessor
 
@@ -103,7 +103,7 @@ Before connecting the Meta test number:
 
 Cloudflare platform/web work can begin while these user actions are completed. WhatsApp cannot.
 
-### Phase 1 — initialize local Git
+### Phase 1 — initialize local Git — COMPLETE
 
 The implementation agent first creates a root .gitignore covering at least:
 
@@ -135,22 +135,22 @@ Acceptance:
 - First commit contains documentation only.
 - No secret-bearing n8n export, user image, environment file or predecessor Git history exists.
 
-### Phase 2 — optional GitHub remote
+### Phase 2 — GitHub remote — COMPLETE
 
-Because GitHub CLI is not installed, create an empty private repository in the GitHub website first. Do not initialize it with a README or licence.
+The repository was created in GitHub and connected without requiring GitHub CLI.
 
 Then:
 
 ~~~powershell
-git remote add origin https://github.com/<owner>/front-of-pack.git
+git remote add origin https://github.com/swapnilskumbhar/front-of-pack.git
 git push -u origin main
 ~~~
 
-GitHub is optional for local Wrangler deployments. Add it when backup/automatic Cloudflare builds are useful.
+The documentation baseline is already backed up on `origin/main`. Automatic Cloudflare builds remain optional.
 
-### Phase 3 — create the Cloudflare/Next.js scaffold
+### Phase 3 — create the Cloudflare/Next.js scaffold — FOUNDATION COMPLETE
 
-The workspace is not empty, so do not run a generator directly over it.
+The official Next.js 16/OpenNext foundation has been merged into the workspace without deploying it. Domain contracts, `migrations/0001_initial.sql`, and the Jobs Worker shell also exist locally. The commands below are retained as provenance, not as pending instructions.
 
 Create a temporary official scaffold beside the workspace:
 
@@ -244,7 +244,9 @@ This makes old objects eligible for deletion after one day; it is not an exact 2
 
 ### Phase 7 — configure scoped secrets
 
-Add secret values interactively. Do not put them on the command line.
+Add production secret values interactively only after the matching local phase passes. Do not put them on the command line.
+
+For the current local analyzer phase, the only required secret is `OPENAI_API_KEY`. Copy `workers/jobs/.dev.vars.example` to the ignored `workers/jobs/.dev.vars`, then replace the placeholder locally. Never place this key in the root `.dev.vars` or bind it to the public Worker.
 
 Public OpenNext Worker:
 
@@ -270,7 +272,7 @@ npx wrangler secret put WHATSAPP_ACCESS_TOKEN --config workers/jobs/wrangler.jso
 
 The OpenAI and WhatsApp send tokens must not be bound to the public Worker. The webhook verification secrets must not be bound to the Jobs Worker.
 
-For local development use one ignored .dev.vars file per Worker. Never commit either file.
+For local development use one ignored `.dev.vars` file per Worker. At the current phase, only `workers/jobs/.dev.vars` is needed. Meta and public-Worker secrets wait until Phase 4 and completion of the legacy credential-rotation gate. Never commit either file.
 
 ### Phase 8 — migrate D1
 
@@ -379,16 +381,16 @@ A custom domain is not required to satisfy this definition.
 
 ~~~text
 secure old Meta/n8n credentials
-→ create .gitignore
-→ git init + documentation-only baseline commit
-→ scaffold OpenNext without overwriting docs
+→ preserve completed Git/GitHub baseline 914ad7d
+→ complete and verify the existing OpenNext/D1/Jobs foundations locally
+→ add OPENAI_API_KEY only to ignored workers/jobs/.dev.vars when Phase 3 begins
 → npx wrangler login + whoami
 → confirm Workers Paid/credit coverage
 → create D1 + private R2 + Analysis/Delivery Queues
-→ configure scoped Worker secrets
+→ configure scoped production Worker secrets only after local gates
 → migrate local/remote D1
 → preview under workerd
 → deploy to workers.dev
 → optionally buy and attach a custom domain separately
-→ optionally connect GitHub for automatic builds
+→ optionally connect the existing GitHub repository for automatic builds
 ~~~

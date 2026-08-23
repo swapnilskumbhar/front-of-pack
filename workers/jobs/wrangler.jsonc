@@ -1,0 +1,33 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "front-of-pack-jobs",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-23",
+  "workers_dev": true,
+
+  // Local placeholder bindings only. Replace queue IDs/configuration after the
+  // production Cloudflare resources are provisioned.
+  "queues": {
+    "consumers": [
+      {
+        "queue": "front-of-pack-analysis",
+        "max_batch_size": 1,
+        "max_batch_timeout": 1,
+        "dead_letter_queue": "front-of-pack-analysis-dlq"
+      },
+      {
+        "queue": "front-of-pack-delivery",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5,
+        "max_retries": 3,
+        "dead_letter_queue": "front-of-pack-delivery-dlq"
+      }
+    ]
+  },
+
+  // D1 and R2 bindings will be added once their production IDs exist.
+  // Do not copy OPENAI_API_KEY or Meta send credentials into the public Worker.
+  "vars": {
+    "ENVIRONMENT": "local"
+  }
+}

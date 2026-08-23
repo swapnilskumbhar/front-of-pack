@@ -1,0 +1,4 @@
+# Copy to .dev.vars for local development. Never commit .dev.vars.
+# OPENAI_API_KEY belongs only to the private Jobs Worker.
+OPENAI_API_KEY="replace-with-a-new-local-development-key"
+ENVIRONMENT="local"

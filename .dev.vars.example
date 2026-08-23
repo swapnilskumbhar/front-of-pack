@@ -1,0 +1,4 @@
+# Public OpenNext Worker local-secret template.
+# No public-Worker secret is required during the current local foundation phase.
+# Never place OPENAI_API_KEY here; it belongs only in workers/jobs/.dev.vars.
+# Phase 4 will add Meta webhook and profile-secret placeholders when implemented.
