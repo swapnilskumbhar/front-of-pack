@@ -1,5 +1,5 @@
 export const TERRA_MODEL = "gpt-5.6-terra" as const;
-export const TERRA_PROMPT_VERSION = "terra-analysis.v1" as const;
+export const TERRA_PROMPT_VERSION = "terra-analysis.v2" as const;
 export { ANALYSIS_SCHEMA_VERSION } from "../../../../src/domain/analysis.ts";
 
 export type LanguageCode =

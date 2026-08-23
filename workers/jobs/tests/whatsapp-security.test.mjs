@@ -95,6 +95,22 @@ test("delivery contract is ID-only and renderer emits one Unicode-safe bounded m
   assert.match(localized.join("\n"), /पॅकवरील माहिती/);
 });
 
+test("WhatsApp rendering limits findings and keeps one uncertain claim", () => {
+  const message = renderWhatsAppChunks({
+    wholeImageSummary: "Quick summary",
+    items: [{
+      identity: { nameAsPrinted: "Product" }, summary: "Short product summary",
+      findings: [1, 2, 3, 4].map((number) => ({ title: `Finding ${number}`, explanation: `Detail ${number}` })),
+      claimAudits: [{ claimAsPrinted: "Marketing claim", assessment: "Needs more evidence", status: "not_established" }],
+      citations: [{ title: "Official source", url: "https://example.test/source" }],
+    }],
+  })[0];
+  assert.match(message, /Finding 3/);
+  assert.doesNotMatch(message, /Finding 4/);
+  assert.match(message, /Marketing claim: Needs more evidence/);
+  assert.match(message, /https:\/\/example\.test\/source/);
+});
+
 test("successful delivery reads stored output and clears all routing ciphertext", async () => {
   const keyBytes = new Uint8Array(32).fill(9);
   const key = await crypto.subtle.importKey("raw", keyBytes, "AES-GCM", false, ["encrypt"]);

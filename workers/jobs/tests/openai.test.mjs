@@ -35,6 +35,8 @@ test("constructs one bounded strict Responses request with optional hosted searc
   assert.equal(request.max_tool_calls, 4);
   assert.equal(request.input.length, 2);
   assert.match(JSON.stringify(request.input), /data:image\/jpeg;base64,AA==/);
+  assert.match(JSON.stringify(request.input), /wholeImageSummary must be at most 35 words/);
+  assert.match(JSON.stringify(request.input), /no more than four prioritized findings/);
 });
 
 test("can disable search without adding a second request path", () => {

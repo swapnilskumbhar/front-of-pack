@@ -314,7 +314,7 @@ npm run preview
 npm run deploy:dry-run
 ~~~
 
-Current merged snapshot is 45 passing root tests and 21 passing Jobs Worker tests, plus successful production builds. This does not replace real-product regression, live Meta, or final release gates.
+Current merged snapshot is 45 passing root tests and 24 passing Jobs Worker tests, plus successful production builds. Prompt v2 concise rendering is deployed; this does not replace real-product regression, live Meta rehearsal, or final release gates.
 
 Deploy:
 

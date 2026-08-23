@@ -14,7 +14,7 @@ import { cleanupExpiredWhatsAppJobs, consumeDelivery } from "./whatsapp/delivery
 
 const PINNED_ANALYSIS_VERSIONS = {
   model_id: "gpt-5.6-terra",
-  prompt_version: "terra-analysis.v1",
+  prompt_version: "terra-analysis.v2",
   schema_version: "analysis-result.v1",
   rules_version: "india-category-rules.v1",
   services_version: "india-consumer-services.v1",

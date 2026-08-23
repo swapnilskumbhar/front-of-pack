@@ -21,6 +21,7 @@ export function renderWhatsAppChunks(result: unknown): string[] {
   if (typeof source.wholeImageSummary === "string") sections.push(source.wholeImageSummary);
   else if (typeof source.summary === "string") sections.push(source.summary);
   if (typeof source.strongestMaterialFinding === "string") sections.push(source.strongestMaterialFinding);
+  const sourceLinks: string[] = [];
   if (Array.isArray(source.items)) {
     for (const value of source.items) {
       if (!value || typeof value !== "object") continue;
@@ -32,15 +33,39 @@ export function renderWhatsAppChunks(result: unknown): string[] {
       if (name) sections.push(name);
       if (typeof item.summary === "string") sections.push(item.summary);
       if (Array.isArray(item.findings)) {
-        for (const findingValue of item.findings) {
+        for (const findingValue of item.findings.slice(0, 3)) {
           if (!findingValue || typeof findingValue !== "object") continue;
           const finding = findingValue as Record<string, unknown>;
-          if (typeof finding.title === "string") sections.push(finding.title);
-          if (typeof finding.explanation === "string") sections.push(finding.explanation);
+          const title = typeof finding.title === "string" ? finding.title : "";
+          const explanation = typeof finding.explanation === "string" ? finding.explanation : "";
+          if (title || explanation) sections.push(`• ${title}${title && explanation ? ": " : ""}${explanation}`);
+        }
+      }
+      if (Array.isArray(item.claimAudits)) {
+        const claim = item.claimAudits.find((value) => value && typeof value === "object" &&
+          (value as Record<string, unknown>).status !== "supported") as Record<string, unknown> | undefined;
+        if (claim) {
+          const printed = typeof claim.claimAsPrinted === "string" ? claim.claimAsPrinted : "";
+          const assessment = typeof claim.assessment === "string" ? claim.assessment : "";
+          if (printed || assessment) sections.push(`? ${printed}${printed && assessment ? ": " : ""}${assessment}`);
+        }
+      }
+      if (item.needsClearerImage === true && typeof item.retakeGuidance === "string") {
+        sections.push(`📷 ${item.retakeGuidance}`);
+      }
+      if (Array.isArray(item.citations)) {
+        for (const citationValue of item.citations) {
+          if (sourceLinks.length >= 2 || !citationValue || typeof citationValue !== "object") continue;
+          const citation = citationValue as Record<string, unknown>;
+          if (typeof citation.url !== "string") continue;
+          const url = citation.url;
+          const title = typeof citation.title === "string" ? citation.title : "Source";
+          if (!sourceLinks.some((entry) => entry.endsWith(url))) sourceLinks.push(`↗ ${title}\n${url}`);
         }
       }
     }
   }
+  if (sourceLinks.length > 0) sections.push(sourceLinks.join("\n\n"));
   if (typeof source.disclaimer === "string") sections.push(source.disclaimer);
   const summary = sections.length > 0 ? sections.join("\n\n") : "Your label analysis is ready.";
   const codePoints = Array.from(summary);

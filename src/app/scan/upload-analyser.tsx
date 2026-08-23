@@ -128,13 +128,42 @@ export default function UploadAnalyser() {
 function AnalysisResultView({ result }: { result: AnalysisResult }) {
   return (
     <section className="analysis-result" aria-live="polite" aria-labelledby="analysis-result-title">
-      <p className="eyebrow">Analysis complete</p>
+      <p className="eyebrow">Quick label check</p>
       <h2 id="analysis-result-title">{result.wholeImageSummary}</h2>
-      <p>{result.strongestMaterialFinding}</p>
-      <div className="analysis-items">{result.items.map((item) => <article key={item.position}><span>Product {item.position}</span><h3>{item.identity.nameAsPrinted || item.identity.brandAsPrinted || "Product identified from the image"}</h3><p>{item.summary}</p>{item.findings.map((finding) => <div className="analysis-finding" key={finding.id}><strong>{finding.title}</strong><p>{finding.explanation}</p></div>)}</article>)}</div>
-      <small>{result.disclaimer}</small>
+      {result.strongestMaterialFinding && <p className="analysis-callout">{result.strongestMaterialFinding}</p>}
+      <div className="analysis-items">{result.items.map((item) => {
+        const visibleFindings = item.findings.slice(0, 3);
+        const claimCheck = item.claimAudits.find((claim) => claim.status !== "supported") ?? item.claimAudits[0];
+        return <article key={item.position}>
+          <div className="analysis-item-heading">
+            <span>Product {item.position}</span>
+            <div className="analysis-badges"><b>{categoryLabel(item.category)}</b><b>{item.coverage.tier.replaceAll("_", " ")}</b></div>
+          </div>
+          <h3>{item.identity.nameAsPrinted || item.identity.brandAsPrinted || "Product identified from the image"}</h3>
+          <p className="analysis-summary">{item.summary}</p>
+          {visibleFindings.length > 0 && <div className="analysis-key-findings">
+            <h4>What matters</h4>
+            <ul>{visibleFindings.map((finding) => <li key={finding.id}><strong>{finding.title}</strong><span>{finding.explanation}</span></li>)}</ul>
+          </div>}
+          {claimCheck && <div className="analysis-claim"><small>Claim check</small><strong>{claimCheck.claimAsPrinted}</strong><p>{claimCheck.assessment}</p></div>}
+          {item.needsClearerImage && item.retakeGuidance && <p className="analysis-retake">📷 {item.retakeGuidance}</p>}
+          {item.serviceRoute && <a className="analysis-next-step" href="/grievance">See your next-step options →</a>}
+          <details className="analysis-evidence">
+            <summary>View full evidence</summary>
+            {item.findings.length > visibleFindings.length && <div><h4>Additional findings</h4>{item.findings.slice(3).map((finding) => <p key={finding.id}><strong>{finding.title}:</strong> {finding.explanation}</p>)}</div>}
+            {item.evidence.length > 0 && <div><h4>Evidence read</h4><ul>{item.evidence.map((evidence) => <li key={evidence.id}>{evidence.excerptOrObservation}</li>)}</ul></div>}
+            {item.citations.length > 0 && <div><h4>Sources</h4><ul>{item.citations.map((citation) => <li key={citation.id}><a href={citation.url} target="_blank" rel="noreferrer nofollow">{citation.title}</a></li>)}</ul></div>}
+            {item.coverage.limitations.length > 0 && <div><h4>Limitations</h4><ul>{item.coverage.limitations.map((limitation) => <li key={limitation}>{limitation}</li>)}</ul></div>}
+          </details>
+        </article>;
+      })}</div>
+      <small className="analysis-disclaimer">{result.disclaimer}</small>
     </section>
   );
+}
+
+function categoryLabel(category: string): string {
+  return category.replaceAll("_", " ").replace(/\b\w/gu, (letter) => letter.toUpperCase());
 }
 
 async function readResponse(response: Response): Promise<unknown> {
