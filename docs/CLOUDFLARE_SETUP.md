@@ -314,7 +314,7 @@ npm run preview
 npm run deploy:dry-run
 ~~~
 
-Current merged local snapshot is 43 passing root tests and 21 passing Jobs Worker tests, plus successful production builds. This does not replace the remote Images, real-product, live Meta, or release gates.
+Current merged snapshot is 45 passing root tests and 21 passing Jobs Worker tests, plus successful production builds. This does not replace real-product regression, live Meta, or final release gates.
 
 Deploy:
 

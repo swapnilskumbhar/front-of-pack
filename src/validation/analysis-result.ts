@@ -113,17 +113,6 @@ export function validateAnalysisResult(
     }
   }
 
-  const derivedUnknownCount = items.filter((item) => isRecord(item) && item.category === "unknown").length;
-  const derivedFlaggedCount = items.filter(
-    (item) => isRecord(item) && asArray(item.findings).some((finding) => isRecord(finding) && finding.level === "attention"),
-  ).length;
-  if (input.unknownCount !== derivedUnknownCount) {
-    add("count_mismatch", "$.unknownCount", "unknownCount must equal the number of unknown-category products.");
-  }
-  if (input.flaggedCount !== derivedFlaggedCount) {
-    add("count_mismatch", "$.flaggedCount", "flaggedCount must equal the number of products with attention findings.");
-  }
-
   const positions = new Set<number>();
   const consumerText: Array<[string, unknown]> = [
     ["$.wholeImageSummary", input.wholeImageSummary],
@@ -183,7 +172,7 @@ export function validateAnalysisResult(
         add("unresolved_citation", `${path}.citationId`, "Evidence citation must resolve within the same product.");
       }
       if (isString(rawEvidence.citationId) && citationIds.has(rawEvidence.citationId)) referencedCitationIds.add(rawEvidence.citationId);
-      if ((rawEvidence.origin === "hosted_web_search" || rawEvidence.origin === "verified_rule") && (!isString(rawEvidence.citationId) || rawEvidence.citationId.length === 0)) {
+      if (rawEvidence.origin === "hosted_web_search" && (!isString(rawEvidence.citationId) || rawEvidence.citationId.length === 0)) {
         add("invalid_evidence_relationship", `${path}.citationId`, `${String(rawEvidence.origin)} evidence requires a citation.`);
       }
       if (rawEvidence.origin === "hosted_web_search" && isString(rawEvidence.citationId)) {

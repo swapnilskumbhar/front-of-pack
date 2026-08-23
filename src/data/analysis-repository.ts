@@ -1,17 +1,17 @@
 import type {
   AnalysisRecord,
   AnalysisResult,
-} from "../domain/analysis";
-import type { LanguageCode } from "../domain/language";
+} from "../domain/analysis.ts";
+import type { LanguageCode } from "../domain/language.ts";
 import {
   changedExactlyOne,
   type D1DatabaseLike,
-} from "./d1";
+} from "./d1.ts";
 import {
   assertAnalysisPayloadSize,
   serializeJson,
   type SerializedAnalysisColumns,
-} from "./serialization";
+} from "./serialization.ts";
 
 type AnalysisRow = {
   id: string;
@@ -69,7 +69,11 @@ export interface FailedAnalysisInput {
 }
 
 export class AnalysisRepository {
-  constructor(private readonly db: D1DatabaseLike) {}
+  private readonly db: D1DatabaseLike;
+
+  constructor(db: D1DatabaseLike) {
+    this.db = db;
+  }
 
   async insertQueued(input: QueuedAnalysisInput): Promise<boolean> {
     const result = await this.db.prepare(`
@@ -159,11 +163,12 @@ export class AnalysisRepository {
     id: string,
     failedAttemptNumber: number,
     queueEnqueuedAt: string,
+    mediaObjectKey: string,
   ): Promise<boolean> {
     const result = await this.db.prepare(`
       UPDATE analyses SET
         status = 'queued', attempt_number = attempt_number + 1,
-        queue_enqueued_at = ?, provider_started_at = NULL,
+        queue_enqueued_at = ?, media_object_key = ?, provider_started_at = NULL,
         openai_response_id = NULL, result_json = NULL,
         provider_sources_json = '[]', local_matches_json = '[]',
         validation_report_json = NULL, web_search_used = 0,
@@ -171,7 +176,7 @@ export class AnalysisRepository {
         estimated_cost_usd_micros = NULL, error_code = NULL,
         error_json = NULL, completed_at = NULL
       WHERE id = ? AND attempt_number = ? AND status = 'failed'
-    `).bind(queueEnqueuedAt, id, failedAttemptNumber).run();
+    `).bind(queueEnqueuedAt, mediaObjectKey, id, failedAttemptNumber).run();
     return changedExactlyOne(result);
   }
 

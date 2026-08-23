@@ -20,9 +20,9 @@ export default function Home() {
 
       <section className="hero" id="top">
         <div className="hero-copy">
-          <p className="eyebrow"><span /> Clear labels. Better choices.</p>
-          <h1>Know what&apos;s really on the <em>front of your pack.</em></h1>
-          <p className="hero-intro">Upload one photo. Understand up to six products with evidence-led guidance in the language you choose.</p>
+          <p className="eyebrow"><span /> Product labels, explained simply.</p>
+          <h1>Understand any product label <em>from one photo.</em></h1>
+          <p className="hero-intro">Upload one image with up to six products. Get a clear, sourced explanation in the language you choose.</p>
           <div className="trust-row" aria-label="Service highlights"><span>12 Indian languages</span><span>Multiple product categories</span><span>Sources included</span></div>
         </div>
 

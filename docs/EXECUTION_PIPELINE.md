@@ -473,8 +473,8 @@ Cut tiers:
 | SERVICES-001 | ELIG-003 | Allow-listed service directory | FoSCoS, BIS Care and NCH routes are wired into Terra and validator with category constraints | Codex | DONE | C0 |
 | CORE-001 | MODEL-001,RULES-001,SERVICES-001 | Strict AnalysisResult schema | Provider strict schema exists and is covered by Jobs tests; full single, multi, unknown and label_only fixtures remain | Codex | IN_PROGRESS | C0 |
 | CORE-002 | CORE-001,MODEL-002 | Unified prompt and only call site | Direct Responses call site exists in the Jobs Worker with no automatic retry; durable one-attempt integration remains | Codex | IN_PROGRESS | C0 |
-| CORE-003 | CORE-001 | Contract validator | Strict result-shape validation and failure persistence are wired; orphan citations/rules/routes, food panel on non-food, prohibited wording and real pack validation remain | Codex | IN_PROGRESS | C0 |
-| CORE-004 | CORE-002,CORE-003,DATA-001,QUEUE-001,MEDIA-001 | One-call queued analysis/cache | Local proof now covers miss=1, identical exact-image hit=0 and corrupt-image failure persistence; stale/redelivered attempts=0, explicit retry and production bindings remain | Codex | IN_PROGRESS | C0 |
+| CORE-003 | CORE-001 | Contract validator | Strict shape, allow-list, citation, wording, size and failure validation are wired; real-product regression fixtures remain | Codex | IN_PROGRESS | C0 |
+| CORE-004 | CORE-002,CORE-003,DATA-001,QUEUE-001,MEDIA-001 | One-call queued analysis/cache | Production proof covers miss=1, identical hit=0, failure persistence and explicit new-attempt resubmission; broader real-product regression remains | Codex | IN_PROGRESS | C0 |
 | EVAL-001 | CORE-003 | Golden evaluation set | All required food/non-food/failure fixtures have assertions | Codex | TODO | C0 |
 
 ### 9.4 Profiles and web journey
@@ -548,7 +548,7 @@ The scaffold must expose these stable commands so later agents do not invent dif
 
 Until a script exists, the owning task cannot be DONE. CI runs lint, typecheck, tests and build on every release candidate.
 
-Current verification snapshot (2026-08-23): combined local `workerd` runs proved bounded Images normalization, one-call analysis, authorization, profiles and zero-call cache hits. Production then proved public TLS, Images/R2/D1/Analysis Queue/Jobs/Terra completion in Tamil and an identical-image HTTP `200` cache hit. FSSAI, Legal Metrology, CDSCO, experimental INR, FoSCoS, BIS Care and NCH packs are wired through Terra and validation. Durable encrypted WhatsApp transport and officer auth pass mocked coverage but await owner credentials and live rehearsal. Exact synthetic registry and editable no-submit grievance are public. Tests stand at 43/43 root and 21/21 Jobs Worker cases. Real product fixtures and live Meta keep G3–G6 incomplete.
+Current verification snapshot (2026-08-23): combined local `workerd` runs proved bounded Images normalization, one-call analysis, authorization, profiles and zero-call cache hits. Production then proved public TLS, Images/R2/D1/Analysis Queue/Jobs/Terra completion in Tamil and an identical-image HTTP `200` cache hit. A real pack exposed two over-strict validator assumptions; the validator now leaves semantic summary counters to Terra, accepts allow-listed rule evidence without fabricated provider citations, and supports explicit resubmission as a new durable attempt. FSSAI, Legal Metrology, CDSCO, experimental INR, FoSCoS, BIS Care and NCH packs remain allow-listed. Durable encrypted WhatsApp transport and officer auth pass mocked coverage but await owner credentials and live rehearsal. Exact synthetic registry and editable no-submit grievance are public. Tests stand at 45/45 root and 21/21 Jobs Worker cases. Real-product regression and live Meta keep final gates incomplete.
 
 ---
 
@@ -840,7 +840,7 @@ Web, Cloudflare platform, model, rules and profile work may proceed while the us
 
 The next safe execution focus is:
 
-> **Finish remote Images/real-product validation and public-service surfaces, then complete live Meta proof after credential rotation before Cloudflare provisioning and deployment.**
+> **Run real-product regression on the deployed scanner, configure officer and Meta credentials, then complete the live WhatsApp and final demo rehearsal.**
 
 ---
 

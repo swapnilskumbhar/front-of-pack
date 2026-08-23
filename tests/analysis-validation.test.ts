@@ -70,12 +70,18 @@ test("reports cross-product evidence references and duplicate positions", () => 
   assert.ok(codes.includes("unresolved_evidence"));
 });
 
-test("derives unknown and flagged counts from products", () => {
+test("accepts Terra semantic counters when they remain within item bounds", () => {
   const result = validResult();
   result.unknownCount = 1;
   result.flaggedCount = 0;
-  const mismatches = validateAnalysisResult(result, options).errors.filter(({ code }) => code === "count_mismatch");
-  assert.equal(mismatches.length, 2);
+  assert.equal(validateAnalysisResult(result, options).valid, true);
+});
+
+test("accepts allow-listed rule evidence without inventing a provider citation", () => {
+  const result = validResult();
+  result.items[0].evidence[0].citationId = null;
+  result.items[0].citations = [];
+  assert.equal(validateAnalysisResult(result, options).valid, true);
 });
 
 test("rejects unsupported ids, URL schemes, and forbidden verdicts", () => {

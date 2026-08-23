@@ -105,7 +105,7 @@ export default function UploadAnalyser() {
         setPending(false);
         return;
       }
-      if (analysis.status === "failed") throw new Error("The analysis failed. Please try again with a clear image.");
+      if (analysis.status === "failed") throw new Error(failedAnalysisMessage(analysis.errorCode));
     }
     if (!stopped.current) throw new Error("The analysis is taking longer than expected. Please try again.");
   }
@@ -145,6 +145,16 @@ function errorMessage(body: unknown): string {
   return typeof body === "object" && body !== null && "error" in body && typeof body.error === "string"
     ? body.error
     : "The request could not be completed.";
+}
+
+function failedAnalysisMessage(errorCode: string | null): string {
+  if (errorCode === "terra_request_failed") {
+    return "The analysis service was temporarily unavailable. Tap Analyse label to retry.";
+  }
+  if (errorCode === "analysis_processing_failed") {
+    return "We could not validate that result. Tap Analyse label to retry.";
+  }
+  return "The analysis could not be completed. Tap Analyse label to retry.";
 }
 
 function delay(milliseconds: number): Promise<void> {

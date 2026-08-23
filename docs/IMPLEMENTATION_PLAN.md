@@ -125,7 +125,7 @@ Tasks:
 - [x] Validate the returned evidence graph, provider citation ID+URL pairs, allow-listed coverage/service IDs, prohibited wording, and serialized size against the wired FSSAI, Legal Metrology, CDSCO, experimental INR, FoSCoS, BIS Care, and NCH packs.
 - [x] Persist a validated provider result, protect polling with a per-scan 256-bit capability whose digest alone is stored, and render the consumer result.
 - [x] Implement versioned exact-image cache identity and prove an authorized zero-call cache hit; production version-pack coverage remains.
-- [ ] Wire explicit retry to durable attempt state; never automatically repeat a provider-started call.
+- [x] Wire explicit user resubmission to a new durable attempt with fresh normalized media; never automatically repeat a provider-started call.
 
 Current proof (2026-08-23): combined multi-config local `workerd` runs used simulated D1, R2, Queue, and Images bindings. The image was decoded and re-encoded to bounded WebP before private storage. A Gujarati fresh upload made exactly one Terra request, persisted the validated localized result, and returned it through capability-authorized polling; the identical image/language cache hit made zero additional model calls. Browser profile proof persisted English → Urdu through an HttpOnly cookie while D1 stored only the identity digest. The merged snapshot stands at 43 root and 21 Jobs Worker tests. This is verified local proof, not production readiness; real product fixtures remain open.
 

@@ -1,16 +1,20 @@
-import { MAX_SERIALIZED_ANALYSIS_BYTES } from "../domain/analysis";
+import { MAX_SERIALIZED_ANALYSIS_BYTES } from "../domain/analysis.ts";
 
 const encoder = new TextEncoder();
 
 export class AnalysisPayloadTooLargeError extends Error {
   readonly code = "ANALYSIS_PAYLOAD_TOO_LARGE";
+  readonly actualBytes: number;
+  readonly maximumBytes: number;
 
   constructor(
-    readonly actualBytes: number,
-    readonly maximumBytes = MAX_SERIALIZED_ANALYSIS_BYTES,
+    actualBytes: number,
+    maximumBytes = MAX_SERIALIZED_ANALYSIS_BYTES,
   ) {
     super(`Serialized analysis is ${actualBytes} bytes; maximum is ${maximumBytes}`);
     this.name = "AnalysisPayloadTooLargeError";
+    this.actualBytes = actualBytes;
+    this.maximumBytes = maximumBytes;
   }
 }
 

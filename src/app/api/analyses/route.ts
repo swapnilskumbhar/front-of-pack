@@ -115,6 +115,9 @@ export async function POST(request: Request): Promise<Response> {
     if (cached.status === "processing") {
       return Response.json(withAccessToken(cached, accessToken), { status: 202 });
     }
+    if (cached.status === "failed") {
+      return retryFailedAnalysis(cached, analyses, bindings, normalized, imageHash, accessToken, now);
+    }
     return error("This analysis is no longer fresh. Start an explicit retry.", 409);
   }
 
@@ -176,6 +179,9 @@ export async function POST(request: Request): Promise<Response> {
       return Response.json(withAccessToken(winner, accessToken), { status: 202 });
     }
     if (winner.status === "processing") return Response.json(withAccessToken(winner, accessToken), { status: 202 });
+    if (winner.status === "failed") {
+      return retryFailedAnalysis(winner, analyses, bindings, normalized, imageHash, accessToken, now);
+    }
     return error("This analysis is no longer fresh. Start an explicit retry.", 409);
   }
 
@@ -217,6 +223,62 @@ function toSafeResponse(record: AnalysisRecord): SafeAnalysisResponse {
 
 function withAccessToken(record: AnalysisRecord, accessToken: string): CreatedAnalysisResponse {
   return { ...toSafeResponse(record), accessToken };
+}
+
+async function retryFailedAnalysis(
+  record: AnalysisRecord,
+  analyses: AnalysisRepository,
+  bindings: NonNullable<Awaited<ReturnType<typeof getIntakeBindings>>>,
+  normalized: Awaited<ReturnType<typeof normalizeImage>>,
+  imageHash: string,
+  accessToken: string,
+  now: string,
+): Promise<Response> {
+  const mediaObjectKey = `analyses/${record.id}/${crypto.randomUUID()}`;
+  try {
+    await bindings.MEDIA.put(mediaObjectKey, normalized.bytes, {
+      httpMetadata: { contentType: normalized.mime },
+      customMetadata: {
+        analysisId: record.id,
+        imageHash,
+        normalization: "complete",
+        normalizationVersion: normalized.normalizationVersion,
+        normalizedWidth: String(normalized.width),
+        normalizedHeight: String(normalized.height),
+        retryAttempt: String(record.attemptNumber + 1),
+      },
+    });
+  } catch {
+    return error("The image could not be stored for retry. Try again.", 503);
+  }
+
+  let retried: boolean;
+  try {
+    retried = await analyses.retry(
+      record.id,
+      record.attemptNumber,
+      now,
+      mediaObjectKey,
+    );
+  } catch {
+    await deleteOwnUpload(bindings.MEDIA, mediaObjectKey);
+    return error("The analysis could not be retried. Try again.", 503);
+  }
+  if (!retried) {
+    await deleteOwnUpload(bindings.MEDIA, mediaObjectKey);
+    return error("The analysis state changed. Please submit again.", 409);
+  }
+
+  const attemptNumber = record.attemptNumber + 1;
+  try {
+    await bindings.ANALYSIS_QUEUE.send(job(record.id, attemptNumber));
+  } catch {
+    return error("The retry was saved but could not be queued. Submit again.", 503);
+  }
+  const updated = await analyses.findById(record.id);
+  return updated
+    ? Response.json(withAccessToken(updated, accessToken), { status: 202 })
+    : error("The retried analysis could not be loaded.", 503);
 }
 
 async function insertScan(

@@ -8,6 +8,7 @@ import {
   readBearerToken,
 } from "../src/intake/access-token.ts";
 import { ScanRequestRepository } from "../src/intake/scan-repository.ts";
+import { AnalysisRepository } from "../src/data/analysis-repository.ts";
 import type { D1DatabaseLike, D1PreparedStatement } from "../src/data/d1.ts";
 
 test("scan capabilities contain 256 random bits encoded as unpadded base64url", () => {
@@ -64,6 +65,26 @@ test("scan repository stores only the capability digest", async () => {
     "2026-08-23T00:00:00.000Z",
   ]);
   assert.match(db.lastQuery, /access_token_digest/);
+});
+
+test("explicit retry installs fresh media and increments only the failed attempt", async () => {
+  const observed: unknown[] = [];
+  const db = fakeDb(null, observed, 1);
+  const retried = await new AnalysisRepository(db).retry(
+    "analysis-id",
+    2,
+    "2026-08-23T13:00:00.000Z",
+    "analyses/analysis-id/retry-object",
+  );
+  assert.equal(retried, true);
+  assert.match(db.lastQuery, /media_object_key = \?/);
+  assert.match(db.lastQuery, /status = 'failed'/);
+  assert.deepEqual(observed, [
+    "2026-08-23T13:00:00.000Z",
+    "analyses/analysis-id/retry-object",
+    "analysis-id",
+    2,
+  ]);
 });
 
 function fakeDb(
