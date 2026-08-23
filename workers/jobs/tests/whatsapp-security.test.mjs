@@ -75,7 +75,8 @@ test("safe metadata download uses no redirects and bounded recognized media", as
     return new Response(jpg, { headers: { "content-type": "image/jpeg", "content-length": "4" } });
   });
   assert.deepEqual(result.bytes, jpg);
-  assert.equal(calls[1].init.redirect, "error");
+  assert.equal(calls[0].init.redirect, "manual");
+  assert.equal(calls[1].init.redirect, "manual");
   assert.equal(calls[1].init.headers.authorization, "Bearer top-secret");
 });
 

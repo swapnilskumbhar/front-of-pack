@@ -32,7 +32,7 @@ export async function downloadWhatsAppMedia(
   if (!/^v\d+\.\d+$/.test(config.apiVersion)) throw new Error("invalid_graph_version");
   const metadataUrl = `https://graph.facebook.com/${config.apiVersion}/${encodeURIComponent(mediaId)}`;
   const metadataResponse = await fetcher(metadataUrl, {
-    headers: { authorization: `Bearer ${config.accessToken}` }, redirect: "error",
+    headers: { authorization: `Bearer ${config.accessToken}` }, redirect: "manual",
   });
   if (!metadataResponse.ok) throw new Error(`graph_media_metadata_${metadataResponse.status}`);
   const metadata = await metadataResponse.json() as { url?: unknown; mime_type?: unknown; file_size?: unknown };
@@ -43,7 +43,7 @@ export async function downloadWhatsAppMedia(
     throw new Error("media_too_large");
   }
   const mediaResponse = await fetcher(metadata.url, {
-    headers: { authorization: `Bearer ${config.accessToken}` }, redirect: "error",
+    headers: { authorization: `Bearer ${config.accessToken}` }, redirect: "manual",
   });
   if (!mediaResponse.ok) throw new Error(`graph_media_download_${mediaResponse.status}`);
   if (mediaResponse.redirected || !isAllowedMetaMediaUrl(mediaResponse.url || metadata.url)) {
@@ -67,7 +67,7 @@ export async function sendWhatsAppText(
   const response = await fetcher(
     `https://graph.facebook.com/${config.apiVersion}/${encodeURIComponent(config.phoneNumberId)}/messages`,
     {
-      method: "POST", redirect: "error",
+      method: "POST", redirect: "manual",
       headers: { authorization: `Bearer ${config.accessToken}`, "content-type": "application/json" },
       body: JSON.stringify({ messaging_product: "whatsapp", to: recipient, type: "text", text: { body } }),
     },
