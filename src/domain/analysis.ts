@@ -110,6 +110,8 @@ export interface ProductAnalysis {
   ingredientTokens?: string[];
   claimsAsPrinted?: string[];
   printedVegMark?: "veg" | "non_veg" | null;
+  webMatchConfidence?: "high" | "medium" | "low" | null;
+  webMatchBasis?: string | null;
   coverage: Coverage;
   summary: string;
   findings: Finding[];

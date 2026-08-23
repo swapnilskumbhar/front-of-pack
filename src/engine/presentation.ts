@@ -95,3 +95,60 @@ export function buildVerdict(signals: readonly DerivedSignal[], language: Langua
   if (!signals.length) return null;
   return signals.slice(0, 2).map((signal) => formatDerivedSignal(signal, language).headline).join(" · ");
 }
+
+export type AttentionLevel = "needs_attention" | "some_caution" | "no_major_concern" | "not_enough_information";
+
+export function buildAttentionIndicator(item: ProductAnalysis, signals: readonly DerivedSignal[], language: LanguageCode): { level: AttentionLevel; title: string; summary: string } {
+  const highSignal = signals.find((signal) => signal.severity === "high");
+  const uncertainSignal = signals.find((signal) => signal.kind === "source_unclear");
+  const materialFinding = (item.findings ?? []).find((finding) => finding.level === "attention" && !isMissingInformationFinding(finding.title, finding.explanation));
+  const onlineEvidence = (item.evidence ?? []).find((evidence) => evidence.origin === "hosted_web_search");
+  if (highSignal) {
+    return { level: "needs_attention", title: indicatorTitle("needs_attention", language), summary: formatDerivedSignal(highSignal, language).headline };
+  }
+  if (materialFinding) {
+    return { level: "some_caution", title: indicatorTitle("some_caution", language), summary: materialFinding.explanation };
+  }
+  if (uncertainSignal || onlineEvidence) {
+    const summary = uncertainSignal ? formatDerivedSignal(uncertainSignal, language).headline : onlineEvidence?.excerptOrObservation ?? "";
+    return { level: "some_caution", title: indicatorTitle("some_caution", language), summary };
+  }
+  const ranAnyCheck = Boolean(item.ingredientTokens?.length || item.nutrition?.basis || item.claimsAsPrinted?.length);
+  if (ranAnyCheck && !item.needsClearerImage) {
+    return { level: "no_major_concern", title: indicatorTitle("no_major_concern", language), summary: item.summary ?? "" };
+  }
+  return { level: "not_enough_information", title: indicatorTitle("not_enough_information", language), summary: item.retakeGuidance ?? item.summary ?? "More of the package is needed for a useful decision." };
+}
+
+export function buildProductProfile(item: ProductAnalysis, signals: readonly DerivedSignal[]): string {
+  const parts = [(item.category ?? "product").replaceAll("_", " ")];
+  if (item.printedVegMark === "veg") parts.push("VEG mark");
+  if (item.printedVegMark === "non_veg") parts.push("NON-VEG mark");
+  if (item.claimsAsPrinted?.some((claim) => /caffeine/iu.test(claim))) parts.push("caffeine declared");
+  if (signals.some((signal) => signal.kind === "veg_mark_conflict" || signal.kind === "diet_profile" && signal.severity === "high")) parts.push("animal/insect-derived ingredient");
+  if (signals.some((signal) => signal.kind === "source_unclear")) parts.push("ingredient source unclear");
+  if (signals.some((signal) => signal.kind === "allergen_profile")) parts.push("allergens identified");
+  return parts.slice(0, 3).join(" · ");
+}
+
+function isMissingInformationFinding(title: string, explanation: string): boolean {
+  return /(?:not visible|unreadable|missing|needed|need(?:s|ed)?|not shown|cannot be assessed)/iu.test(`${title} ${explanation}`);
+}
+
+function indicatorTitle(level: AttentionLevel, language: LanguageCode): string {
+  const titles: Record<LanguageCode, Record<AttentionLevel, string>> = {
+    en: { needs_attention: "NEEDS ATTENTION", some_caution: "SOME CAUTION", no_major_concern: "NO MAJOR CONCERN FOUND", not_enough_information: "NOT ENOUGH INFORMATION" },
+    hi: { needs_attention: "ध्यान दें", some_caution: "कुछ सावधानी", no_major_concern: "कोई बड़ी चिंता नहीं मिली", not_enough_information: "पर्याप्त जानकारी नहीं" },
+    mr: { needs_attention: "लक्ष द्या", some_caution: "काही सावधगिरी", no_major_concern: "मोठी चिंता आढळली नाही", not_enough_information: "पुरेशी माहिती नाही" },
+    bn: { needs_attention: "মনোযোগ প্রয়োজন", some_caution: "কিছু সতর্কতা", no_major_concern: "বড় উদ্বেগ পাওয়া যায়নি", not_enough_information: "যথেষ্ট তথ্য নেই" },
+    ta: { needs_attention: "கவனம் தேவை", some_caution: "சில எச்சரிக்கை", no_major_concern: "பெரிய கவலை இல்லை", not_enough_information: "போதிய தகவல் இல்லை" },
+    te: { needs_attention: "శ్రద్ధ అవసరం", some_caution: "కొంత జాగ్రత్త", no_major_concern: "పెద్ద ఆందోళన కనిపించలేదు", not_enough_information: "తగిన సమాచారం లేదు" },
+    kn: { needs_attention: "ಗಮನ ಅಗತ್ಯ", some_caution: "ಸ್ವಲ್ಪ ಎಚ್ಚರಿಕೆ", no_major_concern: "ದೊಡ್ಡ ಕಳವಳ ಕಂಡಿಲ್ಲ", not_enough_information: "ಸಾಕಷ್ಟು ಮಾಹಿತಿ ಇಲ್ಲ" },
+    gu: { needs_attention: "ધ્યાન જરૂરી", some_caution: "થોડી સાવચેતી", no_major_concern: "મોટી ચિંતા મળી નથી", not_enough_information: "પૂરતી માહિતી નથી" },
+    ml: { needs_attention: "ശ്രദ്ധ വേണം", some_caution: "കുറച്ച് ജാഗ്രത", no_major_concern: "വലിയ ആശങ്ക കണ്ടെത്തിയില്ല", not_enough_information: "മതിയായ വിവരം ഇല്ല" },
+    pa: { needs_attention: "ਧਿਆਨ ਦੀ ਲੋੜ", some_caution: "ਕੁਝ ਸਾਵਧਾਨੀ", no_major_concern: "ਵੱਡੀ ਚਿੰਤਾ ਨਹੀਂ ਮਿਲੀ", not_enough_information: "ਕਾਫ਼ੀ ਜਾਣਕਾਰੀ ਨਹੀਂ" },
+    or: { needs_attention: "ଧ୍ୟାନ ଆବଶ୍ୟକ", some_caution: "କିଛି ସାବଧାନତା", no_major_concern: "ବଡ଼ ଚିନ୍ତା ମିଳିଲା ନାହିଁ", not_enough_information: "ପର୍ଯ୍ୟାପ୍ତ ସୂଚନା ନାହିଁ" },
+    ur: { needs_attention: "توجہ درکار", some_caution: "کچھ احتیاط", no_major_concern: "کوئی بڑی تشویش نہیں ملی", not_enough_information: "کافی معلومات نہیں" },
+  };
+  return titles[language]?.[level] ?? titles.en[level];
+}

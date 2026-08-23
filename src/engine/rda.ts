@@ -19,7 +19,9 @@ export function evaluateWholePack(nutrition: ExtractedNutrition | null): WholePa
     if (!Number.isFinite(derivedRda) || derivedRda <= 0) continue;
     const wholePackAmount = per100 * nutrition.netQuantity / 100;
     const wholePackRdaPercent = wholePackAmount / derivedRda * 100;
-    if (!Number.isFinite(wholePackRdaPercent) || wholePackRdaPercent < 25 || wholePackRdaPercent < servingPct * 1.5) continue;
+    if (!Number.isFinite(wholePackRdaPercent) || wholePackRdaPercent < 25) continue;
+    const servingSizeHidesPackImpact = wholePackRdaPercent >= servingPct * 1.5;
+    if (wholePackRdaPercent < 50 && !servingSizeHidesPackImpact) continue;
     signals.push({
       kind: "whole_pack_rda",
       nutrient: config.nutrient as DerivedNutrient,

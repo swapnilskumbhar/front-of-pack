@@ -91,7 +91,7 @@ test("delivery contract is ID-only and renderer emits one Unicode-safe bounded m
     items: [{ identity: { brandAsPrinted: "ब्रँड" }, summary: "पॅकवरील माहिती." }],
     disclaimer: "ही शैक्षणिक माहिती आहे.",
   });
-  assert.match(localized.join("\n"), /लेबल विश्लेषण पूर्ण झाले/);
+  assert.match(localized.join("\n"), /पॅकवरील माहिती/);
 });
 
 test("WhatsApp rendering puts attention first and removes secondary prose", () => {
@@ -124,7 +124,7 @@ test("WhatsApp marks searched evidence as online and includes one source", () =>
     evidence: [{ origin: "hosted_web_search", excerptOrObservation: "Official 200 g page lists chickpea flour and clove powder." }],
     citations: [{ title: "Official product page", url: "https://example.test/ratlami-sev" }],
   }] })[0];
-  assert.match(message, /ONLINE MATCH/);
+  assert.match(message, /ONLINE ANALYSIS/);
   assert.match(message, /example\.test\/ratlami-sev/);
 });
 

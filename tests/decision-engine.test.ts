@@ -27,6 +27,17 @@ test("derives serving reality for a multi-serving chips packet", () => {
   assert.equal(signals[0].severity, "moderate");
 });
 
+test("flags a high whole-container value even when one serving equals the container", () => {
+  const signals = evaluateWholePack({
+    basis: "per_100ml", servingSize: 250, netQuantity: 250,
+    values: { addedSugarsG: 11, saturatedFatG: 0, sodiumMg: 0, totalFatG: 0 },
+    printedPerServeRdaPct: { addedSugars: 54, saturatedFat: null, sodium: null, totalFat: null },
+  });
+  assert.equal(signals[0]?.wholePackAmount, 27.5);
+  assert.equal(signals[0]?.wholePackRdaPercent, 54);
+  assert.equal(signals[0]?.severity, "high");
+});
+
 test("does not manufacture a decision from missing or rounding-noise data", () => {
   assert.deepEqual(evaluateWholePack(null), []);
   assert.deepEqual(evaluateWholePack({

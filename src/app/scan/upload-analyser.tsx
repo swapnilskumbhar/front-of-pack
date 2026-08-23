@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { AnalysisResult } from "@/domain/analysis";
-import { buildCheckStrip, buildVerdict, formatDerivedSignal } from "@/engine/presentation";
+import { buildAttentionIndicator, buildCheckStrip, buildProductProfile, buildVerdict, formatDerivedSignal } from "@/engine/presentation";
 import { DEFAULT_LANGUAGE, type LanguageCode } from "@/domain/language";
 import { MAX_IMAGE_BYTES, type CreatedAnalysisResponse, type SafeAnalysisResponse } from "@/intake";
 import { DEMO_LABELS, DEMO_RESULTS } from "@/demo/results";
@@ -161,6 +161,8 @@ function AnalysisResultView({ result }: { result: AnalysisResult }) {
         const visibleFindingIds = new Set(visibleFindings.map((finding) => finding.id));
         const additionalFindings = item.findings.filter((finding) => !visibleFindingIds.has(finding.id));
         const verdict = buildVerdict(derivedSignals, result.language);
+        const indicator = buildAttentionIndicator(item, derivedSignals, result.language);
+        const profile = buildProductProfile(item, derivedSignals);
         const checks = buildCheckStrip(item, derivedSignals);
         const claimCheck = item.claimAudits.find((claim) => claim.status !== "supported") ?? item.claimAudits[0];
         const onlineEvidence = item.evidence.filter((evidence) => evidence.origin === "hosted_web_search");
@@ -169,6 +171,9 @@ function AnalysisResultView({ result }: { result: AnalysisResult }) {
             <span>Product {item.position}</span>
             <div className="analysis-badges"><b>{categoryLabel(item.category)}</b><b>{item.coverage.tier.replaceAll("_", " ")}</b><b>Identity: {item.identity.confidence}</b></div>
           </div>
+          <div className={`analysis-indicator indicator-${indicator.level}`}><strong>{indicator.title}</strong><span>{indicator.summary}</span></div>
+          <h3>{item.identity.nameAsPrinted || item.identity.brandAsPrinted || "Product identified from the image"}</h3>
+          <p className="analysis-profile"><strong>Profile:</strong> {profile}</p>
           {verdict && <p className="analysis-verdict"><strong>Verdict</strong>{verdict}</p>}
           {derivedCopies.map((copy, index) => <div className="analysis-callout" key={`${copy.title}-${index}`}><strong>{copy.title}</strong><br />{copy.headline}<br /><small>{copy.detail}</small></div>)}
           <div className="analysis-check-strip">{checks.map((check) => <span key={check.label} className={`check-${check.state}`} title={check.text}><b>{check.label}</b>{check.state === "alert" ? "⚠" : check.state === "pass" ? "✓" : "—"}</span>)}</div>
@@ -176,10 +181,10 @@ function AnalysisResultView({ result }: { result: AnalysisResult }) {
             <h4>What matters</h4>
             <ul>{visibleFindings.map((finding) => <li key={finding.id}><strong>{finding.title}</strong><span>{finding.explanation}</span></li>)}</ul>
           </div>}
-          <h3>{item.identity.nameAsPrinted || item.identity.brandAsPrinted || "Product identified from the image"}</h3>
           {claimCheck && <div className="analysis-claim"><small>Claim check</small><strong>{claimCheck.claimAsPrinted}</strong><p>{claimCheck.assessment}</p></div>}
           {onlineEvidence.length > 0 && <div className="analysis-online">
-            <small>Found online · verify against your pack</small>
+            <small>Online analysis · match {item.webMatchConfidence ?? "unrated"} · verify against your pack</small>
+            {item.webMatchBasis && <p>{item.webMatchBasis}</p>}
             {onlineEvidence.map((evidence) => <p key={evidence.id}>{evidence.excerptOrObservation}</p>)}
             {item.citations.slice(0, 2).map((citation) => <a key={citation.id} href={citation.url} target="_blank" rel="noreferrer nofollow">{citation.title} ↗</a>)}
           </div>}

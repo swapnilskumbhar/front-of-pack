@@ -18,6 +18,17 @@ export default function HowWeDecidePage() {
     </section>
 
     <section className="service-card">
+      <p className="eyebrow">At-a-glance indicator</p>
+      <h2>What do the four states mean?</h2>
+      <div className="decision-grid">
+        <article><span>🔴</span><h3>Needs attention</h3><p>A high deterministic signal exists, such as a large whole-pack contribution or an explicit package contradiction.</p></article>
+        <article><span>🟠</span><h3>Some caution</h3><p>A material model finding or provisional online consequence needs review, but does not justify a definitive warning.</p></article>
+        <article><span>🟢</span><h3>No major concern found</h3><p>Readable checks ran without a material signal. This never means universally healthy or safe.</p></article>
+        <article><span>⚪</span><h3>Not enough information</h3><p>The necessary panel or evidence is unavailable. Missing information is not treated as a warning or a pass.</p></article>
+      </div>
+    </section>
+
+    <section className="service-card">
       <p className="eyebrow">Serving-size reality</p>
       <h2>What does the whole pack mean?</h2>
       <code>derived RDA = serving amount ÷ (printed serving %RDA ÷ 100)</code>

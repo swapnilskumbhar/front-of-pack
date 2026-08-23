@@ -1,6 +1,6 @@
 import { decryptIdentifier } from "./crypto.ts";
 import { GraphSendError, sendWhatsAppText, type GraphConfig } from "./graph.ts";
-import { buildCheckStrip, buildVerdict, type DerivedSignal } from "../../../../src/engine/index.ts";
+import { buildAttentionIndicator, buildProductProfile, buildVerdict, type DerivedSignal } from "../../../../src/engine/index.ts";
 import type { LanguageCode } from "../../../../src/domain/language.ts";
 import type { ProductAnalysis } from "../../../../src/domain/analysis.ts";
 
@@ -56,27 +56,15 @@ export function renderWhatsAppChunks(result: unknown): string[] {
         ? rawFindings.filter((finding) => finding.kind !== "nutrition") : rawFindings;
       const orderedFindings = [...findings].sort((left, right) =>
         Number(right.level === "attention") - Number(left.level === "attention"));
-      const primary = orderedFindings[0];
       const verdict = buildVerdict(signals, language);
-      if (verdict) {
-        sections.push(`⚠️ *VERDICT*\n${verdict}`);
-      } else if (primary) {
-        const title = typeof primary.title === "string" ? primary.title.toUpperCase() : "WHAT MATTERS";
-        const explanation = typeof primary.explanation === "string" ? primary.explanation : "";
-        sections.push(`${primary.level === "attention" ? "⚠️" : "ℹ️"} *${title}*${explanation ? `\n${explanation}` : ""}`);
-      } else if (typeof source.strongestMaterialFinding === "string") {
-        sections.push(`ℹ️ *WHAT MATTERS*\n${source.strongestMaterialFinding}`);
-      } else if (typeof source.wholeImageSummary === "string") {
-        sections.push(source.wholeImageSummary);
-      }
+      const typedItem = item as unknown as ProductAnalysis;
+      const indicator = buildAttentionIndicator(typedItem, signals, language);
+      const indicatorIcon = indicator.level === "needs_attention" ? "🔴" : indicator.level === "some_caution" ? "🟠" : indicator.level === "no_major_concern" ? "🟢" : "⚪";
+      sections.push(`${indicatorIcon} *${indicator.title}*\n${indicator.summary}`);
       const confidence = typeof identity.confidence === "string" ? identity.confidence : "unknown";
-      if (name) sections.push(`📦 ${name}\nID confidence: ${confidence}`);
-      if (signals.length) {
-        const checks = buildCheckStrip(item as unknown as ProductAnalysis, signals)
-          .map((check) => `${check.label} ${check.state === "alert" ? "⚠" : check.state === "pass" ? "✓" : "—"}`)
-          .join(" · ");
-        sections.push(checks);
-      }
+      const profile = buildProductProfile(typedItem, signals);
+      if (name) sections.push(`📦 *${name}*\nProfile: ${profile} · Confidence: ${confidence}`);
+      if (verdict && verdict !== indicator.summary) sections.push(`*Verdict:* ${verdict}`);
       if (Array.isArray(item.findings)) {
         for (const findingValue of orderedFindings.slice(signals.length ? 0 : 1, signals.length ? 1 : 3)) {
           if (!findingValue || typeof findingValue !== "object") continue;
@@ -97,7 +85,8 @@ export function renderWhatsAppChunks(result: unknown): string[] {
       if (onlineEvidence) {
         const observation = typeof onlineEvidence.excerptOrObservation === "string" ? onlineEvidence.excerptOrObservation : "";
         const sourceUrl = typeof onlineCitation?.url === "string" ? onlineCitation.url : "";
-        sections.push(`🌐 *ONLINE MATCH — VERIFY PACK*${observation ? `\n${observation}` : ""}${sourceUrl ? `\n${sourceUrl}` : ""}`);
+        const matchConfidence = typeof item.webMatchConfidence === "string" ? item.webMatchConfidence : "unrated";
+        sections.push(`🌐 *ONLINE ANALYSIS · MATCH ${matchConfidence.toUpperCase()}*${observation ? `\n${observation}` : ""}${sourceUrl ? `\n${sourceUrl}` : ""}`);
       }
     }
   }
