@@ -55,7 +55,7 @@ export async function prepareWhatsAppAnalysis(
   const mediaValidationMs = Date.now() - validationStartedAt;
   const cacheKey = await buildAnalysisCacheKey({ normalizedImageHash: imageHash, language: wa.language as never,
     modelId: INTAKE_VERSION.model, promptVersion: INTAKE_VERSION.prompt, schemaVersion: ANALYSIS_SCHEMA_VERSION,
-    rulesVersion: INTAKE_VERSION.rules, servicesVersion: INTAKE_VERSION.services });
+    rulesVersion: INTAKE_VERSION.rules, servicesVersion: INTAKE_VERSION.services, engineVersion: INTAKE_VERSION.engine });
   const repository = new AnalysisRepository(env.DB);
   let analysis = await repository.findByCacheKey(cacheKey);
   if (analysis?.status === "failed") {
@@ -84,7 +84,7 @@ export async function prepareWhatsAppAnalysis(
     await repository.insertQueued({ id: analysisId, cacheKey, imageHash, mediaObjectKey: objectKey,
       language: wa.language as never, queueEnqueuedAt: new Date().toISOString(), modelId: INTAKE_VERSION.model,
       promptVersion: INTAKE_VERSION.prompt, schemaVersion: ANALYSIS_SCHEMA_VERSION, rulesVersion: INTAKE_VERSION.rules,
-      servicesVersion: INTAKE_VERSION.services, createdAt: new Date().toISOString() });
+      servicesVersion: INTAKE_VERSION.services, engineVersion: INTAKE_VERSION.engine, createdAt: new Date().toISOString() });
     analysis = await repository.findByCacheKey(cacheKey);
   }
   if (!analysis) throw new Error("analysis_persistence_failed");

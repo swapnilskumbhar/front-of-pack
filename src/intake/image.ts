@@ -1,4 +1,5 @@
 import type { AnalysisCacheIdentityInputs } from "../domain/cache";
+import { ENGINE_VERSION } from "../engine/types.ts";
 
 export const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
 export const MAX_MULTIPART_BYTES = MAX_IMAGE_BYTES + 1024 * 1024;
@@ -6,10 +7,11 @@ export const NORMALIZATION_VERSION = "validated-original.v2";
 
 export const INTAKE_VERSION = {
   model: "gpt-5.6-terra",
-  prompt: "terra-analysis.v7",
+  prompt: "terra-analysis.v8",
   schema: "analysis-result.v1",
   rules: "india-category-rules.v2",
   services: "india-consumer-services.v1",
+  engine: ENGINE_VERSION,
   normalization: NORMALIZATION_VERSION,
 } as const;
 
@@ -68,6 +70,7 @@ export async function buildAnalysisCacheKey(input: AnalysisCacheIdentityInputs):
     input.schemaVersion,
     input.rulesVersion,
     input.servicesVersion,
+    input.engineVersion,
   ]));
 }
 

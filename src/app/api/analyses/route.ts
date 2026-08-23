@@ -86,6 +86,7 @@ export async function POST(request: Request): Promise<Response> {
     schemaVersion: ANALYSIS_SCHEMA_VERSION,
     rulesVersion: INTAKE_VERSION.rules,
     servicesVersion: INTAKE_VERSION.services,
+    engineVersion: INTAKE_VERSION.engine,
   });
   const analyses = new AnalysisRepository(bindings.DB);
   const scans = new ScanRequestRepository(bindings.DB);
@@ -153,6 +154,7 @@ export async function POST(request: Request): Promise<Response> {
       schemaVersion: ANALYSIS_SCHEMA_VERSION,
       rulesVersion: INTAKE_VERSION.rules,
       servicesVersion: INTAKE_VERSION.services,
+      engineVersion: INTAKE_VERSION.engine,
       createdAt: now,
     });
   } catch {

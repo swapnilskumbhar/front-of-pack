@@ -1,4 +1,4 @@
-export const ENGINE_VERSION = "decision-engine.v1" as const;
+export const ENGINE_VERSION = "decision-engine.v2" as const;
 
 export type NutritionBasis = "per_100g" | "per_100ml";
 export type DerivedNutrient = "added_sugars" | "saturated_fat" | "sodium" | "total_fat";
@@ -45,7 +45,48 @@ export interface ClaimContradictionSignal {
   basis: "literal_package_consistency";
 }
 
-export type DerivedSignal = WholePackSignal | ClaimContradictionSignal;
+export interface DietMatch {
+  entryId: string;
+  displayName: string;
+  printedToken: string;
+  flags: import("../knowledge/ingredient-dictionary.ts").DietFlag[];
+  note: string;
+  sourceUrl: string;
+}
+
+export interface DietProfileSignal {
+  kind: "diet_profile";
+  severity: "high" | "info";
+  printedVegMark: "veg" | "non_veg" | null;
+  matches: DietMatch[];
+  basis: "printed_ingredients";
+}
+
+export interface VegMarkConflictSignal {
+  kind: "veg_mark_conflict";
+  severity: "high";
+  printedVegMark: "veg";
+  matches: DietMatch[];
+  basis: "explicit_printed_origin";
+}
+
+export interface SourceUnclearSignal {
+  kind: "source_unclear";
+  severity: "info";
+  matches: DietMatch[];
+  basis: "ingredient_source_not_printed";
+}
+
+export interface AllergenSignal {
+  kind: "allergen_profile";
+  severity: "high";
+  matches: DietMatch[];
+  basis: "printed_ingredients";
+}
+
+export type DietarySignal = DietProfileSignal | VegMarkConflictSignal | SourceUnclearSignal | AllergenSignal;
+
+export type DerivedSignal = WholePackSignal | ClaimContradictionSignal | DietarySignal;
 
 export interface DerivedItemDecision {
   position: number;

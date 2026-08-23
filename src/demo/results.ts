@@ -10,36 +10,50 @@ const baseItem = (position: number, name: string, category: ProductAnalysis["cat
   needsClearerImage: false, retakeGuidance: null,
 });
 
-function result(items: ProductAnalysis[], summary: string): AnalysisResult {
+function result(items: ProductAnalysis[], summary: string, real = true): AnalysisResult {
   return attachDecisions({ schemaVersion: "analysis-result.v1", language: "en", analyzedCount: items.length,
     unknownCount: 0, flaggedCount: 0, truncated: false, wholeImageSummary: summary,
-    strongestMaterialFinding: null, items, disclaimer: "Cached demonstration from a fixed synthetic pack fixture." });
+    strongestMaterialFinding: null, items, disclaimer: real
+      ? "Cached result from a real Front of Pack analysis run on 23 August 2026."
+      : "Cached demonstration from a fixed synthetic multi-product fixture." });
 }
 
-const shampoo = baseItem(1, "Everyday Shampoo", "personal_care");
-shampoo.identity.variantAsPrinted = "100% Natural · Sulphate Free";
-shampoo.claimsAsPrinted = ["100% Natural", "Sulphate Free"];
-shampoo.ingredientTokens = ["aqua", "sles", "cocamidopropyl betaine", "fragrance"];
-shampoo.coverage = { tier: "category_rules", rulePackIds: ["in.cdsco.cosmetics-rules-2020-labelling.v1"], limitations: [] };
+const haldirams = baseItem(1, "RATLAMI SEV", "food");
+haldirams.identity = { nameAsPrinted: "RATLAMI SEV", brandAsPrinted: "Haldiram’s", variantAsPrinted: null, gtin: null, confidence: "high" };
+haldirams.printedVegMark = "veg";
+haldirams.claimsAsPrinted = ["Extruded Snack of Bengal Gram Flour with Pinch of Clove.", "PRODUCT OF INDIA"];
+haldirams.findings = [{ id: "h1", kind: "label_fact", level: "attention", title: "Back panel needed", explanation: "Allergen advice and nutrition are not visible; verify them on the rear panel.", evidenceIds: ["he1"], ruleIds: ["in.fssai.labelling-display-2020.v1"], experimental: false }];
+haldirams.evidence = [
+  { id: "he1", origin: "package", excerptOrObservation: "Only the front panel is shown; no ingredient list, allergen statement or nutrition panel is readable.", citationId: null, visibleOnPackage: true },
+  { id: "he2", origin: "hosted_web_search", excerptOrObservation: "The official matching 200 g page lists chickpea flour, oil and spices; confirm this pack’s rear label because recipes can change.", citationId: "hc1", visibleOnPackage: false },
+];
+haldirams.citations = [{ id: "hc1", title: "Ratlami Sev (200 gms) — Haldiram Foods", url: "https://haldiramfoods.com/product/ratlami-sev-200-gms/", providerSourceId: "https://haldiramfoods.com/product/ratlami-sev-200-gms/" }];
+haldirams.needsClearerImage = true;
+haldirams.retakeGuidance = "Photograph the full back panel to confirm ingredients, allergens and nutrition.";
 
-const chips = baseItem(1, "Masala Potato Chips", "food");
-chips.nutrition = { basis: "per_100g", servingSize: 20, netQuantity: 52,
-  values: { addedSugarsG: 0, saturatedFatG: 12.6, sodiumMg: 890, totalFatG: 33.4 },
-  printedPerServeRdaPct: { addedSugars: null, saturatedFat: 11, sodium: 9, totalFat: 10 } };
-chips.coverage = { tier: "category_rules", rulePackIds: ["in.fssai.labelling-display-2020.v1"], limitations: [] };
+const bread = baseItem(1, "Fibre Up", "food");
+bread.identity = { nameAsPrinted: "Fibre Up", brandAsPrinted: "English Oven", variantAsPrinted: "For a Happy Gut", gtin: "8906001387114", confidence: "high" };
+bread.printedVegMark = "veg";
+bread.ingredientTokens = ["whole wheat flour", "oats", "soy flour", "sesame seeds", "wheat gluten", "sugar"];
+bread.nutrition = { basis: "per_100g", servingSize: 55, netQuantity: 400,
+  values: { addedSugarsG: 1.93, saturatedFatG: 1.1, sodiumMg: 435, totalFatG: 3.09 },
+  printedPerServeRdaPct: { addedSugars: 2, saturatedFat: 2.8, sodium: 12, totalFat: 3 } };
+bread.coverage = { tier: "category_rules", rulePackIds: ["in.fssai.labelling-display-2020.v1"], limitations: [] };
+bread.findings = [{ id: "b1", kind: "ingredient", level: "attention", title: "Allergens printed", explanation: "The pack declares wheat, oats, soy and sesame.", evidenceIds: ["be1"], ruleIds: ["in.fssai.labelling-display-2020.v1"], experimental: false }];
+bread.evidence = [{ id: "be1", origin: "package", excerptOrObservation: "Allergen declaration states wheat, oats, soy and sesame seeds.", citationId: null, visibleOnPackage: true }];
 
 const cartNames = ["Fruit Drink", "Breakfast Cereal", "Face Wash", "Dishwash Gel", "Baby Lotion", "Pet Treats"];
 const cartCategories: ProductAnalysis["category"][] = ["beverage", "food", "personal_care", "household", "baby_care", "pet_care"];
 const cart = cartNames.map((name, index) => baseItem(index + 1, name, cartCategories[index]));
 
 export const DEMO_RESULTS: Record<string, AnalysisResult> = {
-  shampoo: result([shampoo], "A literal claim and ingredient contradiction is visible."),
-  chips: result([chips], "The packet contains more than one printed serving."),
-  cart: result(cart, "Six products identified from one shopping-cart image."),
+  haldirams: result([haldirams], "A front-only Haldiram’s pack triggers a provisional official-source lookup."),
+  bread: result([bread], "A real bread label supports whole-pack and allergen checks."),
+  cart: result(cart, "Six products identified from one shopping-cart image.", false),
 };
 
 export const DEMO_LABELS = [
-  { id: "shampoo", label: "Claim contradiction", detail: "Sulphate Free ↔ SLES" },
-  { id: "chips", label: "Serving reality", detail: "20 g serving ↔ 52 g pack" },
-  { id: "cart", label: "Six products", detail: "Multi-category cart" },
+  { id: "haldirams", label: "Front-only search", detail: "Real pack · official match", imageSrc: "/demo/haldirams-ratlami-sev.jpeg" },
+  { id: "bread", label: "Whole-pack reality", detail: "Real pack · allergens", imageSrc: "/demo/english-oven-fibre-up.jpeg" },
+  { id: "cart", label: "Six products", detail: "Synthetic until photo supplied", imageSrc: null },
 ] as const;

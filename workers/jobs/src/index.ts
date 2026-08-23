@@ -15,10 +15,11 @@ import { attachDecisions } from "../../../src/engine/index.ts";
 
 const PINNED_ANALYSIS_VERSIONS = {
   model_id: "gpt-5.6-terra",
-  prompt_version: "terra-analysis.v7",
+  prompt_version: "terra-analysis.v8",
   schema_version: "analysis-result.v1",
   rules_version: "india-category-rules.v2",
   services_version: "india-consumer-services.v1",
+  engine_version: "decision-engine.v2",
 } as const;
 
 const MODEL_RULE_CONTEXT = RULE_PACKS.map((pack) => ({
@@ -186,7 +187,7 @@ function canonicalSourceUrl(value: string): string | null {
 
 async function assertPinnedAnalysisVersions(db: D1Database, analysisId: string): Promise<void> {
   const row = await db.prepare(`
-    SELECT model_id, prompt_version, schema_version, rules_version, services_version
+    SELECT model_id, prompt_version, schema_version, rules_version, services_version, engine_version
     FROM analyses WHERE id = ? LIMIT 1
   `).bind(analysisId).first<Record<keyof typeof PINNED_ANALYSIS_VERSIONS, string>>();
   if (row === null) throw new Error("Queued analysis version metadata is missing");

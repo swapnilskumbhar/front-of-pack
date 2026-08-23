@@ -30,6 +30,7 @@ type AnalysisRow = {
   error_code: string | null;
   created_at: string;
   completed_at: string | null;
+  engine_version: string | null;
 };
 
 export interface QueuedAnalysisInput {
@@ -44,6 +45,7 @@ export interface QueuedAnalysisInput {
   schemaVersion: string;
   rulesVersion: string;
   servicesVersion: string;
+  engineVersion: string;
   createdAt: string;
   expiresAt?: string | null;
 }
@@ -80,12 +82,12 @@ export class AnalysisRepository {
       INSERT OR IGNORE INTO analyses (
         id, cache_key, image_hash, media_object_key, language, status,
         attempt_number, queue_enqueued_at, model_id, prompt_version,
-        schema_version, rules_version, services_version, created_at, expires_at
-      ) VALUES (?, ?, ?, ?, ?, 'queued', 1, ?, ?, ?, ?, ?, ?, ?, ?)
+        schema_version, rules_version, services_version, engine_version, created_at, expires_at
+      ) VALUES (?, ?, ?, ?, ?, 'queued', 1, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       input.id, input.cacheKey, input.imageHash, input.mediaObjectKey,
       input.language, input.queueEnqueuedAt, input.modelId, input.promptVersion,
-      input.schemaVersion, input.rulesVersion, input.servicesVersion,
+      input.schemaVersion, input.rulesVersion, input.servicesVersion, input.engineVersion,
       input.createdAt, input.expiresAt ?? null,
     ).run();
     return changedExactlyOne(result);
@@ -196,7 +198,7 @@ export class AnalysisRepository {
       SELECT id, cache_key, image_hash, media_object_key, language, status,
         attempt_number, queue_enqueued_at, provider_started_at,
         openai_response_id, result_json, web_search_used, expires_at,
-        error_code, created_at, completed_at
+        error_code, created_at, completed_at, engine_version
       FROM analyses WHERE ${field} = ? LIMIT 1
     `).bind(value).first<AnalysisRow>();
     return row ? mapAnalysisRow(row) : null;
@@ -223,5 +225,6 @@ function mapAnalysisRow(row: AnalysisRow): AnalysisRecord {
     errorCode: row.error_code,
     createdAt: row.created_at,
     completedAt: row.completed_at,
+    engineVersion: row.engine_version,
   };
 }

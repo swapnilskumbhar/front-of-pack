@@ -15,7 +15,7 @@ export function evaluateClaimConsistency(
     const claim = claimsAsPrinted.find((candidate) => test.claimPatterns.some((pattern) => pattern.test(candidate)));
     if (!claim) continue;
     const foundIngredient = test.contradictingIngredients.find((needle) =>
-      normalizedIngredients.some((ingredient) => ingredient === normalize(needle)));
+      normalizedIngredients.some((ingredient) => containsIngredient(ingredient, needle)));
     if (!foundIngredient) continue;
     signals.push({
       kind: "claim_contradiction", severity: "high", testId: test.id,
@@ -28,4 +28,9 @@ export function evaluateClaimConsistency(
 
 function normalize(value: string): string {
   return value.toLocaleLowerCase("en-IN").replace(/[^a-z0-9]+/gu, " ").trim();
+}
+
+function containsIngredient(haystack: string, needle: string): boolean {
+  const escaped = normalize(needle).replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  return new RegExp(`\\b${escaped}\\b`, "u").test(haystack);
 }

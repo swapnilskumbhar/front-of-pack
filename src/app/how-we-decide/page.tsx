@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { ENGINE_VERSION } from "@/engine/types";
 import { CLAIM_TESTS } from "@/knowledge/claim-tests";
+import { INGREDIENT_DICTIONARY } from "@/knowledge/ingredient-dictionary";
 import { RULE_PACKS } from "@/knowledge/rule-packs";
 
 export default function HowWeDecidePage() {
@@ -23,6 +24,19 @@ export default function HowWeDecidePage() {
       <code>whole-pack % = whole-pack amount ÷ derived RDA × 100</code>
       <div className="worked-example"><b>Worked example</b><span>12.6 g saturated fat / 100 g · 20 g serving · 11% printed RDA · 52 g packet</span><strong>Whole packet ≈ 29%</strong></div>
       <p className="decision-note">A signal appears only when the whole pack is at least 25% of the pack-derived reference and at least 1.5× its printed serving percentage. “Moderate” and “high” are presentation bands, not regulatory classifications.</p>
+    </section>
+
+    <section className="service-card">
+      <p className="eyebrow">Dietary source and allergens</p>
+      <h2>Which printed ingredients are recognized?</h2>
+      <div className="decision-grid">{INGREDIENT_DICTIONARY.map((entry) => <article key={entry.id}>
+        <span>{entry.id}</span><h3>{entry.displayName}</h3>
+        <p>Printed forms: {entry.tokens.join(", ")}</p>
+        <p>Flags: {entry.flags.join(", ")}</p>
+        <a href={entry.sourceUrl} target="_blank" rel="noreferrer">Source context ↗</a>
+        <small>{entry.note} {entry.limitation}</small>
+      </article>)}</div>
+      <p className="decision-note">INS 627, 631, 471 and 920 never prove animal origin; they report that the source is not stated. “Non-toxic,” “chemical-free,” halal status and general naturalness are deliberate exclusions because a photograph cannot establish them reliably.</p>
     </section>
 
     <section className="service-card">

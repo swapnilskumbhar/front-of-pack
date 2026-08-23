@@ -9,6 +9,7 @@ export interface AnalysisCacheIdentityInputs {
   schemaVersion: string;
   rulesVersion: string;
   servicesVersion: string;
+  engineVersion: string;
 }
 
 export interface CachePolicy {

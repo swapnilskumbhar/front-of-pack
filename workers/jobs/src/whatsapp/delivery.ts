@@ -1,7 +1,8 @@
 import { decryptIdentifier } from "./crypto.ts";
 import { GraphSendError, sendWhatsAppText, type GraphConfig } from "./graph.ts";
-import { formatClaimSignal, formatWholePackSignal, type DerivedSignal } from "../../../../src/engine/index.ts";
+import { buildCheckStrip, buildVerdict, type DerivedSignal } from "../../../../src/engine/index.ts";
 import type { LanguageCode } from "../../../../src/domain/language.ts";
+import type { ProductAnalysis } from "../../../../src/domain/analysis.ts";
 
 export interface DeliveryJob { version: 1; whatsapp_job_id: string }
 export interface DeliveryEnv extends GraphConfig {
@@ -46,17 +47,19 @@ export function renderWhatsAppChunks(result: unknown): string[] {
         ? item.identity as Record<string, unknown> : {};
       const name = [identity.brandAsPrinted, identity.nameAsPrinted, identity.variantAsPrinted]
         .filter((part): part is string => typeof part === "string" && part.length > 0).join(" — ");
-      const findings = Array.isArray(item.findings)
+      const rawFindings = Array.isArray(item.findings)
         ? item.findings.filter((finding) => finding && typeof finding === "object") as Record<string, unknown>[] : [];
-      const orderedFindings = [...findings].sort((left, right) =>
-        Number(right.level === "attention") - Number(left.level === "attention"));
       const derivedItem = derivedItems.find((candidate) => candidate && typeof candidate === "object" &&
         (candidate as Record<string, unknown>).position === item.position) as Record<string, unknown> | undefined;
-      const signal = Array.isArray(derivedItem?.signals) ? derivedItem.signals[0] as DerivedSignal | undefined : undefined;
+      const signals = Array.isArray(derivedItem?.signals) ? derivedItem.signals as DerivedSignal[] : [];
+      const findings = signals.some((signal) => signal.kind === "whole_pack_rda")
+        ? rawFindings.filter((finding) => finding.kind !== "nutrition") : rawFindings;
+      const orderedFindings = [...findings].sort((left, right) =>
+        Number(right.level === "attention") - Number(left.level === "attention"));
       const primary = orderedFindings[0];
-      if (signal?.kind === "whole_pack_rda" || signal?.kind === "claim_contradiction") {
-        const copy = signal.kind === "whole_pack_rda" ? formatWholePackSignal(signal, language) : formatClaimSignal(signal, language);
-        sections.push(`⚠️ *${copy.title}*\n${copy.headline}\n${copy.detail}`);
+      const verdict = buildVerdict(signals, language);
+      if (verdict) {
+        sections.push(`⚠️ *VERDICT*\n${verdict}`);
       } else if (primary) {
         const title = typeof primary.title === "string" ? primary.title.toUpperCase() : "WHAT MATTERS";
         const explanation = typeof primary.explanation === "string" ? primary.explanation : "";
@@ -66,9 +69,16 @@ export function renderWhatsAppChunks(result: unknown): string[] {
       } else if (typeof source.wholeImageSummary === "string") {
         sections.push(source.wholeImageSummary);
       }
-      if (name) sections.push(`📦 ${name}`);
+      const confidence = typeof identity.confidence === "string" ? identity.confidence : "unknown";
+      if (name) sections.push(`📦 ${name}\nID confidence: ${confidence}`);
+      if (signals.length) {
+        const checks = buildCheckStrip(item as unknown as ProductAnalysis, signals)
+          .map((check) => `${check.label} ${check.state === "alert" ? "⚠" : check.state === "pass" ? "✓" : "—"}`)
+          .join(" · ");
+        sections.push(checks);
+      }
       if (Array.isArray(item.findings)) {
-        for (const findingValue of orderedFindings.slice(signal ? 0 : 1, signal ? 2 : 3)) {
+        for (const findingValue of orderedFindings.slice(signals.length ? 0 : 1, signals.length ? 1 : 3)) {
           if (!findingValue || typeof findingValue !== "object") continue;
           const finding = findingValue as Record<string, unknown>;
           const title = typeof finding.title === "string" ? finding.title : "";

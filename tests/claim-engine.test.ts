@@ -14,6 +14,20 @@ test("does not confuse sodium lauryl sulfoacetate with SLS", () => {
   assert.deepEqual(evaluateClaimConsistency(["Sulphate Free"], ["sodium lauryl sulfoacetate"], "personal_care"), []);
 });
 
+for (const ingredient of [
+  "sodium laureth sulphate",
+  "sodium lauryl sulphate",
+  "sodium laureth sulfate",
+  "sodium laureth sulfate (SLES)",
+  "sles",
+  "sodium c12-15 pareth sulphate",
+]) {
+  test(`detects sulphate-free contradiction for ${ingredient}`, () => {
+    const signals = evaluateClaimConsistency(["Sulphate Free"], [ingredient], "personal_care");
+    assert.equal(signals[0]?.testId, "claim.sulphate-free");
+  });
+}
+
 test("applies the official no-added-sugar consistency check to explicit sugar", () => {
   const signals = evaluateClaimConsistency(["No Added Sugar"], ["water", "sugar", "fruit pulp"], "beverage");
   assert.equal(signals[0].ruleId, "in.fssai.advertising-claims-2018.v1");

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { AnalysisResult } from "@/domain/analysis";
-import { formatClaimSignal, formatWholePackSignal } from "@/engine/presentation";
+import { buildCheckStrip, buildVerdict, formatDerivedSignal } from "@/engine/presentation";
 import { DEFAULT_LANGUAGE, type LanguageCode } from "@/domain/language";
 import { MAX_IMAGE_BYTES, type CreatedAnalysisResponse, type SafeAnalysisResponse } from "@/intake";
 import { DEMO_LABELS, DEMO_RESULTS } from "@/demo/results";
@@ -135,7 +135,7 @@ export default function UploadAnalyser() {
           setResult(DEMO_RESULTS[demo.id]);
           setMessage("Cached demonstration result — no model call was made.");
           window.history.replaceState(null, "", `?demo=${demo.id}`);
-        }}><strong>{demo.label}</strong><small>{demo.detail}</small></button>)}
+        }}>{demo.imageSrc && <span className="demo-thumb" aria-hidden="true" style={{ backgroundImage: `url(${demo.imageSrc})` }} />}<strong>{demo.label}</strong><small>{demo.detail}</small></button>)}
       </div>
       {result && <AnalysisResultView result={result} />}
     </>
@@ -151,23 +151,27 @@ function AnalysisResultView({ result }: { result: AnalysisResult }) {
       {!hasDerivedDecision && <h2 id="analysis-result-title">{result.wholeImageSummary}</h2>}
       {hasDerivedDecision && <h2 id="analysis-result-title">What changes the decision</h2>}
       <div className="analysis-items">{result.items.map((item) => {
-        const derivedSignal = result.derived?.items.find((entry) => entry.position === item.position)?.signals[0];
-        const derivedCopy = derivedSignal
-          ? derivedSignal.kind === "whole_pack_rda"
-            ? formatWholePackSignal(derivedSignal, result.language)
-            : formatClaimSignal(derivedSignal, result.language)
-          : null;
+        const derivedSignals = result.derived?.items.find((entry) => entry.position === item.position)?.signals ?? [];
+        const derivedCopies = derivedSignals.slice(0, 2).map((signal) => formatDerivedSignal(signal, result.language));
+        const hasWholePackSignal = derivedSignals.some((signal) => signal.kind === "whole_pack_rda");
         const visibleFindings = [...item.findings]
+          .filter((finding) => !(hasWholePackSignal && finding.kind === "nutrition"))
           .sort((left, right) => Number(right.level === "attention") - Number(left.level === "attention"))
           .slice(0, 3);
+        const visibleFindingIds = new Set(visibleFindings.map((finding) => finding.id));
+        const additionalFindings = item.findings.filter((finding) => !visibleFindingIds.has(finding.id));
+        const verdict = buildVerdict(derivedSignals, result.language);
+        const checks = buildCheckStrip(item, derivedSignals);
         const claimCheck = item.claimAudits.find((claim) => claim.status !== "supported") ?? item.claimAudits[0];
         const onlineEvidence = item.evidence.filter((evidence) => evidence.origin === "hosted_web_search");
         return <article key={item.position}>
           <div className="analysis-item-heading">
             <span>Product {item.position}</span>
-            <div className="analysis-badges"><b>{categoryLabel(item.category)}</b><b>{item.coverage.tier.replaceAll("_", " ")}</b></div>
+            <div className="analysis-badges"><b>{categoryLabel(item.category)}</b><b>{item.coverage.tier.replaceAll("_", " ")}</b><b>Identity: {item.identity.confidence}</b></div>
           </div>
-          {derivedCopy && <div className="analysis-callout"><strong>{derivedCopy.title}</strong><br />{derivedCopy.headline}<br /><small>{derivedCopy.detail}</small></div>}
+          {verdict && <p className="analysis-verdict"><strong>Verdict</strong>{verdict}</p>}
+          {derivedCopies.map((copy, index) => <div className="analysis-callout" key={`${copy.title}-${index}`}><strong>{copy.title}</strong><br />{copy.headline}<br /><small>{copy.detail}</small></div>)}
+          <div className="analysis-check-strip">{checks.map((check) => <span key={check.label} className={`check-${check.state}`} title={check.text}><b>{check.label}</b>{check.state === "alert" ? "⚠" : check.state === "pass" ? "✓" : "—"}</span>)}</div>
           {visibleFindings.length > 0 && <div className="analysis-key-findings">
             <h4>What matters</h4>
             <ul>{visibleFindings.map((finding) => <li key={finding.id}><strong>{finding.title}</strong><span>{finding.explanation}</span></li>)}</ul>
@@ -183,7 +187,7 @@ function AnalysisResultView({ result }: { result: AnalysisResult }) {
           {item.serviceRoute && <a className="analysis-next-step" href="/grievance">See your next-step options →</a>}
           <details className="analysis-evidence">
             <summary>View full evidence</summary>
-            {item.findings.length > visibleFindings.length && <div><h4>Additional findings</h4>{item.findings.slice(3).map((finding) => <p key={finding.id}><strong>{finding.title}:</strong> {finding.explanation}</p>)}</div>}
+            {additionalFindings.length > 0 && <div><h4>Additional findings</h4>{additionalFindings.map((finding) => <p key={finding.id}><strong>{finding.title}:</strong> {finding.explanation}</p>)}</div>}
             {item.evidence.length > 0 && <div><h4>Evidence read</h4><ul>{item.evidence.map((evidence) => <li key={evidence.id}>{evidence.excerptOrObservation}</li>)}</ul></div>}
             {item.citations.length > 0 && <div><h4>Sources</h4><ul>{item.citations.map((citation) => <li key={citation.id}><a href={citation.url} target="_blank" rel="noreferrer nofollow">{citation.title}</a></li>)}</ul></div>}
             {item.coverage.limitations.length > 0 && <div><h4>Limitations</h4><ul>{item.coverage.limitations.map((limitation) => <li key={limitation}>{limitation}</li>)}</ul></div>}

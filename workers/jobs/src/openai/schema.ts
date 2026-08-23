@@ -105,7 +105,7 @@ export const ANALYSIS_RESULT_SCHEMA: Record<string, unknown> = {
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["position", "identity", "category", "nutrition", "ingredientTokens", "claimsAsPrinted", "coverage", "summary", "findings", "claimAudits", "evidence", "citations", "serviceRoute", "needsClearerImage", "retakeGuidance"],
+        required: ["position", "identity", "category", "nutrition", "ingredientTokens", "claimsAsPrinted", "printedVegMark", "coverage", "summary", "findings", "claimAudits", "evidence", "citations", "serviceRoute", "needsClearerImage", "retakeGuidance"],
         properties: {
           position: { type: "integer", minimum: 1, maximum: 6 },
           identity,
@@ -113,6 +113,7 @@ export const ANALYSIS_RESULT_SCHEMA: Record<string, unknown> = {
           nutrition,
           ingredientTokens,
           claimsAsPrinted: printedClaims,
+          printedVegMark: { type: ["string", "null"], enum: ["veg", "non_veg", null] },
           coverage: {
             type: "object",
             additionalProperties: false,

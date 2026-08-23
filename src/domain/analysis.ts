@@ -109,6 +109,7 @@ export interface ProductAnalysis {
   nutrition?: ExtractedNutrition | null;
   ingredientTokens?: string[];
   claimsAsPrinted?: string[];
+  printedVegMark?: "veg" | "non_veg" | null;
   coverage: Coverage;
   summary: string;
   findings: Finding[];
@@ -155,6 +156,7 @@ export interface AnalysisRecord {
   errorCode: string | null;
   createdAt: string;
   completedAt: string | null;
+  engineVersion: string | null;
 }
 
 /** Queue payloads carry identifiers only; image bytes, PII, and model output stay out. */

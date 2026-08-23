@@ -1,11 +1,13 @@
 import type { AnalysisResult } from "../domain/analysis.ts";
 import { evaluateClaimConsistency } from "./claim-audit.ts";
+import { evaluateDiet } from "./diet-audit.ts";
 import { evaluateWholePack } from "./rda.ts";
 import { ENGINE_VERSION, type DerivedDecisionResult } from "./types.ts";
 
 export * from "./rda.ts";
 export * from "./presentation.ts";
 export * from "./claim-audit.ts";
+export * from "./diet-audit.ts";
 export * from "./types.ts";
 
 export function evaluateAnalysis(result: AnalysisResult): DerivedDecisionResult {
@@ -16,7 +18,8 @@ export function evaluateAnalysis(result: AnalysisResult): DerivedDecisionResult 
       signals: [
         ...evaluateClaimConsistency(item.claimsAsPrinted, item.ingredientTokens, item.category),
         ...evaluateWholePack(item.nutrition ?? null),
-      ].slice(0, 3),
+        ...evaluateDiet(item.ingredientTokens, item.printedVegMark, item.category),
+      ].slice(0, 4),
     })),
   };
 }

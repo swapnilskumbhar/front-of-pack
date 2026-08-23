@@ -39,12 +39,14 @@ test("cache identity changes when any semantic input changes", async () => {
     schemaVersion: "schema.v1",
     rulesVersion: "rules.v1",
     servicesVersion: "services.v1",
+    engineVersion: "engine.v1",
   };
   const first = await buildAnalysisCacheKey(base);
   assert.equal(first.length, 64);
   assert.equal(await buildAnalysisCacheKey(base), first);
   assert.notEqual(await buildAnalysisCacheKey({ ...base, language: "hi" }), first);
   assert.notEqual(await buildAnalysisCacheKey({ ...base, rulesVersion: "rules.v2" }), first);
+  assert.notEqual(await buildAnalysisCacheKey({ ...base, engineVersion: "engine.v2" }), first);
 });
 
 test("freshness treats no expiry as fresh and rejects elapsed expiry", () => {
