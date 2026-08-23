@@ -54,6 +54,8 @@
   // Do not copy OPENAI_API_KEY or Meta send credentials into the public Worker.
   "vars": {
     "ENVIRONMENT": "production",
+    "MODEL_ANALYSIS": "gpt-5.6-terra",
+    "TERRA_REASONING_EFFORT": "low",
     "WHATSAPP_GRAPH_VERSION": "v23.0"
   },
   "triggers": {
