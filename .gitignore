@@ -1,0 +1,26 @@
+# Dependencies and build output
+node_modules/
+.next/
+.open-next/
+dist/
+coverage/
+
+# Cloudflare local state and local secrets
+.wrangler/
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+!.env.example
+
+# Local tooling and temporary artifacts
+.codex/
+.agents/
+tmp/
+*.log
+setup-codex-api-key.bat
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+Desktop.ini
