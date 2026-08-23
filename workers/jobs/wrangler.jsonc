@@ -5,27 +5,43 @@
   "compatibility_date": "2026-08-23",
   "workers_dev": true,
 
+  // LOCAL PLACEHOLDER ONLY. Replace both IDs before any remote deployment.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "front-of-pack",
+      "database_id": "00000000-0000-0000-0000-000000000001",
+      "preview_database_id": "00000000-0000-0000-0000-000000000001",
+      "migrations_dir": "../../migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "front-of-pack-private-media",
+      "preview_bucket_name": "front-of-pack-private-media-preview"
+    }
+  ],
+
   // Local placeholder bindings only. Replace queue IDs/configuration after the
   // production Cloudflare resources are provisioned.
   "queues": {
+    "producers": [
+      {
+        "binding": "DELIVERY_QUEUE",
+        "queue": "front-of-pack-delivery"
+      }
+    ],
     "consumers": [
       {
         "queue": "front-of-pack-analysis",
         "max_batch_size": 1,
         "max_batch_timeout": 1,
         "dead_letter_queue": "front-of-pack-analysis-dlq"
-      },
-      {
-        "queue": "front-of-pack-delivery",
-        "max_batch_size": 10,
-        "max_batch_timeout": 5,
-        "max_retries": 3,
-        "dead_letter_queue": "front-of-pack-delivery-dlq"
       }
     ]
   },
 
-  // D1 and R2 bindings will be added once their production IDs exist.
   // Do not copy OPENAI_API_KEY or Meta send credentials into the public Worker.
   "vars": {
     "ENVIRONMENT": "local"

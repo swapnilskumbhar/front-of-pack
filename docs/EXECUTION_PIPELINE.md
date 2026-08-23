@@ -4,7 +4,7 @@
 > **Created:** 23 August 2026
 > **Deadline:** 28 August 2026, 8:00 PM IST
 > **Submission target:** 28 August 2026, 12:00 PM IST
-> **Current implementation state:** local Next.js/OpenNext and Jobs Worker foundations exist; the direct Terra client and `/api/whatsapp` verification route are tested; durable provider intake and WhatsApp dispatch are not complete; no Cloudflare deployment exists yet
+> **Current implementation state:** combined local `workerd` runs have verified the capability-authorized queued web analysis miss-to-result and exact-image cache-hit foundation with simulated D1/R2/Queues; production image normalization, verified rule/service packs, durable WhatsApp/Graph delivery, and Cloudflare provisioning remain; no Cloudflare deployment exists yet
 > **Scope authority:** [FINAL_PLAN.md](./FINAL_PLAN.md)
 > **Architecture:** [HLD.md](./HLD.md)
 > **Implementation contract:** [LLD.md](./LLD.md)
@@ -453,10 +453,10 @@ Cut tiers:
 | CF-001 | ELIG-003 | Cloudflare platform access | Wrangler authentication works; Workers Paid/Standard and startup-credit billing coverage confirmed without storing account token | User + Codex | BLOCKED_USER | C0 |
 | PLATFORM-001 | CF-001 | OpenNext full-stack shell | Next.js 16/OpenNext scaffold exists locally; completion requires `npm run preview` in workerd and a public `workers.dev` skeleton | Codex | IN_PROGRESS | C0 |
 | PLATFORM-002 | PLATFORM-001 | Least-privilege Wrangler binding/secret contract | App/Jobs types generated; each Worker lacks the other's unnecessary secrets | Codex | TODO | C0 |
-| DATA-001 | CF-001 | Compact D1 migration | Initial migration and domain contracts exist locally; completion requires local/remote migration and JSON/row-cap proof | Codex | TODO | C0 |
+| DATA-001 | CF-001 | Compact D1 migration | Initial migration and analysis persistence pass in simulated local D1; completion requires remote migration and JSON/row-cap proof | Codex | IN_PROGRESS | C0 |
 | DATA-002 | DATA-001 | D1 seed loader | Rules/services/synthetic data load reproducibly | Codex | TODO | C0 |
-| QUEUE-001 | CF-001,DATA-001 | Private R2 + Analysis/Delivery Queues + Jobs Worker | Jobs Worker shell exists locally; completion requires two round trips, batch one, ID+attempt payloads, DLQ, crash and duplicate-message proof | Codex | TODO | C0 |
-| MEDIA-001 | PLATFORM-001,QUEUE-001 | Workers-runtime image normalizer/R2 lifecycle | Max image MIME/dimensions/EXIF/hash pass in workerd; R2 terminal deletion passes | Codex | TODO | C0 |
+| QUEUE-001 | CF-001,DATA-001 | Private R2 + Analysis/Delivery Queues + Jobs Worker | One simulated local Analysis Queue round trip passes with an ID+attempt payload; Delivery Queue, DLQ, crash and duplicate-message proof remain | Codex | IN_PROGRESS | C0 |
+| MEDIA-001 | PLATFORM-001,QUEUE-001 | Workers-runtime image normalizer/R2 lifecycle | Terminal R2 cleanup passes in the local analysis flow; max-image MIME/dimensions, normalization/EXIF removal and canonical-hash proof remain | Codex | IN_PROGRESS | C0 |
 | CLEANUP-001 | DATA-001,QUEUE-001 | Hourly/lazy expiry cleanup | Expired ciphertext/nonces cleared, orphan R2 removed, operation idempotent | Codex | TODO | C0 |
 | DOMAIN-001 | PLATFORM-001 | Stable TLS hostname | Custom domain works without Access; `workers.dev` remains release fallback | User + Codex | BLOCKED_USER | C1 |
 | BUDGET-001 | CF-001 | Cloudflare/OpenAI budget telemetry | Billing exclusions, Worker/D1/R2/Queue use and OpenAI spend documented separately | Codex | TODO | C1 |
@@ -466,15 +466,15 @@ Cut tiers:
 
 | ID | Depends on | Output | Acceptance/proof | Owner | Status | Cut |
 |---|---|---|---|---|---|---|
-| MODEL-001 | PLATFORM-002,QUEUE-001,MEDIA-001 | Terra image/schema spike in Jobs Worker | Direct Jobs-only client and strict schema exist; a live synthetic smoke succeeded on 2026-08-23 with exactly one Responses request and web search disabled; R2/Queue integration and usage evidence remain | Codex | IN_PROGRESS | C0 |
+| MODEL-001 | PLATFORM-002,QUEUE-001,MEDIA-001 | Terra image/schema spike in Jobs Worker | On 2026-08-23 one R2-backed simulated Analysis Queue job completed in about 3.9s with exactly one Responses request and a persisted response ID; hosted-search/usage evidence and production bindings remain | Codex | IN_PROGRESS | C0 |
 | MODEL-002 | MODEL-001 | Hosted-search spike | Optional in-call web-search configuration exists; name-only image must still prove tool-sourced URLs in the same response | Codex | IN_PROGRESS | C0 |
 | RULES-001 | ELIG-003 | Verified food rule pack | Build rejects missing source/status/units | Codex | TODO | C0 |
 | RULES-002 | RULES-001 | Cosmetics/general-pack baseline | Golden cosmetic and general-pack fixtures pass coverage policy | Codex | TODO | C1 |
 | SERVICES-001 | ELIG-003 | Allow-listed service directory | FSSAI/FoSCoS, BIS Care, NCH routes have official source and category constraints | Codex | TODO | C0 |
 | CORE-001 | MODEL-001,RULES-001,SERVICES-001 | Strict AnalysisResult schema | Provider strict schema exists and is covered by Jobs tests; full single, multi, unknown and label_only fixtures remain | Codex | IN_PROGRESS | C0 |
 | CORE-002 | CORE-001,MODEL-002 | Unified prompt and only call site | Direct Responses call site exists in the Jobs Worker with no automatic retry; durable one-attempt integration remains | Codex | IN_PROGRESS | C0 |
-| CORE-003 | CORE-001 | Contract validator | Orphan citations/rules/routes, food panel on non-food, and prohibited wording fail | Codex | TODO | C0 |
-| CORE-004 | CORE-002,CORE-003,DATA-001,QUEUE-001,MEDIA-001 | One-call queued analysis/cache | Miss=1, hit=0, invalid=1+failure, stale/redelivered attempts=0, explicit retry only | Codex | TODO | C0 |
+| CORE-003 | CORE-001 | Contract validator | Strict result-shape validation and failure persistence are wired; orphan citations/rules/routes, food panel on non-food, prohibited wording and real pack validation remain | Codex | IN_PROGRESS | C0 |
+| CORE-004 | CORE-002,CORE-003,DATA-001,QUEUE-001,MEDIA-001 | One-call queued analysis/cache | Local proof now covers miss=1, identical exact-image hit=0 and corrupt-image failure persistence; stale/redelivered attempts=0, explicit retry and production bindings remain | Codex | IN_PROGRESS | C0 |
 | EVAL-001 | CORE-003 | Golden evaluation set | All required food/non-food/failure fixtures have assertions | Codex | TODO | C0 |
 
 ### 9.4 Profiles and web journey
@@ -548,7 +548,7 @@ The scaffold must expose these stable commands so later agents do not invent dif
 
 Until a script exists, the owning task cannot be DONE. CI runs lint, typecheck, tests and build on every release candidate.
 
-Current local verification snapshot (2026-08-23): 12 root unit/contract tests and 5 Jobs Worker tests pass. The production build emits `/api/whatsapp` as a dynamic route. These checks prove foundations only; they do not satisfy G1, G3, or G4 end to end.
+Current local verification snapshot (2026-08-23): combined multi-config `workerd` runs with simulated D1, R2 and Queues proved a fresh `202` upload, exactly one Terra call, D1 completion, 256-bit capability-authorized polling, unauthorized `404`, localized result persistence, and an identical image/language HTTP `200` cache hit without another Queue job. Root tests pass 21/21 and Jobs Worker tests pass 12/12. A deliberately corrupt PNG-signature sample exercised persisted provider failure. This proves the local vertical-slice foundation only: normalization/EXIF removal, verified rule/service packs, durable WhatsApp D1/Queue/Graph flow, real Cloudflare resource IDs and deployment are still open, so G1, G3 and G4 are not complete.
 
 ---
 

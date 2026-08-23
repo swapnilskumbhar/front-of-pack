@@ -4,10 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "wrangler dev --local --persist-to ../../.wrangler/local-state",
     "smoke:terra": "node scripts/smoke-terra.mjs",
     "test": "node --test tests/*.test.mjs",
     "typecheck": "tsc --noEmit",
+    "cf-typegen": "wrangler types worker-configuration.d.ts",
     "deploy": "wrangler deploy"
   },
   "devDependencies": {

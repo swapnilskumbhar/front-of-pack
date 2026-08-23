@@ -102,32 +102,32 @@ Tasks:
 
 - [x] Define 12-language, profile, analysis, cache, product, evidence, citation, coverage, and Queue contracts.
 - [x] Add the initial D1-compatible SQLite migration.
-- [ ] Add runtime schema validators and serialized-result size enforcement.
-- [ ] Add D1 repositories and idempotent state transitions.
+- [x] Add runtime schema validation for the queued provider result; full evidence/rule/service policy validation and serialized-result size enforcement remain.
+- [x] Add the D1 analysis repository and exact-attempt provider claim; profile and cleanup repositories remain.
 - [ ] Implement web-device profile identity and remembered language.
-- [ ] Implement analysis attempt claiming, stale-attempt rejection, expiry, and cleanup primitives.
-- [ ] Add local D1 migration and repository tests.
+- [ ] Complete stale-attempt rejection, expiry, and cleanup primitives; the exact provider claim is implemented.
+- [x] Apply the D1 migration in the combined local `workerd` environment and exercise analysis persistence; broader repository tests remain.
 
 Exit proof: a language set once is recovered on the next local request, and Queue redelivery cannot claim an already-started provider attempt.
 
 ### Phase 3 — Web intake and the one-call Terra analyzer
 
-State: IN PROGRESS — direct provider foundation verified; durable intake/cache integration remains
+State: IN PROGRESS — the local queued miss-to-result and exact-image cache-hit foundation is verified; production hardening remains
 
 Tasks:
 
-- [ ] Validate one image, supported MIME, 12 MB cap, dimensions, and one-to-six product contract.
+- [ ] Complete image validation for supported MIME, 12 MB cap, dimensions, and one-to-six product contract; current intake performs only foundational checks.
 - [ ] Normalize metadata safely in the Workers runtime and compute a canonical image hash.
-- [ ] Store temporary media privately and enqueue identifiers plus attempt number only.
+- [x] Store temporary media in the simulated private R2 binding and enqueue identifiers plus attempt number only in the combined local runtime.
 - [x] Implement the direct, Jobs-only `gpt-5.6-terra` Responses client with image input, strict structured output, and optional hosted web search inside the same request.
 - [x] Prove the client with a live synthetic smoke on 2026-08-23: one Responses request completed successfully with web search disabled.
 - [x] Enforce no automatic provider retry; another provider call requires an explicit new attempt.
-- [ ] Validate returned schema, evidence graph, provider citations, coverage IDs, service IDs, and wording.
-- [ ] Persist the validated result and render it without semantic rewriting.
-- [ ] Implement cache identity across image, language, model, prompt, schema, rules, and services versions.
+- [x] Validate the returned evidence graph, provider citation ID+URL pairs, allow-listed coverage/service IDs, prohibited wording, and serialized size; real rule/service packs remain.
+- [x] Persist a validated provider result, protect polling with a per-scan 256-bit capability whose digest alone is stored, and render the consumer result.
+- [x] Implement versioned exact-image cache identity and prove an authorized zero-call cache hit; production version-pack coverage remains.
 - [ ] Wire explicit retry to durable attempt state; never automatically repeat a provider-started call.
 
-Current proof: 12 root unit/contract tests and 5 Jobs Worker tests pass, including the direct client and strict schema. The production build recognizes `/api/whatsapp` as a dynamic route. This is foundation proof, not an end-to-end product claim.
+Current proof (2026-08-23): combined multi-config local `workerd` runs used simulated D1, R2, and Queue bindings. A fresh upload returned `202`, made exactly one Terra request, persisted the completed result, and returned it through capability-authorized polling. Polling without the capability returned `404`. The identical image/language then returned HTTP `200` from cache without another Queue job. Tests stand at 21 root and 12 Jobs Worker cases. A deliberately corrupt PNG-signature fixture also persisted the provider failure path. This is a verified local foundation, not deployment readiness.
 
 Exit proof: instrumentation proves zero Terra calls on a fresh cache hit and exactly one on a cache miss.
 
@@ -209,9 +209,9 @@ No agent deploys, purchases a domain, creates paid resources, or receives a real
 
 ## 5. Immediate next tasks
 
-1. Add local Cloudflare bindings for D1, private R2, and the Analysis/Delivery Queues; apply the initial migration locally.
-2. Implement web upload validation, Workers-safe normalization, hashing, temporary R2 storage, and durable analysis intake.
-3. Wire the Jobs consumer to exact-attempt claim, one Terra call, full runtime validation, persistence, delivery publish, and terminal media cleanup.
+1. Harden web intake with Workers-safe normalization/EXIF removal, complete MIME/dimension/size checks, and canonical hashing.
+2. Add durable browser profile/language persistence; capability-authorized result polling is implemented.
+3. Complete evidence/rule/service validation, real verified packs, stale/redelivery assertions, delivery publishing, and cleanup coverage.
 4. Persist browser and WhatsApp language preferences through the D1 profile repositories.
 5. Wire `/api/whatsapp` signed POST to encrypted D1 deduplication and ID-only Queue dispatch before Meta configuration or deployment.
 6. Keep Cloudflare production resources, production secrets, and deployment blocked until the local gates pass; keep the full WhatsApp channel blocked until the legacy Meta credential rotation is confirmed.

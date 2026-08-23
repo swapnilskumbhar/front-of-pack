@@ -1,3 +1,5 @@
+import UploadAnalyser from "./scan/upload-analyser";
+
 const categories = [
   ["Food & drinks", "Nutrition, ingredients and pack claims"],
   ["Cosmetics", "Ingredients and label declarations"],
@@ -7,16 +9,6 @@ const categories = [
   ["Pet care", "Product details and directions"],
   ["Supplements", "Claims, ingredients and declarations"],
 ];
-
-const languages = ["English", "हिन्दी", "मराठी", "বাংলা", "தமிழ்", "తెలుగు", "ಕನ್ನಡ", "ગુજરાતી", "മലയാളം", "ਪੰਜਾਬੀ", "ଓଡ଼ିଆ", "اردو"];
-
-function ArrowIcon() {
-  return <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5" /></svg>;
-}
-
-function CameraIcon() {
-  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h3l1.4-2h7.2l1.4 2h3a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9.5a2 2 0 0 1 2-2Z" /><circle cx="12" cy="13" r="4" /></svg>;
-}
 
 export default function Home() {
   return (
@@ -34,13 +26,7 @@ export default function Home() {
           <div className="trust-row" aria-label="Service highlights"><span>12 Indian languages</span><span>Multiple product categories</span><span>Sources included</span></div>
         </div>
 
-        <form className="upload-card" id="upload">
-          <div className="card-heading"><div><p className="step-label">Start here</p><h2>Check a product label</h2></div><span className="private-pill">Temporary image</span></div>
-          <label className="language-field"><span>Response language</span><select name="language" defaultValue="English">{languages.map((language) => <option key={language}>{language}</option>)}</select><small>Your choice is remembered for next time.</small></label>
-          <label className="drop-zone"><input type="file" name="label" accept="image/jpeg,image/png,image/webp" /><span className="camera-icon"><CameraIcon /></span><strong>Take a photo or choose an image</strong><span>Show the front label clearly · JPG, PNG or WebP</span></label>
-          <button type="button" className="primary-button" aria-describedby="upload-note">Analyse label <ArrowIcon /></button>
-          <p className="upload-note" id="upload-note">Your image is used only for this analysis and then removed.</p>
-        </form>
+        <UploadAnalyser />
       </section>
 
       <section className="journey section" id="how-it-works" aria-labelledby="journey-title">

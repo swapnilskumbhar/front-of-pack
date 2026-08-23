@@ -1,86 +1,232 @@
-export interface AnalysisQueueMessage {
-  analysisId: string;
-  attemptNumber: number;
-}
+import { AnalysisRepository } from "../../../src/data/analysis-repository.ts";
+import { validateAnalysisResult } from "../../../src/validation/analysis-result.ts";
+import { callTerraOnce } from "./openai/client.ts";
+import { TerraError } from "./openai/errors.ts";
+import type { TerraProviderResult } from "./openai/types.ts";
 
-export interface DeliveryQueueMessage {
-  whatsappJobId: string;
-  attemptNumber: number;
+const PINNED_ANALYSIS_VERSIONS = {
+  model_id: "gpt-5.6-terra",
+  prompt_version: "terra-analysis.v1",
+  schema_version: "analysis-result.v1",
+  rules_version: "india-category-rules.v1",
+  services_version: "india-consumer-services.v1",
+} as const;
+
+export interface WebAnalysisQueueMessage {
+  version: 1;
+  trigger: "web";
+  analysis_id: string;
+  attempt_number: number;
 }
 
 export interface Env {
   ENVIRONMENT: string;
+  DB: D1Database;
+  MEDIA: R2Bucket;
   OPENAI_API_KEY?: string;
   MODEL_ANALYSIS?: string;
   TERRA_REASONING_EFFORT?: "low" | "medium" | "high";
 }
 
-function isQueueMessage(
-  value: unknown,
-  idKey: "analysisId" | "whatsappJobId",
-): value is Record<typeof idKey, string> & { attemptNumber: number } {
-  if (typeof value !== "object" || value === null) return false;
+type AnalysisMessage = Pick<Message<unknown>, "body" | "ack">;
 
+export function parseWebAnalysisMessage(value: unknown): WebAnalysisQueueMessage | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
   const message = value as Record<string, unknown>;
-  return (
-    typeof message[idKey] === "string" &&
-    message[idKey].length > 0 &&
-    Number.isInteger(message.attemptNumber) &&
-    (message.attemptNumber as number) > 0 &&
-    Object.keys(message).every(
-      (key) => key === idKey || key === "attemptNumber",
-    )
-  );
+  if (
+    message.version !== 1 || message.trigger !== "web" ||
+    typeof message.analysis_id !== "string" || message.analysis_id.length === 0 ||
+    !Number.isInteger(message.attempt_number) || (message.attempt_number as number) < 1
+  ) return null;
+  const exactKeys = ["analysis_id", "attempt_number", "trigger", "version"];
+  return Object.keys(message).every((key) => exactKeys.includes(key))
+    ? message as unknown as WebAnalysisQueueMessage : null;
 }
 
-async function consumeAnalysis(
-  message: Message<unknown>,
-): Promise<void> {
-  if (!isQueueMessage(message.body, "analysisId")) {
-    throw new Error("Invalid analysis queue message");
-  }
-
-  // Provider execution, conditional D1 claiming, and result persistence are
-  // added in a later phase. Throwing prevents this shell from silently losing
-  // work if a queue is accidentally connected early.
-  throw new Error("Analysis processing is not implemented");
+function contentType(object: R2ObjectBody): string {
+  const candidate = object.httpMetadata?.contentType;
+  return typeof candidate === "string" && candidate.startsWith("image/")
+    ? candidate : "image/jpeg";
 }
 
-async function consumeDelivery(
-  message: Message<unknown>,
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+  }
+  return btoa(binary);
+}
+
+function errorDetails(error: unknown): { code: string; error: Record<string, unknown> } {
+  if (error instanceof TerraError) {
+    return {
+      code: `terra_${error.code}`,
+      error: { name: error.name, message: error.message, status: error.status, responseId: error.responseId },
+    };
+  }
+  if (error instanceof Error) {
+    return { code: "analysis_processing_failed", error: { name: error.name, message: error.message } };
+  }
+  return { code: "analysis_processing_failed", error: { message: "Unknown processing failure" } };
+}
+
+async function persistFailure(
+  repository: AnalysisRepository,
+  db: D1Database,
+  job: WebAnalysisQueueMessage,
+  error: unknown,
 ): Promise<void> {
-  if (!isQueueMessage(message.body, "whatsappJobId")) {
-    throw new Error("Invalid delivery queue message");
+  const details = errorDetails(error);
+  try {
+    await repository.markFailed(job.analysis_id, job.attempt_number, {
+      errorCode: details.code,
+      error: details.error,
+      completedAt: new Date().toISOString(),
+    });
+  } catch {
+    // Best-effort explicit terminal marker for the ambiguous case where the
+    // provider ran but normal completion/failure persistence did not succeed.
+    try {
+      await db.prepare(`
+        UPDATE analyses
+        SET status = 'failed', error_code = 'post_claim_persistence_ambiguous',
+          error_json = '{"nonRetryable":true}', completed_at = ?
+        WHERE id = ? AND attempt_number = ? AND status = 'processing'
+          AND provider_started_at IS NOT NULL
+      `).bind(new Date().toISOString(), job.analysis_id, job.attempt_number).run();
+    } catch {
+      // The message is still acknowledged: a provider-started attempt is never
+      // automatically replayed, even when D1 itself is unavailable.
+    }
+  }
+}
+
+function assertProviderSources(result: TerraProviderResult<unknown>): void {
+  const returnedById = new Map(result.searchSources.flatMap((source) =>
+    source.id === null ? [] : [[source.id, source] as const]
+  ));
+  const analysis = result.result as { items?: Array<{
+    citations?: Array<{ id?: unknown; url?: unknown; providerSourceId?: unknown }>;
+    evidence?: Array<{ origin?: unknown; citationId?: unknown }>;
+  }> };
+  for (const item of analysis.items ?? []) {
+    const citations = new Map((item.citations ?? []).flatMap((citation) =>
+      typeof citation.id === "string" ? [[citation.id, citation] as const] : []
+    ));
+    for (const evidence of item.evidence ?? []) {
+      if (evidence.origin !== "hosted_web_search" || typeof evidence.citationId !== "string") continue;
+      const citation = citations.get(evidence.citationId);
+      if (!citation || typeof citation.providerSourceId !== "string" || citation.providerSourceId.length === 0) {
+        throw new Error("Hosted-search evidence is missing its provider source id");
+      }
+      const source = returnedById.get(citation.providerSourceId);
+      if (!source || typeof citation.url !== "string" || source.url !== citation.url) {
+        throw new Error("Hosted-search citation does not match the provider source id and URL");
+      }
+    }
+  }
+}
+
+async function assertPinnedAnalysisVersions(db: D1Database, analysisId: string): Promise<void> {
+  const row = await db.prepare(`
+    SELECT model_id, prompt_version, schema_version, rules_version, services_version
+    FROM analyses WHERE id = ? LIMIT 1
+  `).bind(analysisId).first<Record<keyof typeof PINNED_ANALYSIS_VERSIONS, string>>();
+  if (row === null) throw new Error("Queued analysis version metadata is missing");
+  for (const [field, expected] of Object.entries(PINNED_ANALYSIS_VERSIONS)) {
+    if (row[field as keyof typeof PINNED_ANALYSIS_VERSIONS] !== expected) {
+      throw new Error(`Queued analysis ${field} is not supported by this worker`);
+    }
+  }
+}
+
+/** Processes one web job. Returning normally acknowledges every post-claim outcome. */
+export async function consumeWebAnalysis(
+  message: AnalysisMessage,
+  env: Env,
+  fetcher: typeof fetch = fetch,
+): Promise<void> {
+  const job = parseWebAnalysisMessage(message.body);
+  if (job === null) throw new Error("Invalid web analysis queue message");
+
+  const repository = new AnalysisRepository(env.DB);
+  const analysis = await repository.findById(job.analysis_id);
+  if (analysis === null) throw new Error("Queued analysis is missing");
+  if (
+    analysis.status !== "queued" ||
+    analysis.attemptNumber !== job.attempt_number ||
+    analysis.providerStartedAt !== null
+  ) {
+    message.ack();
+    return;
+  }
+  await assertPinnedAnalysisVersions(env.DB, job.analysis_id);
+  if (analysis.mediaObjectKey === null) {
+    throw new Error("Queued analysis media reference is missing");
+  }
+  const media = await env.MEDIA.get(analysis.mediaObjectKey);
+  if (media === null) throw new Error("Queued analysis media is missing");
+
+  const claimed = await repository.claimProvider(job.analysis_id, job.attempt_number, new Date().toISOString());
+  if (!claimed) {
+    message.ack();
+    return;
   }
 
-  throw new Error("Delivery processing is not implemented");
+  try {
+    const imageBytes = new Uint8Array(await media.arrayBuffer());
+    const provider = await callTerraOnce(env, {
+      imageUrl: `data:${contentType(media)};base64,${bytesToBase64(imageBytes)}`,
+      language: analysis.language,
+      verifiedRuleContext: [],
+      verifiedServiceDirectory: [],
+    }, fetcher);
+    assertProviderSources(provider);
+    const validation = validateAnalysisResult(provider.result, {
+      allowedRuleIds: new Set(),
+      allowedServiceIds: new Set(),
+    });
+    if (!validation.valid) {
+      throw new Error(`Analysis validation failed: ${JSON.stringify(validation.errors)}`);
+    }
+    const completed = await repository.markComplete(job.analysis_id, job.attempt_number, {
+      result: provider.result,
+      providerSources: provider.searchSources,
+      validationReport: validation,
+      tokenUsage: provider.usage,
+      openAiResponseId: provider.responseId,
+      webSearchUsed: provider.webSearchUsed,
+      completedAt: new Date().toISOString(),
+    });
+    if (!completed) throw new Error("Claimed analysis could not be completed");
+  } catch (error) {
+    await persistFailure(repository, env.DB, job, error);
+  } finally {
+    try {
+      await env.MEDIA.delete(analysis.mediaObjectKey);
+    } catch {
+      // The lifecycle rule is the orphan backstop; never retry the provider call.
+    }
+  }
+  message.ack();
 }
 
 export default {
   fetch(request: Request, env: Env): Response {
     const url = new URL(request.url);
-
     if (request.method === "GET" && url.pathname === "/health") {
       return Response.json({
-        service: "front-of-pack-jobs",
-        status: "ok",
-        environment: env.ENVIRONMENT,
+        service: "front-of-pack-jobs", status: "ok", environment: env.ENVIRONMENT,
         providerConfigured: Boolean(env.OPENAI_API_KEY),
       });
     }
-
     return new Response("Not Found", { status: 404 });
   },
 
-  async queue(batch: MessageBatch<unknown>): Promise<void> {
-    for (const message of batch.messages) {
-      if (batch.queue === "front-of-pack-analysis") {
-        await consumeAnalysis(message);
-      } else if (batch.queue === "front-of-pack-delivery") {
-        await consumeDelivery(message);
-      } else {
-        throw new Error(`Unsupported queue: ${batch.queue}`);
-      }
+  async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {
+    if (batch.queue !== "front-of-pack-analysis") {
+      throw new Error(`Unsupported queue: ${batch.queue}`);
     }
+    for (const message of batch.messages) await consumeWebAnalysis(message, env);
   },
 } satisfies ExportedHandler<Env>;

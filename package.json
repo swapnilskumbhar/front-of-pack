@@ -12,7 +12,12 @@
     "typecheck": "tsc --noEmit",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "cf-typegen": "wrangler types cloudflare-env.d.ts"
+    "cf-typegen": "wrangler types cloudflare-env.d.ts",
+    "platform:d1:migrate": "wrangler d1 migrations apply DB --local --persist-to .wrangler/local-state",
+    "platform:d1:query": "wrangler d1 execute DB --local --persist-to .wrangler/local-state --command",
+    "platform:dev": "opennextjs-cloudflare build && wrangler dev --config wrangler.jsonc --config workers/jobs/wrangler.jsonc --persist-to .wrangler/local-state",
+    "platform:jobs:dev": "npm --prefix workers/jobs run dev",
+    "platform:jobs:typegen": "npm --prefix workers/jobs run cf-typegen"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.20.2",
