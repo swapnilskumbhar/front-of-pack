@@ -40,17 +40,7 @@ export interface ImageInfoLike {
   fileSize?: number;
 }
 
-export interface ImagesOutputLike {
-  response(): Response;
-}
-
-export interface ImagesInputLike {
-  transform(options: { width?: number; height?: number; fit?: "scale-down" }): ImagesInputLike;
-  output(options: { format: "image/webp"; quality?: number; anim?: boolean }): Promise<ImagesOutputLike>;
-}
-
-/** Structural subset of the Cloudflare Images raw-byte binding used at intake. */
+/** Structural subset used only to decode-check original image dimensions. */
 export interface ImagesBindingLike {
   info(stream: ReadableStream<Uint8Array>): Promise<ImageInfoLike>;
-  input(stream: ReadableStream<Uint8Array>): ImagesInputLike;
 }

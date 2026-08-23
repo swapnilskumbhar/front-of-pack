@@ -8,7 +8,7 @@ import { TERRA_MODEL, type ResponsesRequest, type TerraEnv, type TerraInput, typ
 const RESPONSES_URL = "https://api.openai.com/v1/responses";
 
 export function buildTerraRequest(env: TerraEnv, input: TerraInput): ResponsesRequest {
-  const effort = input.reasoningEffort ?? env.TERRA_REASONING_EFFORT ?? "medium";
+  const effort = input.reasoningEffort ?? env.TERRA_REASONING_EFFORT ?? "low";
   const request: ResponsesRequest = {
     model: env.MODEL_ANALYSIS ?? TERRA_MODEL,
     store: false,
@@ -30,6 +30,7 @@ export function buildTerraRequest(env: TerraEnv, input: TerraInput): ResponsesRe
     ],
     reasoning: { effort },
     text: {
+      verbosity: "low",
       format: {
         type: "json_schema",
         name: "front_of_pack_analysis",
@@ -37,12 +38,12 @@ export function buildTerraRequest(env: TerraEnv, input: TerraInput): ResponsesRe
         schema: ANALYSIS_RESULT_SCHEMA,
       },
     },
-    max_output_tokens: 12_000,
+    max_output_tokens: 6_000,
   };
   if (input.enableWebSearch !== false) {
     request.tools = [{ type: "web_search" }];
     request.tool_choice = "auto";
-    request.max_tool_calls = 4;
+    request.max_tool_calls = 2;
     request.include = ["web_search_call.action.sources"];
   }
   return request;

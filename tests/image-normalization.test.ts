@@ -1,47 +1,59 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { ImagesBindingLike, ImagesInputLike } from "../src/intake/contracts.ts";
+
+import type { ImagesBindingLike } from "../src/intake/contracts.ts";
 import { ImageValidationError, sha256Hex } from "../src/intake/image.ts";
-import { MAX_NORMALIZED_BYTES, normalizeImage } from "../src/intake/normalization.ts";
+import { normalizeImage } from "../src/intake/normalization.ts";
 
-const WEBP = new TextEncoder().encode("RIFF0000WEBPnormalized");
-
-function binding(options: { width?: number; height?: number; output?: Uint8Array } = {}): ImagesBindingLike {
-  const input: ImagesInputLike = {
-    transform: () => input,
-    output: async () => ({ response: () => new Response(options.output ?? WEBP) }),
-  };
+function binding(options: { width?: number; height?: number } = {}): ImagesBindingLike {
   return {
-    info: async () => ({ width: options.width ?? 1200, height: options.height ?? 800, format: "jpeg" }),
-    input: () => input,
+    info: async () => ({
+      width: options.width ?? 1200,
+      height: options.height ?? 800,
+      format: "jpeg",
+    }),
   };
 }
 
-test("never passes raw bytes or EXIF marker through to normalized output", async () => {
-  const raw = new TextEncoder().encode("\u00ff\u00d8\u00ffExif\0\0GPS:private-location");
-  const normalized = await normalizeImage(raw, binding());
-  assert.deepEqual(normalized.bytes, WEBP);
-  assert.equal(new TextDecoder().decode(normalized.bytes).includes("private-location"), false);
-  assert.notDeepEqual(normalized.bytes, raw);
+test("preserves the original encoded bytes and pixel dimensions", async () => {
+  const raw = Uint8Array.from([0xff, 0xd8, 0xff, ...new TextEncoder().encode("Exif GPS metadata and original pixels")]);
+  const validated = await normalizeImage(raw, binding());
+  assert.deepEqual(validated.bytes, raw);
+  assert.equal(validated.mime, "image/jpeg");
+  assert.equal(validated.width, 1200);
+  assert.equal(validated.height, 800);
+  assert.equal(validated.normalizationVersion, "validated-original.v1");
 });
 
-test("rejects decompression-bomb dimensions before transformation", async () => {
-  await assert.rejects(() => normalizeImage(Uint8Array.of(1), binding({ width: 10_000, height: 10_000 })), /dimensions are too large/);
-});
-
-test("fails closed when the Images binding is unavailable", async () => {
-  await assert.rejects(() => normalizeImage(Uint8Array.of(1), undefined), ImageValidationError);
-});
-
-test("rejects normalized output beyond its byte cap", async () => {
+test("rejects decompression-bomb dimensions without altering the image", async () => {
   await assert.rejects(
-    () => normalizeImage(Uint8Array.of(1), binding({ output: new Uint8Array(MAX_NORMALIZED_BYTES + 1) })),
-    /normalized image is too large/,
+    () => normalizeImage(Uint8Array.of(0xff, 0xd8, 0xff), binding({ width: 10_000, height: 10_000 })),
+    /dimensions are too large/,
   );
 });
 
-test("normalized hash is stable when source metadata differs but pixels normalize identically", async () => {
-  const first = await normalizeImage(new TextEncoder().encode("pixels + EXIF one"), binding());
-  const second = await normalizeImage(new TextEncoder().encode("pixels + EXIF two"), binding());
-  assert.equal(await sha256Hex(first.bytes), await sha256Hex(second.bytes));
+test("rejects invalid decoded dimensions", async () => {
+  await assert.rejects(
+    () => normalizeImage(Uint8Array.of(0xff, 0xd8, 0xff), binding({ width: 0, height: 800 })),
+    /invalid dimensions/,
+  );
+});
+
+test("fails closed when decode validation is unavailable", async () => {
+  await assert.rejects(
+    () => normalizeImage(Uint8Array.of(0xff, 0xd8, 0xff), undefined),
+    ImageValidationError,
+  );
+});
+
+test("original-byte cache identity changes when encoded metadata changes", async () => {
+  const first = await normalizeImage(
+    Uint8Array.from([0xff, 0xd8, 0xff, ...new TextEncoder().encode("pixels + EXIF one")]),
+    binding(),
+  );
+  const second = await normalizeImage(
+    Uint8Array.from([0xff, 0xd8, 0xff, ...new TextEncoder().encode("pixels + EXIF two")]),
+    binding(),
+  );
+  assert.notEqual(await sha256Hex(first.bytes), await sha256Hex(second.bytes));
 });

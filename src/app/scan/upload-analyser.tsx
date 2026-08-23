@@ -117,7 +117,7 @@ export default function UploadAnalyser() {
         <label className="language-field"><span>Response language</span><select name="language" value={language} onChange={(event) => changeLanguage(event.target.value as LanguageCode)}>{languages.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select><small>Your choice is remembered for next time.</small></label>
         <label className="drop-zone"><input type="file" name="image" required accept="image/jpeg,image/png,image/webp" onChange={(event) => setFileName(event.target.files?.[0]?.name ?? "")} /><span className="camera-icon"><CameraIcon /></span><strong>{fileName || "Take a photo or choose an image"}</strong><span>Show the label clearly · JPG, PNG or WebP · up to 12 MB</span></label>
         <button type="submit" className="primary-button" disabled={pending} aria-describedby="upload-note">{pending ? "Analysing…" : "Analyse label"} {!pending && <ArrowIcon />}</button>
-        <p className="upload-note" id="upload-note">Your image is re-encoded to remove metadata, stored temporarily, then deleted after analysis.</p>
+        <p className="upload-note" id="upload-note">Your original image is validated, stored temporarily, then deleted after analysis.</p>
         <p className="analysis-message" aria-live="polite">{message}</p>
       </form>
       {result && <AnalysisResultView result={result} />}

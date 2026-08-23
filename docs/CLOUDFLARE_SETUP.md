@@ -367,7 +367,7 @@ Cloudflare is connected when:
 - local and remote D1 migrations pass;
 - private R2 put/get/delete passes;
 - Analysis and Delivery Queue round trips pass through the Jobs Worker;
-- Images normalization passes remotely with the same dimension, pixel and WebP output caps proven locally;
+- Images decode validation passes remotely while original encoded bytes and pixel dimensions remain unchanged;
 - a real Meta test-number image completes intake, analysis, localized delivery, replay safety and cleanup after credential rotation;
 - secret scans are clean;
 - the public Worker lacks OpenAI/Meta send secrets;

@@ -14,11 +14,30 @@ import { cleanupExpiredWhatsAppJobs, consumeDelivery } from "./whatsapp/delivery
 
 const PINNED_ANALYSIS_VERSIONS = {
   model_id: "gpt-5.6-terra",
-  prompt_version: "terra-analysis.v2",
+  prompt_version: "terra-analysis.v3",
   schema_version: "analysis-result.v1",
   rules_version: "india-category-rules.v1",
   services_version: "india-consumer-services.v1",
 } as const;
+
+const MODEL_RULE_CONTEXT = RULE_PACKS.map((pack) => ({
+  id: pack.id,
+  status: pack.status,
+  categories: pack.categories,
+  coverageTier: pack.coverageTier,
+  context: pack.machineContext,
+  source: pack.source.url,
+  limitations: pack.limitations.slice(0, 2),
+}));
+
+const MODEL_SERVICE_DIRECTORY = SERVICE_DIRECTORY.map((service) => ({
+  id: service.id,
+  categories: service.categories,
+  purposes: service.purposes,
+  url: service.url,
+  routingConstraints: service.routingConstraints,
+  limitations: service.limitations.slice(0, 1),
+}));
 
 export interface WebAnalysisQueueMessage {
   version: 1;
@@ -34,7 +53,7 @@ export interface Env {
   IMAGES: import("../../../src/intake/contracts.ts").ImagesBindingLike;
   OPENAI_API_KEY?: string;
   MODEL_ANALYSIS?: string;
-  TERRA_REASONING_EFFORT?: "low" | "medium" | "high";
+  TERRA_REASONING_EFFORT?: "none" | "low" | "medium" | "high";
   DELIVERY_QUEUE: Queue<{ version: 1; whatsapp_job_id: string }>;
   DELIVERY_ENCRYPTION_KEY?: string;
   WHATSAPP_ACCESS_TOKEN?: string;
@@ -189,12 +208,14 @@ export async function consumeWebAnalysis(
 
   try {
     const imageBytes = new Uint8Array(await media.arrayBuffer());
+    const providerStartedAtMs = Date.now();
     const provider = await callTerraOnce(env, {
       imageUrl: `data:${contentType(media)};base64,${bytesToBase64(imageBytes)}`,
       language: analysis.language,
-      verifiedRuleContext: RULE_PACKS,
-      verifiedServiceDirectory: SERVICE_DIRECTORY,
+      verifiedRuleContext: MODEL_RULE_CONTEXT,
+      verifiedServiceDirectory: MODEL_SERVICE_DIRECTORY,
     }, fetcher);
+    const providerDurationMs = Date.now() - providerStartedAtMs;
     assertProviderSources(provider);
     const validation = validateAnalysisResult(provider.result, {
       allowedRuleIds: ENABLED_RULE_PACK_ID_SET,
@@ -207,6 +228,7 @@ export async function consumeWebAnalysis(
       result: provider.result,
       providerSources: provider.searchSources,
       validationReport: validation,
+      timings: { providerDurationMs },
       tokenUsage: provider.usage,
       openAiResponseId: provider.responseId,
       webSearchUsed: provider.webSearchUsed,

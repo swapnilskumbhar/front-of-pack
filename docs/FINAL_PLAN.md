@@ -198,7 +198,7 @@ Important packaged-product declarations and claims are difficult for ordinary co
 web or verified Meta WhatsApp webhook
     → Cloudflare OpenNext Worker and shared Front of Pack API
     → anonymous saved profile and language
-    → normalize, strip EXIF, hash, private temporary R2 object
+    → decode-validate original bytes, hash, private temporary R2 object
     → versioned cache lookup
        ├─ fresh hit: zero model calls
        └─ miss: publish small metadata to Cloudflare Analysis Queue
@@ -305,7 +305,7 @@ Build:
 
 - anonymous profile and remembered language;
 - Settings/reset;
-- upload/camera/paste and EXIF stripping;
+- upload/camera/paste, decode validation, and original-resolution preservation;
 - simple cache and explicit retry;
 - result renderer, evidence badges, citations, unknown/retake states;
 - experimental front-of-pack panel and disclaimer;

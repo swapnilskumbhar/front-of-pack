@@ -116,8 +116,8 @@ State: IN PROGRESS — the local queued miss-to-result and exact-image cache-hit
 
 Tasks:
 
-- [x] Validate supported input type, 12 MB input size, decoded dimensions/pixel count, normalized WebP output size, and one-to-six product contract.
-- [x] Decode and re-encode through the Cloudflare Images binding to WebP, stripping source metadata, and compute the canonical normalized-image hash in the Workers runtime.
+- [x] Validate supported input type, 12 MB input size, decoded dimensions/pixel count, and one-to-six product contract.
+- [x] Preserve original encoded bytes and pixel dimensions after Cloudflare Images decode validation; hash the original validated bytes without lossy re-encoding.
 - [x] Store temporary media in the simulated private R2 binding and enqueue identifiers plus attempt number only in the combined local runtime.
 - [x] Implement the direct, Jobs-only `gpt-5.6-terra` Responses client with image input, strict structured output, and optional hosted web search inside the same request.
 - [x] Prove the client with a live synthetic smoke on 2026-08-23: one Responses request completed successfully with web search disabled.
@@ -128,7 +128,7 @@ Tasks:
 - [x] Implement versioned exact-image cache identity and prove an authorized zero-call cache hit; production version-pack coverage remains.
 - [x] Wire explicit user resubmission to a new durable attempt with fresh normalized media; never automatically repeat a provider-started call.
 
-Current proof (2026-08-23): combined multi-config local `workerd` runs used simulated D1, R2, Queue, and Images bindings. The image was decoded and re-encoded to bounded WebP before private storage. A Gujarati fresh upload made exactly one Terra request, persisted the validated localized result, and returned it through capability-authorized polling; the identical image/language cache hit made zero additional model calls. Browser profile proof persisted English → Urdu through an HttpOnly cookie while D1 stored only the identity digest. The merged snapshot stands at 43 root and 21 Jobs Worker tests. This is verified local proof, not production readiness; real product fixtures remain open.
+Current proof (2026-08-23): local and production runs validate decode bounds while preserving original bytes and dimensions. Production has proved one-call analysis, capability polling, cache hits, profiles and live WhatsApp delivery. Prompt v3 uses low reasoning, compact rule/service context and bounded output. Real product fixtures remain the release-quality benchmark.
 
 Exit proof: instrumentation proves zero Terra calls on a fresh cache hit and exactly one on a cache miss.
 

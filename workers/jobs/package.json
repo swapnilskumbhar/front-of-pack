@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev --local --persist-to ../../.wrangler/local-state",
+    "benchmark:models": "node scripts/benchmark-models.mjs",
     "smoke:terra": "node scripts/smoke-terra.mjs",
     "test": "node --test tests/*.test.mjs",
     "typecheck": "tsc --noEmit",

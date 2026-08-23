@@ -1,12 +1,12 @@
 export const TERRA_MODEL = "gpt-5.6-terra" as const;
-export const TERRA_PROMPT_VERSION = "terra-analysis.v2" as const;
+export const TERRA_PROMPT_VERSION = "terra-analysis.v3" as const;
 export { ANALYSIS_SCHEMA_VERSION } from "../../../../src/domain/analysis.ts";
 
 export type LanguageCode =
   | "en" | "hi" | "mr" | "bn" | "ta" | "te"
   | "kn" | "gu" | "ml" | "pa" | "or" | "ur";
 
-export type ReasoningEffort = "low" | "medium" | "high";
+export type ReasoningEffort = "none" | "low" | "medium" | "high";
 
 export interface TerraInput {
   imageUrl: string;
@@ -43,6 +43,7 @@ export interface ResponsesRequest {
   input: Array<Record<string, unknown>>;
   reasoning: { effort: ReasoningEffort };
   text: {
+    verbosity: "low";
     format: {
       type: "json_schema";
       name: string;

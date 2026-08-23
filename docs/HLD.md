@@ -248,7 +248,7 @@ Terra must:
 
 Application code must:
 
-1. Strip EXIF, resize, hash, and cache the image.
+1. Validate MIME, decoded dimensions and pixel count; preserve the original encoded bytes and pixel dimensions; hash and cache those bytes.
 2. Load the verified rule context and construct one request.
 3. Validate the response without changing its semantic conclusion.
 4. Match returned identity fields to the Product Registry.
@@ -409,7 +409,7 @@ Cloudflare D1 is the small SQLite-compatible system of record. Seeded regulatory
 | Service Directory | Allow-listed FSSAI/FoSCoS, BIS Care, NCH, and other verified citizen routes |
 | WhatsApp Jobs | Provider message ID, payload digest, encrypted short-lived recipient, delivery state and expiry |
 | Synthetic Government Data | Clearly marked seeded licence and recall records |
-| Private R2 Media | Random-key, EXIF-stripped temporary upload; never public; explicitly deleted at terminal processing, with one-day lifecycle eligibility only as a non-exact orphan backstop |
+| Private R2 Media | Random-key, decode-validated original upload; never public; explicitly deleted at terminal processing, with one-day lifecycle eligibility only as a non-exact orphan backstop |
 
 This is intentionally a hackathon schema, not a speculative workflow platform. D1 stores JSON as text and IDs/timestamps are generated in application code. Attempt leases, immutable artifact histories, cache-pointer tables, and generalized orchestration are production-hardening work after the submission.
 
@@ -464,7 +464,7 @@ Workers Paid/Standard activation is a platform gate: the Jobs Worker needs confi
 
 - No named user account or web PII is required. An opaque random, HttpOnly, SameSite cookie identifies an anonymous profile.
 - Users uploading cart screenshots are prompted to crop names, addresses, phone numbers and order IDs.
-- Uploaded images are stripped of EXIF, including GPS, before storage or model submission.
+- Uploaded images preserve original encoded bytes for label readability and may retain EXIF/GPS metadata. The UI discloses temporary processing, advises users not to include personal surroundings, and terminal deletion plus the R2 lifecycle backstop limits retention.
 - Browser and WhatsApp identity digests use keyed HMAC-SHA256 with a server secret. A raw phone number or browser token is never used as a database key or written to logs.
 - WhatsApp and Meta necessarily receive routing and media data. The Worker encrypts the recipient before short-lived D1 storage; the delivery consumer deletes it after terminal send or expiry, and logs never contain it.
 - The user can change preferences and reset/delete the anonymous channel profile. Scan history is not durably linked into a consumption dossier.

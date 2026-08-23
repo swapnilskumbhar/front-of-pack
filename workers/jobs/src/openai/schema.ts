@@ -1,7 +1,7 @@
 import { ANALYSIS_SCHEMA_VERSION } from "./types.ts";
 
-const stringArray = { type: "array", items: { type: "string" } } as const;
-const nullableString = { type: ["string", "null"] } as const;
+const stringArray = { type: "array", maxItems: 12, items: { type: "string", maxLength: 160 } } as const;
+const nullableString = { type: ["string", "null"], maxLength: 200 } as const;
 
 const identity = {
   type: "object",
@@ -11,7 +11,7 @@ const identity = {
     nameAsPrinted: nullableString,
     brandAsPrinted: nullableString,
     variantAsPrinted: nullableString,
-    gtin: nullableString,
+    gtin: { type: ["string", "null"], maxLength: 64 },
     confidence: { type: "string", enum: ["high", "medium", "low", "unknown"] },
   },
 };
@@ -21,9 +21,9 @@ const evidence = {
   additionalProperties: false,
   required: ["id", "origin", "excerptOrObservation", "citationId", "visibleOnPackage"],
   properties: {
-    id: { type: "string" },
+    id: { type: "string", maxLength: 80 },
     origin: { type: "string", enum: ["package", "hosted_web_search", "verified_rule"] },
-    excerptOrObservation: { type: "string" },
+    excerptOrObservation: { type: "string", maxLength: 500 },
     citationId: nullableString,
     visibleOnPackage: { type: "boolean" },
   },
@@ -34,9 +34,9 @@ const citation = {
   additionalProperties: false,
   required: ["id", "title", "url", "providerSourceId"],
   properties: {
-    id: { type: "string" },
-    title: { type: "string" },
-    url: { type: "string" },
+    id: { type: "string", maxLength: 80 },
+    title: { type: "string", maxLength: 200 },
+    url: { type: "string", maxLength: 2048 },
     providerSourceId: nullableString,
   },
 };
@@ -46,11 +46,11 @@ const finding = {
   additionalProperties: false,
   required: ["id", "kind", "level", "title", "explanation", "evidenceIds", "ruleIds", "experimental"],
   properties: {
-    id: { type: "string" },
+    id: { type: "string", maxLength: 80 },
     kind: { type: "string", enum: ["label_fact", "ingredient", "nutrition", "claim_audit", "regulatory_context", "experimental_fop"] },
     level: { type: "string", enum: ["information", "attention", "unknown"] },
-    title: { type: "string" },
-    explanation: { type: "string" },
+    title: { type: "string", maxLength: 100 },
+    explanation: { type: "string", maxLength: 300 },
     evidenceIds: stringArray,
     ruleIds: stringArray,
     experimental: { type: "boolean" },
@@ -68,8 +68,8 @@ export const ANALYSIS_RESULT_SCHEMA: Record<string, unknown> = {
     unknownCount: { type: "integer", minimum: 0, maximum: 6 },
     flaggedCount: { type: "integer", minimum: 0, maximum: 6 },
     truncated: { type: "boolean" },
-    wholeImageSummary: { type: "string" },
-    strongestMaterialFinding: nullableString,
+    wholeImageSummary: { type: "string", maxLength: 320 },
+    strongestMaterialFinding: { type: ["string", "null"], maxLength: 220 },
     items: {
       type: "array",
       maxItems: 6,
@@ -88,27 +88,28 @@ export const ANALYSIS_RESULT_SCHEMA: Record<string, unknown> = {
             properties: {
               tier: { type: "string", enum: ["category_rules", "general_pack_rules", "label_only"] },
               rulePackIds: stringArray,
-              limitations: stringArray,
+              limitations: { type: "array", maxItems: 4, items: { type: "string", maxLength: 240 } },
             },
           },
-          summary: { type: "string" },
-          findings: { type: "array", items: finding },
+          summary: { type: "string", maxLength: 280 },
+          findings: { type: "array", maxItems: 4, items: finding },
           claimAudits: {
             type: "array",
+            maxItems: 4,
             items: {
               type: "object",
               additionalProperties: false,
               required: ["claimAsPrinted", "assessment", "evidenceIds", "status"],
               properties: {
-                claimAsPrinted: { type: "string" },
-                assessment: { type: "string" },
+                claimAsPrinted: { type: "string", maxLength: 200 },
+                assessment: { type: "string", maxLength: 300 },
                 evidenceIds: stringArray,
                 status: { type: "string", enum: ["supported", "partially_supported", "not_established", "not_assessable"] },
               },
             },
           },
-          evidence: { type: "array", items: evidence },
-          citations: { type: "array", items: citation },
+          evidence: { type: "array", maxItems: 12, items: evidence },
+          citations: { type: "array", maxItems: 6, items: citation },
           serviceRoute: {
             anyOf: [
               { type: "null" },
@@ -116,7 +117,7 @@ export const ANALYSIS_RESULT_SCHEMA: Record<string, unknown> = {
                 type: "object",
                 additionalProperties: false,
                 required: ["serviceId", "reason"],
-                properties: { serviceId: { type: "string" }, reason: { type: "string" } },
+                properties: { serviceId: { type: "string", maxLength: 100 }, reason: { type: "string", maxLength: 240 } },
               },
             ],
           },
@@ -125,6 +126,6 @@ export const ANALYSIS_RESULT_SCHEMA: Record<string, unknown> = {
         },
       },
     },
-    disclaimer: { type: "string" },
+    disclaimer: { type: "string", maxLength: 350 },
   },
 };

@@ -693,8 +693,8 @@ Terra must:
 ~~~text
 HTTP Worker
 → validate decoded MIME/size/dimensions
-→ normalize/re-encode in the Workers runtime and strip EXIF
-→ hash normalized bytes and build versioned cache key
+→ decode-validate MIME/dimensions/pixel count in the Workers runtime while preserving original encoded bytes
+→ hash original validated bytes and build versioned cache key
 → D1 complete/fresh: create scan request and return 200, zero calls
 → D1 queued/processing: create scan request and return 202, zero calls
 → new/explicit retry: put random-key normalized object in private R2
@@ -713,7 +713,7 @@ Analysis Queue consumer
 
 The 128 KB Queue limit is for job metadata, not images. Normalized images use a dedicated private R2 bucket with no public/custom domain; it is not the OpenNext cache bucket. Terminal code explicitly deletes each object. An R2 lifecycle rule that makes objects eligible for deletion after one day is only a backstop and is not described as an exact 24-hour guarantee.
 
-Image normalization must pass inside `workerd`/deployed Workers. Do not assume native `sharp` is available. If the chosen pure-JS/WASM or Cloudflare-native path exceeds the 128 MB Worker memory limit, reduce the input cap before changing privacy or evidence rules.
+Image decode validation must pass inside `workerd`/deployed Workers. Cloudflare Images `info()` validates dimensions without resizing or lossy re-encoding. If original-byte handling exceeds the 128 MB Worker memory limit, reduce the input cap rather than lowering label resolution.
 
 D1, R2 and Queue publication are not one cross-service transaction. Intake is therefore idempotent: persist the queued analysis and object key, publish `{analysis_id, attempt_number}`, then record `queue_enqueued_at`. A crash before publication leaves a safely re-enqueueable pre-provider row; a crash after publication may create a duplicate message, which the conditional provider claim rejects. The hourly/lazy cleanup re-enqueues only queued rows whose `provider_started_at` is NULL and whose enqueue marker is absent/stale.
 
@@ -874,7 +874,7 @@ WhatsApp is a must-have channel using the same Cloudflare API, Queue consumer an
 ~~~text
 Meta → POST /api/whatsapp on the OpenNext Worker
 → verify raw-body signature before JSON parsing
-→ normalize every entry/change/message
+→ normalize every entry/change/message envelope
 → insert/reuse D1 whatsapp_job by provider message ID
 → encrypt recipient and media ID with DELIVERY_ENCRYPTION_KEY
 → publish whatsapp_job ID to Analysis Queue
@@ -882,7 +882,7 @@ Meta → POST /api/whatsapp on the OpenNext Worker
 
 Jobs Worker
 → decrypt media ID in memory
-→ retrieve/validate/normalize media and store temporary private R2 object
+→ retrieve and decode-validate media; preserve the original bytes in temporary private R2
 → resolve saved language and cache
 → call the shared Terra analyzer once only on a miss
 → store result and publish whatsapp_job ID to Delivery Queue
@@ -912,7 +912,7 @@ The webhook payload supplies a media ID, not a trusted download URL.
 2. Accept only HTTPS media URLs returned by that successful metadata request.
 3. Restrict the download to approved Meta/CDN hosts and prevent redirects outside that allow-list.
 4. Enforce declared and decoded MIME, byte and dimension limits.
-5. Strip EXIF, compute a digest and write the normalized file under a random private R2 object key.
+5. Compute a digest and write the decode-validated original file under a random private R2 object key.
 6. Delete the R2 object explicitly in terminal/finally logic. The one-day lifecycle policy is a delayed orphan backstop, not an exact deletion guarantee.
 
 No bearer credential may ever be attached to a URL selected directly from incoming webhook JSON.
@@ -1022,8 +1022,8 @@ Never turn a failure into a guessed result or expose partial provider JSON.
 ## 15. Security, privacy, and retention
 
 - Accept only allow-listed decoded image formats and enforce size/dimension limits.
-- Strip EXIF/GPS before hashing or model submission.
-- Store only normalized, EXIF-stripped web/WhatsApp media under random keys in a private R2 bucket while queued processing is pending.
+- Preserve original encoded bytes and dimensions for label readability; disclose that source metadata may remain.
+- Store original validated web/WhatsApp media only under random keys in a private R2 bucket while queued processing is pending, then delete it terminally.
 - Explicitly delete each R2 object at terminal completion/failure; configure one-day lifecycle eligibility only as an orphan backstop and never promise exact lifecycle deletion timing.
 - Revoke/rotate the credential exposed by the legacy n8n export before connecting the Front of Pack channel; deleting the plaintext from one file is not remediation.
 - Keep the legacy workflow disabled and never import its raw export into the new repository; Front of Pack has no n8n workflow.
@@ -1175,7 +1175,7 @@ Only after the winning citizen loop is proven:
 ~~~text
 saved anonymous language/profile
     → one image from web or direct verified Worker WhatsApp webhook
-    → normalize, EXIF-strip, hash, private temporary R2, D1 cache
+    → decode-validate, hash original bytes, private temporary R2, D1 cache
     → cache miss: Analysis Queue job with IDs + attempt number only
     → Jobs Worker: ONE GPT-5.6 Terra Responses request
        (whole image + strict schema + verified category rules/services

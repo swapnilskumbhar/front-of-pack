@@ -273,7 +273,7 @@ WhatsApp user                                       │
                                                     ▼
                                        D1 profile/idempotency/cache
                                                     │
-                                      normalize + EXIF strip + hash
+                              decode-validate + original-byte hash
                                                     │
                                      private temporary R2 object
                                                     │
@@ -456,7 +456,7 @@ Cut tiers:
 | DATA-001 | CF-001 | Compact D1 migration | Production APAC D1 exists; migrations `0001`–`0003` are applied remotely; JSON/row-cap release proof remains | Codex | IN_PROGRESS | C0 |
 | DATA-002 | DATA-001 | D1 seed loader | Rules/services/synthetic data load reproducibly | Codex | TODO | C0 |
 | QUEUE-001 | CF-001,DATA-001 | Private R2 + Analysis/Delivery Queues + Jobs Worker | Production Analysis, Delivery and both DLQ resources exist; R2 awaits dashboard enablement; local duplicate/race tests pass | Codex | IN_PROGRESS | C0 |
-| MEDIA-001 | PLATFORM-001,QUEUE-001 | Workers-runtime image normalizer/R2 lifecycle | Local Images binding decodes/re-encodes to WebP with input, dimension, pixel and output caps; remote-fidelity and real-product fixture proof remain | Codex | IN_PROGRESS | C0 |
+| MEDIA-001 | PLATFORM-001,QUEUE-001 | Workers-runtime image validation/R2 lifecycle | Images binding validates decode dimensions/pixels while original encoded bytes and resolution are preserved; real-product fixture proof remains | Codex | IN_PROGRESS | C0 |
 | CLEANUP-001 | DATA-001,QUEUE-001 | Hourly/lazy expiry cleanup | Expired ciphertext/nonces cleared, orphan R2 removed, operation idempotent | Codex | TODO | C0 |
 | DOMAIN-001 | PLATFORM-001 | Stable TLS hostname | Custom domain works without Access; `workers.dev` remains release fallback | User + Codex | BLOCKED_USER | C1 |
 | BUDGET-001 | CF-001 | Cloudflare/OpenAI budget telemetry | Billing exclusions, Worker/D1/R2/Queue use and OpenAI spend documented separately | Codex | TODO | C1 |
@@ -548,7 +548,7 @@ The scaffold must expose these stable commands so later agents do not invent dif
 
 Until a script exists, the owning task cannot be DONE. CI runs lint, typecheck, tests and build on every release candidate.
 
-Current verification snapshot (2026-08-23): combined local `workerd` runs proved bounded Images normalization, one-call analysis, authorization, profiles and zero-call cache hits. Production proved public TLS, Images/R2/D1/Queues/Jobs/Terra, cache hits, and live WhatsApp webhook/media/analysis/delivery with terminal ciphertext cleanup. A real pack exposed over-strict validator assumptions; those checks and explicit resubmission are fixed. Prompt v2 now constrains shopper summaries and renders three priority findings, one claim check and expandable evidence on web, with a bounded equivalent on WhatsApp. FSSAI, Legal Metrology, CDSCO, experimental INR, FoSCoS, BIS Care and NCH remain allow-listed. Exact registry and editable no-submit grievance are public. Tests stand at 45/45 root and 24/24 Jobs Worker cases. Real-product regression, officer rehearsal and final submission evidence remain.
+Current verification snapshot (2026-08-23): combined local `workerd` runs proved bounded Images validation, original-image preservation, one-call analysis, authorization, profiles and zero-call cache hits. Production proved public TLS, Images/R2/D1/Queues/Jobs/Terra, cache hits, and live WhatsApp webhook/media/analysis/delivery with terminal ciphertext cleanup. A real pack exposed over-strict validator assumptions; those checks and explicit resubmission are fixed. Prompt v3 constrains concise shopper summaries and renders three priority findings, one claim check and expandable evidence on web, with a bounded equivalent on WhatsApp. FSSAI, Legal Metrology, CDSCO, experimental INR, FoSCoS, BIS Care and NCH remain allow-listed. Exact registry and editable no-submit grievance are public. Tests stand at 45/45 root and 25/25 Jobs Worker cases. Real-product regression, officer rehearsal and final submission evidence remain.
 
 ---
 
