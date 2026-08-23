@@ -85,6 +85,14 @@ Verified on this machine:
 
 The GitHub remote is `https://github.com/swapnilskumbhar/front-of-pack`. Local Wrangler deployment remains the release mechanism; connecting Cloudflare Builds is optional.
 
+### Current production provisioning status — 23 August 2026
+
+- Wrangler OAuth is authenticated to the intended account.
+- D1 database `front-of-pack` exists in APAC and migrations `0001`–`0003` are applied remotely.
+- Analysis, Delivery, Analysis DLQ, and Delivery DLQ Queues exist.
+- R2 is blocked until Object Storage is enabled once in the Cloudflare dashboard (`code 10042`).
+- No Worker has been deployed and no custom domain has been purchased.
+
 ---
 
 ## 3. Safe setup order

@@ -453,9 +453,9 @@ Cut tiers:
 | CF-001 | ELIG-003 | Cloudflare platform access | Wrangler authentication works; Workers Paid/Standard and startup-credit billing coverage confirmed without storing account token | User + Codex | BLOCKED_USER | C0 |
 | PLATFORM-001 | CF-001 | OpenNext full-stack shell | Next.js 16/OpenNext scaffold exists locally; completion requires `npm run preview` in workerd and a public `workers.dev` skeleton | Codex | IN_PROGRESS | C0 |
 | PLATFORM-002 | PLATFORM-001 | Least-privilege Wrangler binding/secret contract | App/Jobs types generated; each Worker lacks the other's unnecessary secrets | Codex | TODO | C0 |
-| DATA-001 | CF-001 | Compact D1 migration | Initial migration and analysis persistence pass in simulated local D1; completion requires remote migration and JSON/row-cap proof | Codex | IN_PROGRESS | C0 |
+| DATA-001 | CF-001 | Compact D1 migration | Production APAC D1 exists; migrations `0001`–`0003` are applied remotely; JSON/row-cap release proof remains | Codex | IN_PROGRESS | C0 |
 | DATA-002 | DATA-001 | D1 seed loader | Rules/services/synthetic data load reproducibly | Codex | TODO | C0 |
-| QUEUE-001 | CF-001,DATA-001 | Private R2 + Analysis/Delivery Queues + Jobs Worker | One simulated local Analysis Queue round trip passes with an ID+attempt payload; Delivery Queue, DLQ, crash and duplicate-message proof remain | Codex | IN_PROGRESS | C0 |
+| QUEUE-001 | CF-001,DATA-001 | Private R2 + Analysis/Delivery Queues + Jobs Worker | Production Analysis, Delivery and both DLQ resources exist; R2 awaits dashboard enablement; local duplicate/race tests pass | Codex | IN_PROGRESS | C0 |
 | MEDIA-001 | PLATFORM-001,QUEUE-001 | Workers-runtime image normalizer/R2 lifecycle | Local Images binding decodes/re-encodes to WebP with input, dimension, pixel and output caps; remote-fidelity and real-product fixture proof remain | Codex | IN_PROGRESS | C0 |
 | CLEANUP-001 | DATA-001,QUEUE-001 | Hourly/lazy expiry cleanup | Expired ciphertext/nonces cleared, orphan R2 removed, operation idempotent | Codex | TODO | C0 |
 | DOMAIN-001 | PLATFORM-001 | Stable TLS hostname | Custom domain works without Access; `workers.dev` remains release fallback | User + Codex | BLOCKED_USER | C1 |
@@ -814,7 +814,7 @@ A category can fall back to label_only rather than block the release.
 | Confirm Meta token rotated | Before WA-001 | Rotate now | BLOCKED_USER |
 | Separate WhatsApp test number available? | Before WA deployment | Use separate number | BLOCKED_USER |
 | Cloudflare Startup credits | Architecture/budget | Screenshot confirms USD 3,000 active through 21 Aug 2027; Registrar/AI Gateway excluded | CONFIRMED |
-| Cloudflare Wrangler/account authorization | CF-001 | Authenticate locally without sharing an API token in chat/docs | BLOCKED_USER |
+| Cloudflare Wrangler/account authorization | CF-001 | OAuth authenticated to the intended account without sharing an API token | DONE |
 | Workers Paid/Standard active and credits apply | CF-001 | Confirm in billing before relying on 5-minute CPU configuration | BLOCKED_USER |
 | Custom domain choice/purchase | DOMAIN-001 | Buy separately; Registrar is excluded from credits; keep `workers.dev` fallback | BLOCKED_USER |
 | OpenAI project key/model access | MODEL-001 | Configured locally in the ignored Jobs Worker secret file; never paste into chat/docs or expose to the public Worker | CONFIRMED_LOCAL |

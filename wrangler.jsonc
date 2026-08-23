@@ -8,13 +8,12 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
-  // LOCAL PLACEHOLDER ONLY. Replace database_id and preview_database_id with
-  // the IDs returned by `wrangler d1 create` before any remote deployment.
+  // Production D1 ID plus a deterministic local preview ID.
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "front-of-pack",
-      "database_id": "00000000-0000-0000-0000-000000000001",
+      "database_id": "7b69f749-7449-4155-ae96-58c15c413a56",
       "preview_database_id": "00000000-0000-0000-0000-000000000001",
       "migrations_dir": "migrations"
     }

@@ -180,14 +180,14 @@ Exit proof: local gates G1–G5 pass and the demo can be repeated from a clean c
 
 ### Phase 7 — Cloudflare provisioning and release
 
-State: BLOCKED until local gates pass and user completes interactive account steps
+State: IN PROGRESS — OAuth, D1, migrations, and Queues complete; R2 enablement and release gates remain
 
 Tasks:
 
-- [ ] Run `wrangler login` and confirm the intended Cloudflare account.
+- [x] Run `wrangler login` and confirm the intended Cloudflare account.
 - [ ] Confirm Workers Paid/Standard coverage; startup credits alone do not prove plan activation.
-- [ ] Create D1, private R2, Analysis Queue, Delivery Queue, and their DLQs.
-- [ ] Apply remote migrations, lifecycle backstop, bindings, and scoped production secrets.
+- [ ] Create D1, private R2, Analysis Queue, Delivery Queue, and their DLQs. D1 and all Queues are complete; R2 awaits one-time dashboard enablement.
+- [ ] Apply remote migrations, lifecycle backstop, bindings, and scoped production secrets. D1 migrations `0001`–`0003` are complete.
 - [ ] Deploy Jobs Worker, then public OpenNext Worker to `workers.dev`.
 - [ ] Verify public TLS, Meta webhook reachability, cleanup, logs, and end-to-end journeys.
 - [ ] Add a custom domain only after the `workers.dev` release passes and the exact purchase is approved.
