@@ -54,7 +54,7 @@ export default function Home() {
 
       <section className="whatsapp section" aria-labelledby="whatsapp-title">
         <div className="phone-preview" aria-hidden="true"><div className="phone-top"><span /><span /><span /></div><div className="message incoming">Send a clear photo of the product label.</div><div className="message outgoing">Photo attached</div><div className="message incoming lines"><i /><i /><i /></div></div>
-        <div className="whatsapp-copy"><p className="eyebrow">Coming next · WhatsApp</p><h2 id="whatsapp-title">The same clear answer, right where you shop.</h2><p>Send a label photo on WhatsApp and receive the explanation in your saved language—no new app to learn.</p><span className="status-chip">Must-have channel in development</span></div>
+        <div className="whatsapp-copy"><p className="eyebrow">Live · WhatsApp</p><h2 id="whatsapp-title">The same decision, right where you shop.</h2><p>Send a label photo to the connected WhatsApp test channel and receive warning-first guidance in your saved language.</p><span className="status-chip">Live channel</span></div>
       </section>
 
       <footer><div className="footer-brand"><span className="brand-mark" aria-hidden="true">F</span><strong>Front of Pack</strong></div><p>Front of Pack is an independent consumer information service. It is not affiliated with or endorsed by any government authority. Information is educational, not medical or legal advice.</p><a href="#top">Back to top ↑</a></footer>

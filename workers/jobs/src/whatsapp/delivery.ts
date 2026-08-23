@@ -1,5 +1,7 @@
 import { decryptIdentifier } from "./crypto.ts";
 import { GraphSendError, sendWhatsAppText, type GraphConfig } from "./graph.ts";
+import { formatWholePackSignal, type WholePackSignal } from "../../../../src/engine/index.ts";
+import type { LanguageCode } from "../../../../src/domain/language.ts";
 
 export interface DeliveryJob { version: 1; whatsapp_job_id: string }
 export interface DeliveryEnv extends GraphConfig {
@@ -18,6 +20,9 @@ export function parseDeliveryJob(value: unknown): DeliveryJob | null {
 export function renderWhatsAppChunks(result: unknown): string[] {
   const source = result && typeof result === "object" ? result as Record<string, unknown> : {};
   const sections: string[] = [];
+  const language = (typeof source.language === "string" ? source.language : "en") as LanguageCode;
+  const derived = source.derived && typeof source.derived === "object" ? source.derived as Record<string, unknown> : {};
+  const derivedItems = Array.isArray(derived.items) ? derived.items : [];
   if (Array.isArray(source.items)) {
     for (const value of source.items) {
       if (!value || typeof value !== "object") continue;
@@ -30,8 +35,14 @@ export function renderWhatsAppChunks(result: unknown): string[] {
         ? item.findings.filter((finding) => finding && typeof finding === "object") as Record<string, unknown>[] : [];
       const orderedFindings = [...findings].sort((left, right) =>
         Number(right.level === "attention") - Number(left.level === "attention"));
+      const derivedItem = derivedItems.find((candidate) => candidate && typeof candidate === "object" &&
+        (candidate as Record<string, unknown>).position === item.position) as Record<string, unknown> | undefined;
+      const signal = Array.isArray(derivedItem?.signals) ? derivedItem.signals[0] as WholePackSignal | undefined : undefined;
       const primary = orderedFindings[0];
-      if (primary) {
+      if (signal?.kind === "whole_pack_rda") {
+        const copy = formatWholePackSignal(signal, language);
+        sections.push(`⚠️ *${copy.title}*\n${copy.headline}\n${copy.detail}`);
+      } else if (primary) {
         const title = typeof primary.title === "string" ? primary.title.toUpperCase() : "WHAT MATTERS";
         const explanation = typeof primary.explanation === "string" ? primary.explanation : "";
         sections.push(`${primary.level === "attention" ? "⚠️" : "ℹ️"} *${title}*${explanation ? `\n${explanation}` : ""}`);
@@ -42,7 +53,7 @@ export function renderWhatsAppChunks(result: unknown): string[] {
       }
       if (name) sections.push(`📦 ${name}`);
       if (Array.isArray(item.findings)) {
-        for (const findingValue of orderedFindings.slice(1, 3)) {
+        for (const findingValue of orderedFindings.slice(signal ? 0 : 1, signal ? 2 : 3)) {
           if (!findingValue || typeof findingValue !== "object") continue;
           const finding = findingValue as Record<string, unknown>;
           const title = typeof finding.title === "string" ? finding.title : "";

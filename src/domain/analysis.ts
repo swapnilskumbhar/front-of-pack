@@ -1,5 +1,6 @@
 import type { LanguageCode } from "./language";
 import type { ScanChannel } from "./profile";
+import type { DerivedDecisionResult, ExtractedNutrition } from "../engine/types";
 
 export const MAX_PRODUCTS_PER_ANALYSIS = 6 as const;
 export const MAX_SERIALIZED_ANALYSIS_BYTES = 512 * 1024;
@@ -105,6 +106,7 @@ export interface ProductAnalysis {
   position: number;
   identity: ProductIdentity;
   category: ProductCategory;
+  nutrition?: ExtractedNutrition | null;
   coverage: Coverage;
   summary: string;
   findings: Finding[];
@@ -131,6 +133,7 @@ export interface AnalysisResult {
   strongestMaterialFinding: string | null;
   items: ProductAnalysis[];
   disclaimer: string;
+  derived?: DerivedDecisionResult;
 }
 
 export interface AnalysisRecord {

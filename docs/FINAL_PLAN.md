@@ -20,7 +20,7 @@ The winning project is not another generic nutrition scanner. It is:
 
 > **Front of Pack — an independent, multilingual citizen-access layer that turns one packaged-product image into an evidence-linked explanation and connects the consumer to the appropriate verified Indian service without pretending to be government.**
 
-The user chooses a language once. On web or WhatsApp, they send one image containing one or several products. One GPT-5.6 Terra Responses request reads the image, optionally searches the web when only names or incomplete facts are visible, applies the relevant enabled category rules and service directory, and returns the complete localized result. The application validates and displays it; it does not create another AI pipeline around it.
+The user chooses a language once. On web or WhatsApp, they send one image containing one or several products. One GPT-5.6 Terra Responses request reads the image, optionally searches the web when only names or incomplete facts are visible, and returns structured transcription plus localized findings. The application validates it, derives only reproducible package arithmetic without another AI call, and displays warning-first results.
 
 The competition story stays food/FSSAI-first because it is the clearest public-service narrative. The submitted product is broader: predecessor scenarios for cosmetics, personal care, household, baby-care, pet-care, supplements, and other packaged labels are ported and revalidated through the new Terra call. Regulatory depth is shown only where a rule pack and regression fixture are verified.
 

@@ -11,10 +11,11 @@ import { TerraError } from "./openai/errors.ts";
 import type { TerraProviderResult } from "./openai/types.ts";
 import { prepareWhatsAppAnalysis, parseWhatsAppAnalysisJob } from "./whatsapp/analysis.ts";
 import { cleanupExpiredWhatsAppJobs, consumeDelivery } from "./whatsapp/delivery.ts";
+import { attachDecisions } from "../../../src/engine/index.ts";
 
 const PINNED_ANALYSIS_VERSIONS = {
   model_id: "gpt-5.6-terra",
-  prompt_version: "terra-analysis.v4",
+  prompt_version: "terra-analysis.v5",
   schema_version: "analysis-result.v1",
   rules_version: "india-category-rules.v1",
   services_version: "india-consumer-services.v1",
@@ -178,6 +179,7 @@ export async function consumeWebAnalysis(
   message: AnalysisMessage,
   env: Env,
   fetcher: typeof fetch = fetch,
+  initialTimings: Record<string, number> = {},
 ): Promise<void> {
   const job = parseWebAnalysisMessage(message.body);
   if (job === null) throw new Error("Invalid web analysis queue message");
@@ -225,10 +227,10 @@ export async function consumeWebAnalysis(
       throw new Error(`Analysis validation failed: ${JSON.stringify(validation.errors)}`);
     }
     const completed = await repository.markComplete(job.analysis_id, job.attempt_number, {
-      result: provider.result,
+      result: attachDecisions(provider.result),
       providerSources: provider.searchSources,
       validationReport: validation,
-      timings: { providerDurationMs },
+      timings: { ...initialTimings, providerDurationMs },
       tokenUsage: provider.usage,
       openAiResponseId: provider.responseId,
       webSearchUsed: provider.webSearchUsed,
@@ -288,7 +290,7 @@ export default {
       });
       if (!prepared.cacheHit) {
         await consumeWebAnalysis({ body: { version: 1, trigger: "web", analysis_id: prepared.analysisId,
-          attempt_number: prepared.attemptNumber }, ack() {} }, env);
+          attempt_number: prepared.attemptNumber }, ack() {} }, env, fetch, prepared.preparationTimings);
       }
       const result = await env.DB.prepare(`SELECT status FROM analyses WHERE id = ? LIMIT 1`)
         .bind(prepared.analysisId).first<{ status: string }>();

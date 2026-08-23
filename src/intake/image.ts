@@ -2,11 +2,11 @@ import type { AnalysisCacheIdentityInputs } from "../domain/cache";
 
 export const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
 export const MAX_MULTIPART_BYTES = MAX_IMAGE_BYTES + 1024 * 1024;
-export const NORMALIZATION_VERSION = "validated-original.v1";
+export const NORMALIZATION_VERSION = "validated-original.v2";
 
 export const INTAKE_VERSION = {
   model: "gpt-5.6-terra",
-  prompt: "terra-analysis.v4",
+  prompt: "terra-analysis.v5",
   schema: "analysis-result.v1",
   rules: "india-category-rules.v1",
   services: "india-consumer-services.v1",

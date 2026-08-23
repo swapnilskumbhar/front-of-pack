@@ -55,7 +55,7 @@ For the first version, GPT-5.6 Terra performs the complete semantic analysis in 
 
 There is no separate triage call, crop/segment loop, cart parser, per-product fan-out, product-resolution model, synthesis model, or explanation model.
 
-Application code does **not** reinterpret or paraphrase the result. It performs non-semantic validation only: schema checking, bounds checking, citation presence, enabled-rule references, item limits, and required disclaimers. A result that fails validation is rejected rather than silently repaired.
+Application code does not paraphrase Terra's prose. After strict validation, a small versioned decision engine may derive reproducible arithmetic signals solely from structured values and percentages printed on the package. These derived signals remain distinct from model findings and record their calculation basis; missing inputs produce no derived conclusion.
 
 This deliberately favours a small, fast architecture for the hackathon. Model quality is controlled with a strict output schema, a versioned prompt, verified regulatory context, evidence requirements, curated samples, and regression tests.
 

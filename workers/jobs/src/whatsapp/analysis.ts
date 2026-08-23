@@ -24,7 +24,8 @@ export function parseWhatsAppAnalysisJob(value: unknown): WhatsAppAnalysisJob | 
 /** Prepares a WhatsApp image as the same queued analysis record used by web intake. */
 export async function prepareWhatsAppAnalysis(
   job: WhatsAppAnalysisJob, env: WhatsAppAnalysisEnv, fetcher: typeof fetch = fetch,
-): Promise<{ analysisId: string; attemptNumber: number; cacheHit: boolean; analysisStatus: string }> {
+): Promise<{ analysisId: string; attemptNumber: number; cacheHit: boolean; analysisStatus: string; preparationTimings: Record<string, number> }> {
+  const preparationStartedAt = Date.now();
   const wa = await env.DB.prepare(`SELECT id, inbound_message_id, profile_id, language, status,
     media_id_ciphertext, media_id_nonce FROM whatsapp_jobs WHERE id = ? LIMIT 1`)
     .bind(job.whatsapp_job_id).first<{
@@ -38,15 +39,20 @@ export async function prepareWhatsAppAnalysis(
     const analysis = await new AnalysisRepository(env.DB).findById(linked.analysis_id);
     if (!analysis) throw new Error("linked_analysis_missing");
     return { analysisId: analysis.id, attemptNumber: analysis.attemptNumber,
-      cacheHit: analysis.status === "complete" && isFresh(analysis.expiresAt), analysisStatus: analysis.status };
+      cacheHit: analysis.status === "complete" && isFresh(analysis.expiresAt), analysisStatus: analysis.status,
+      preparationTimings: { preparationTotalMs: Date.now() - preparationStartedAt } };
   }
   if (!wa.media_id_ciphertext || !wa.media_id_nonce) throw new Error("encrypted_media_id_missing");
   const mediaId = await decryptIdentifier(wa.media_id_ciphertext, wa.media_id_nonce, env.DELIVERY_ENCRYPTION_KEY);
+  const downloadStartedAt = Date.now();
   const downloaded = await downloadWhatsAppMedia(mediaId, env, fetcher);
+  const mediaDownloadMs = Date.now() - downloadStartedAt;
   const detectedMime = validateImageBytes(downloaded.bytes);
   if (downloaded.declaredMime && downloaded.declaredMime.split(";")[0] !== detectedMime) throw new Error("media_mime_mismatch");
+  const validationStartedAt = Date.now();
   const normalized = await normalizeImage(downloaded.bytes, env.IMAGES);
   const imageHash = await sha256Hex(normalized.bytes);
+  const mediaValidationMs = Date.now() - validationStartedAt;
   const cacheKey = await buildAnalysisCacheKey({ normalizedImageHash: imageHash, language: wa.language as never,
     modelId: INTAKE_VERSION.model, promptVersion: INTAKE_VERSION.prompt, schemaVersion: ANALYSIS_SCHEMA_VERSION,
     rulesVersion: INTAKE_VERSION.rules, servicesVersion: INTAKE_VERSION.services });
@@ -92,5 +98,6 @@ export async function prepareWhatsAppAnalysis(
   await env.DB.prepare(`UPDATE whatsapp_jobs SET scan_request_id = ?, status = 'processing' WHERE id = ?`)
     .bind(scan.id, wa.id).run();
   return { analysisId: analysis.id, attemptNumber: analysis.attemptNumber,
-    cacheHit: analysis.status === "complete" && isFresh(analysis.expiresAt), analysisStatus: analysis.status };
+    cacheHit: analysis.status === "complete" && isFresh(analysis.expiresAt), analysisStatus: analysis.status,
+    preparationTimings: { mediaDownloadMs, mediaValidationMs, preparationTotalMs: Date.now() - preparationStartedAt } };
 }

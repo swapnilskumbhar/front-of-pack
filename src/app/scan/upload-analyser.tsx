@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { AnalysisResult } from "@/domain/analysis";
+import { formatWholePackSignal } from "@/engine/presentation";
 import { DEFAULT_LANGUAGE, type LanguageCode } from "@/domain/language";
 import { MAX_IMAGE_BYTES, type CreatedAnalysisResponse, type SafeAnalysisResponse } from "@/intake";
 
@@ -132,6 +133,8 @@ function AnalysisResultView({ result }: { result: AnalysisResult }) {
       {result.strongestMaterialFinding && <p className="analysis-callout">{result.strongestMaterialFinding}</p>}
       <h2 id="analysis-result-title">{result.wholeImageSummary}</h2>
       <div className="analysis-items">{result.items.map((item) => {
+        const derivedSignal = result.derived?.items.find((entry) => entry.position === item.position)?.signals[0];
+        const derivedCopy = derivedSignal ? formatWholePackSignal(derivedSignal, result.language) : null;
         const visibleFindings = [...item.findings]
           .sort((left, right) => Number(right.level === "attention") - Number(left.level === "attention"))
           .slice(0, 3);
@@ -141,6 +144,7 @@ function AnalysisResultView({ result }: { result: AnalysisResult }) {
             <span>Product {item.position}</span>
             <div className="analysis-badges"><b>{categoryLabel(item.category)}</b><b>{item.coverage.tier.replaceAll("_", " ")}</b></div>
           </div>
+          {derivedCopy && <div className="analysis-callout"><strong>{derivedCopy.title}</strong><br />{derivedCopy.headline}<br /><small>{derivedCopy.detail}</small></div>}
           {visibleFindings.length > 0 && <div className="analysis-key-findings">
             <h4>What matters</h4>
             <ul>{visibleFindings.map((finding) => <li key={finding.id}><strong>{finding.title}</strong><span>{finding.explanation}</span></li>)}</ul>

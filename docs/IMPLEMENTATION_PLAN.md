@@ -128,7 +128,7 @@ Tasks:
 - [x] Implement versioned exact-image cache identity and prove an authorized zero-call cache hit; production version-pack coverage remains.
 - [x] Wire explicit user resubmission to a new durable attempt with fresh normalized media; never automatically repeat a provider-started call.
 
-Current proof (2026-08-23): local and production runs validate decode bounds while preserving original bytes and dimensions. Production has proved one-call analysis, capability polling, cache hits, profiles and live WhatsApp delivery. Prompt v4 uses low reasoning, compact rule/service context and a warning-first, three-signal output. Real product fixtures remain the release-quality benchmark.
+Current proof (2026-08-23): local and production runs validate encoded dimensions while preserving original bytes. Production has proved one-call analysis, capability polling, cache hits, profiles and live WhatsApp delivery. Prompt v5 transcribes structured package nutrition; decision-engine v1 derives whole-pack impact from the pack's printed serving and %RDA figures, then renders it before model findings. Real product fixtures remain the release-quality benchmark.
 
 Exit proof: instrumentation proves zero Terra calls on a fresh cache hit and exactly one on a cache miss.
 
