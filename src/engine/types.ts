@@ -35,9 +35,21 @@ export interface WholePackSignal {
   basis: "pack_printed_rda";
 }
 
+export interface ClaimContradictionSignal {
+  kind: "claim_contradiction";
+  severity: "high";
+  testId: string;
+  claimAsPrinted: string;
+  foundIngredient: string;
+  ruleId: string;
+  basis: "literal_package_consistency";
+}
+
+export type DerivedSignal = WholePackSignal | ClaimContradictionSignal;
+
 export interface DerivedItemDecision {
   position: number;
-  signals: WholePackSignal[];
+  signals: DerivedSignal[];
 }
 
 export interface DerivedDecisionResult {

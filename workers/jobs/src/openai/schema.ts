@@ -3,6 +3,8 @@ import { ANALYSIS_SCHEMA_VERSION } from "./types.ts";
 const stringArray = { type: "array", maxItems: 12, items: { type: "string", maxLength: 160 } } as const;
 const nullableString = { type: ["string", "null"], maxLength: 200 } as const;
 const nullableNumber = { type: ["number", "null"], minimum: 0, maximum: 1_000_000 } as const;
+const ingredientTokens = { type: "array", maxItems: 30, items: { type: "string", maxLength: 80 } } as const;
+const printedClaims = { type: "array", maxItems: 8, items: { type: "string", maxLength: 120 } } as const;
 
 const nutrition = {
   anyOf: [
@@ -103,12 +105,14 @@ export const ANALYSIS_RESULT_SCHEMA: Record<string, unknown> = {
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["position", "identity", "category", "nutrition", "coverage", "summary", "findings", "claimAudits", "evidence", "citations", "serviceRoute", "needsClearerImage", "retakeGuidance"],
+        required: ["position", "identity", "category", "nutrition", "ingredientTokens", "claimsAsPrinted", "coverage", "summary", "findings", "claimAudits", "evidence", "citations", "serviceRoute", "needsClearerImage", "retakeGuidance"],
         properties: {
           position: { type: "integer", minimum: 1, maximum: 6 },
           identity,
           category: { type: "string", enum: ["food", "beverage", "cosmetic", "personal_care", "household", "baby_care", "pet_care", "supplement", "other", "unknown"] },
           nutrition,
+          ingredientTokens,
+          claimsAsPrinted: printedClaims,
           coverage: {
             type: "object",
             additionalProperties: false,

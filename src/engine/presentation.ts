@@ -1,5 +1,5 @@
 import type { LanguageCode } from "../domain/language.ts";
-import type { DerivedNutrient, WholePackSignal } from "./types.ts";
+import type { ClaimContradictionSignal, DerivedNutrient, WholePackSignal } from "./types.ts";
 
 const COPY: Record<LanguageCode, { whole: string; daily: string; label: string; pack: string; nutrients: Record<DerivedNutrient, string> }> = {
   en: { whole: "WHOLE PACK", daily: "of the pack's daily reference", label: "Label shows", pack: "whole pack is", nutrients: { added_sugars: "added sugar", saturated_fat: "saturated fat", sodium: "sodium", total_fat: "total fat" } },
@@ -23,4 +23,24 @@ export function formatWholePackSignal(signal: WholePackSignal, language: Languag
     headline: `${signal.wholePackAmount} ${signal.unit} ${copy.nutrients[signal.nutrient]} · ~${signal.wholePackRdaPercent}% ${copy.daily}`,
     detail: `${copy.label} ${signal.printedServingRdaPercent}% / ${signal.servingSize} ${signal.quantityUnit}; ${copy.pack} ${signal.netQuantity} ${signal.quantityUnit}.`,
   };
+}
+
+const CLAIM_COPY: Record<LanguageCode, { title: string; detail: string }> = {
+  en: { title: "CLAIM CHECK", detail: "The printed claim conflicts with the printed ingredient." },
+  hi: { title: "दावे की जाँच", detail: "छपा दावा छपी सामग्री से मेल नहीं खाता।" },
+  mr: { title: "दावा तपासणी", detail: "छापील दावा छापील घटकाशी जुळत नाही." },
+  bn: { title: "দাবি যাচাই", detail: "মুদ্রিত দাবির সঙ্গে মুদ্রিত উপাদান মেলে না।" },
+  ta: { title: "கூற்று சரிபார்ப்பு", detail: "அச்சிட்ட கூற்று அச்சிட்ட மூலப்பொருளுடன் முரண்படுகிறது." },
+  te: { title: "క్లెయిమ్ తనిఖీ", detail: "ముద్రించిన క్లెయిమ్ ముద్రించిన పదార్థంతో సరిపోలదు." },
+  kn: { title: "ಹೇಳಿಕೆ ಪರಿಶೀಲನೆ", detail: "ಮುದ್ರಿತ ಹೇಳಿಕೆ ಮುದ್ರಿತ ಘಟಕದೊಂದಿಗೆ ಹೊಂದುವುದಿಲ್ಲ." },
+  gu: { title: "દાવાની તપાસ", detail: "છાપેલો દાવો છાપેલા ઘટક સાથે મેળ ખાતો નથી." },
+  ml: { title: "അവകാശവാദ പരിശോധന", detail: "അച്ചടിച്ച അവകാശവാദം അച്ചടിച്ച ചേരുവയുമായി പൊരുത്തപ്പെടുന്നില്ല." },
+  pa: { title: "ਦਾਅਵੇ ਦੀ ਜਾਂਚ", detail: "ਛਪਿਆ ਦਾਅਵਾ ਛਪੀ ਸਮੱਗਰੀ ਨਾਲ ਮੇਲ ਨਹੀਂ ਖਾਂਦਾ।" },
+  or: { title: "ଦାବି ଯାଞ୍ଚ", detail: "ମୁଦ୍ରିତ ଦାବି ମୁଦ୍ରିତ ଉପାଦାନ ସହ ମେଳ ଖାଉନାହିଁ।" },
+  ur: { title: "دعوے کی جانچ", detail: "چھپا ہوا دعویٰ چھپے ہوئے جزو سے مطابقت نہیں رکھتا۔" },
+};
+
+export function formatClaimSignal(signal: ClaimContradictionSignal, language: LanguageCode): { title: string; headline: string; detail: string } {
+  const copy = CLAIM_COPY[language] ?? CLAIM_COPY.en;
+  return { title: copy.title, headline: `“${signal.claimAsPrinted}” ≠ ${signal.foundIngredient}`, detail: copy.detail };
 }

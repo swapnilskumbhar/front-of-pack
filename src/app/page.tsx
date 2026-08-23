@@ -1,13 +1,9 @@
 import UploadAnalyser from "./scan/upload-analyser";
 
 const categories = [
-  ["Food & drinks", "Nutrition, ingredients and pack claims"],
-  ["Cosmetics", "Ingredients and label declarations"],
-  ["Personal care", "Everyday product information"],
-  ["Household", "Pack directions and cautions"],
-  ["Baby care", "Clear, careful label reading"],
-  ["Pet care", "Product details and directions"],
-  ["Supplements", "Claims, ingredients and declarations"],
+  ["Decision checks", "Food, beverages, cosmetics and personal care: whole-pack nutrition and literal claim contradictions when the required print is readable."],
+  ["Pack-rule guidance", "Household, baby care, pet care and supplements: relevant declarations, directions and official service routes."],
+  ["Plain-language reading", "Everything else: label comprehension without pretending that category-specific rules were applied."],
 ];
 
 export default function Home() {
@@ -15,40 +11,40 @@ export default function Home() {
     <main>
       <header className="site-header">
         <a className="brand" href="#top" aria-label="Front of Pack home"><span className="brand-mark" aria-hidden="true">F</span><span>Front of Pack</span></a>
-        <nav aria-label="Primary navigation"><a href="#how-it-works">How it works</a><a href="#coverage">What we cover</a><a className="nav-action" href="#upload">Check a label</a></nav>
+        <nav aria-label="Primary navigation"><a href="#how-it-works">How it works</a><a href="/how-we-decide">How we decide</a><a className="nav-action" href="#upload">Check a label</a></nav>
       </header>
 
       <section className="hero" id="top">
         <div className="hero-copy">
-          <p className="eyebrow"><span /> Product labels, explained simply.</p>
-          <h1>Understand any product label <em>from one photo.</em></h1>
-          <p className="hero-intro">Upload one image with up to six products. Get a clear, sourced explanation in the language you choose.</p>
-          <div className="trust-row" aria-label="Service highlights"><span>12 Indian languages</span><span>Multiple product categories</span><span>Sources included</span></div>
+          <p className="eyebrow"><span /> India’s label rules, useful at the shelf.</p>
+          <h1>The pack shows a serving. <em>You buy the whole pack.</em></h1>
+          <p className="hero-intro">One photo turns fine print into whole-pack warnings, claim contradictions and official next steps—in your language.</p>
+          <div className="trust-row" aria-label="Service highlights"><span>Whole-pack calculations</span><span>Live on WhatsApp</span><span>Open decision logic</span></div>
         </div>
 
         <UploadAnalyser />
       </section>
 
       <section className="journey section" id="how-it-works" aria-labelledby="journey-title">
-        <div className="section-heading"><p className="eyebrow">One photo, useful answers</p><h2 id="journey-title">From pack to plain language</h2><p>No jargon. No unexplained score. Just what the label shows, what reliable sources say, and what you can do next.</p></div>
+        <div className="section-heading"><p className="eyebrow">The public-service gap</p><h2 id="journey-title">Rules exist. Applying them while shopping is hard.</h2><p>Front of Pack makes serving math, conflicting claims and the correct official route visible before the fine print wins.</p></div>
         <ol className="steps">
           <li><span>01</span><div><h3>Share the pack</h3><p>Upload one clear image containing one product or a shelf of up to six.</p></div></li>
-          <li><span>02</span><div><h3>We examine the evidence</h3><p>Label details are checked against relevant rules, registries and public sources.</p></div></li>
-          <li><span>03</span><div><h3>Choose your next step</h3><p>Read a sourced explanation, check a registry, or prepare an editable grievance draft.</p></div></li>
+          <li><span>02</span><div><h3>One AI call reads it</h3><p>Terra transcribes visible facts; a versioned engine performs reproducible checks.</p></div></li>
+          <li><span>03</span><div><h3>See the decision first</h3><p>The most consequential warning appears before descriptions, evidence and next-step options.</p></div></li>
         </ol>
       </section>
 
       <section className="coverage section" id="coverage" aria-labelledby="coverage-title">
-        <div className="section-heading split-heading"><div><p className="eyebrow">Built for the everyday shelf</p><h2 id="coverage-title">More than food labels</h2></div><p>Coverage follows the evidence available for each category. We clearly say when only general pack guidance applies.</p></div>
+        <div className="section-heading split-heading"><div><p className="eyebrow">Honest coverage</p><h2 id="coverage-title">Three levels, clearly separated</h2></div><p>We show exactly whether a decision check, a pack rule, or plain-language reading was applied.</p></div>
         <ul className="category-grid">{categories.map(([name, detail], index) => <li key={name} className={index === 0 ? "featured-category" : ""}><span className="category-number">0{index + 1}</span><h3>{name}</h3><p>{detail}</p></li>)}</ul>
       </section>
 
       <section className="actions section" aria-labelledby="actions-title">
-        <div className="action-intro"><p className="eyebrow light">Beyond an explanation</p><h2 id="actions-title">When you need to go further</h2><p>Useful official routes, without pretending to be the authority.</p></div>
+        <div className="action-intro"><p className="eyebrow light">From evidence to action</p><h2 id="actions-title">Verify the decision or take the next step</h2><p>Inspect the calculation, check an identifier, or prepare facts for an official channel.</p></div>
         <div className="action-list">
-          <article><span>01</span><div><h3><a href="/registry">Check a registry →</a></h3><p>Try an exact identifier against clearly synthetic demonstration data.</p></div></article>
-          <article><span>02</span><div><h3><a href="/officer">Officer dashboard →</a></h3><p>Restricted, redacted aggregate analysis counts—never raw images or personal data.</p></div></article>
-          <article><span>03</span><div><h3><a href="/grievance">Prepare a grievance →</a></h3><p>Create an editable draft from facts you confirm. Nothing is submitted for you.</p></div></article>
+          <article><span>01</span><div><h3><a href="/how-we-decide">Audit our decisions →</a></h3><p>See every formula, threshold, literal claim test and official source.</p></div></article>
+          <article><span>02</span><div><h3><a href="/registry">Look up an identifier →</a></h3><p>Try an FSSAI or BIS number against demonstration data.</p></div></article>
+          <article><span>03</span><div><h3><a href="/grievance">Prepare confirmed facts →</a></h3><p>Create an editable draft for the appropriate official consumer service.</p></div></article>
         </div>
       </section>
 

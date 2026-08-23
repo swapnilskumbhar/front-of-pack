@@ -145,7 +145,7 @@ There is one model call site: **lib/analyze/call-terra.ts**.
 export const VERSION = {
   prompt: "analysis-prompt.v1",
   schema: "analysis-result.v1",
-  rules: "india-category-rules.v1",
+  rules: "india-category-rules.v2",
   services: "india-consumer-services.v1",
 } as const;
 

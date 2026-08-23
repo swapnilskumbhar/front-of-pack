@@ -1,6 +1,6 @@
 import { decryptIdentifier } from "./crypto.ts";
 import { GraphSendError, sendWhatsAppText, type GraphConfig } from "./graph.ts";
-import { formatWholePackSignal, type WholePackSignal } from "../../../../src/engine/index.ts";
+import { formatClaimSignal, formatWholePackSignal, type DerivedSignal } from "../../../../src/engine/index.ts";
 import type { LanguageCode } from "../../../../src/domain/language.ts";
 
 export interface DeliveryJob { version: 1; whatsapp_job_id: string }
@@ -37,10 +37,10 @@ export function renderWhatsAppChunks(result: unknown): string[] {
         Number(right.level === "attention") - Number(left.level === "attention"));
       const derivedItem = derivedItems.find((candidate) => candidate && typeof candidate === "object" &&
         (candidate as Record<string, unknown>).position === item.position) as Record<string, unknown> | undefined;
-      const signal = Array.isArray(derivedItem?.signals) ? derivedItem.signals[0] as WholePackSignal | undefined : undefined;
+      const signal = Array.isArray(derivedItem?.signals) ? derivedItem.signals[0] as DerivedSignal | undefined : undefined;
       const primary = orderedFindings[0];
-      if (signal?.kind === "whole_pack_rda") {
-        const copy = formatWholePackSignal(signal, language);
+      if (signal?.kind === "whole_pack_rda" || signal?.kind === "claim_contradiction") {
+        const copy = signal.kind === "whole_pack_rda" ? formatWholePackSignal(signal, language) : formatClaimSignal(signal, language);
         sections.push(`⚠️ *${copy.title}*\n${copy.headline}\n${copy.detail}`);
       } else if (primary) {
         const title = typeof primary.title === "string" ? primary.title.toUpperCase() : "WHAT MATTERS";

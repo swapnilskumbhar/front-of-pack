@@ -57,6 +57,8 @@ There is no separate triage call, crop/segment loop, cart parser, per-product fa
 
 Application code does not paraphrase Terra's prose. After strict validation, a small versioned decision engine may derive reproducible arithmetic signals solely from structured values and percentages printed on the package. These derived signals remain distinct from model findings and record their calculation basis; missing inputs produce no derived conclusion.
 
+Decision-engine v1 also runs a small allow-listed set of literal package-consistency checks. It may report that an exact printed “free-from” claim conflicts with an exact transcribed ingredient token. It does not infer chemical classes, formulation, intent, legality, or automatically characterize a cosmetic claim as greenwashing. Every test and source is public at `/how-we-decide`.
+
 This deliberately favours a small, fast architecture for the hackathon. Model quality is controlled with a strict output schema, a versioned prompt, verified regulatory context, evidence requirements, curated samples, and regression tests.
 
 ### 1.2 Predecessor boundary

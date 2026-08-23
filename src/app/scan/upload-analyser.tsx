@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { AnalysisResult } from "@/domain/analysis";
-import { formatWholePackSignal } from "@/engine/presentation";
+import { formatClaimSignal, formatWholePackSignal } from "@/engine/presentation";
 import { DEFAULT_LANGUAGE, type LanguageCode } from "@/domain/language";
 import { MAX_IMAGE_BYTES, type CreatedAnalysisResponse, type SafeAnalysisResponse } from "@/intake";
+import { DEMO_LABELS, DEMO_RESULTS } from "@/demo/results";
 
 const LANGUAGE_STORAGE_KEY = "front-of-pack.language";
 const languages: Array<[LanguageCode, string]> = [
@@ -35,11 +36,18 @@ export default function UploadAnalyser() {
 
   useEffect(() => {
     let active = true;
+    const demo = new URLSearchParams(window.location.search).get("demo");
+    const demoTimer = window.setTimeout(() => {
+      if (active && demo && DEMO_RESULTS[demo]) {
+        setResult(DEMO_RESULTS[demo]);
+        setMessage("Cached demonstration result — no model call was made.");
+      }
+    }, 0);
     void fetch("/api/profile", { cache: "no-store" })
       .then(async (response) => response.ok ? response.json() as Promise<{ preferredLanguage: LanguageCode }> : Promise.reject())
       .then((profile) => { if (active && languages.some(([code]) => code === profile.preferredLanguage)) setLanguage(profile.preferredLanguage); })
       .catch(() => { /* localStorage remains the offline fallback. */ });
-    return () => { active = false; stopped.current = true; };
+    return () => { active = false; window.clearTimeout(demoTimer); stopped.current = true; };
   }, []);
 
   function changeLanguage(next: LanguageCode) {
@@ -121,20 +129,34 @@ export default function UploadAnalyser() {
         <p className="upload-note" id="upload-note">Your original image is validated, stored temporarily, then deleted after analysis.</p>
         <p className="analysis-message" aria-live="polite">{message}</p>
       </form>
+      <div className="demo-row" aria-label="Cached demonstrations">
+        <span>Try instantly:</span>
+        {DEMO_LABELS.map((demo) => <button key={demo.id} type="button" onClick={() => {
+          setResult(DEMO_RESULTS[demo.id]);
+          setMessage("Cached demonstration result — no model call was made.");
+          window.history.replaceState(null, "", `?demo=${demo.id}`);
+        }}><strong>{demo.label}</strong><small>{demo.detail}</small></button>)}
+      </div>
       {result && <AnalysisResultView result={result} />}
     </>
   );
 }
 
 function AnalysisResultView({ result }: { result: AnalysisResult }) {
+  const hasDerivedDecision = result.derived?.items.some((item) => item.signals.length > 0) ?? false;
   return (
     <section className="analysis-result" aria-live="polite" aria-labelledby="analysis-result-title">
       <p className="eyebrow">Quick label check</p>
-      {result.strongestMaterialFinding && <p className="analysis-callout">{result.strongestMaterialFinding}</p>}
-      <h2 id="analysis-result-title">{result.wholeImageSummary}</h2>
+      {!hasDerivedDecision && result.strongestMaterialFinding && <p className="analysis-callout">{result.strongestMaterialFinding}</p>}
+      {!hasDerivedDecision && <h2 id="analysis-result-title">{result.wholeImageSummary}</h2>}
+      {hasDerivedDecision && <h2 id="analysis-result-title">What changes the decision</h2>}
       <div className="analysis-items">{result.items.map((item) => {
         const derivedSignal = result.derived?.items.find((entry) => entry.position === item.position)?.signals[0];
-        const derivedCopy = derivedSignal ? formatWholePackSignal(derivedSignal, result.language) : null;
+        const derivedCopy = derivedSignal
+          ? derivedSignal.kind === "whole_pack_rda"
+            ? formatWholePackSignal(derivedSignal, result.language)
+            : formatClaimSignal(derivedSignal, result.language)
+          : null;
         const visibleFindings = [...item.findings]
           .sort((left, right) => Number(right.level === "attention") - Number(left.level === "attention"))
           .slice(0, 3);

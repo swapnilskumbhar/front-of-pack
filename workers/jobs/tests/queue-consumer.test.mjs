@@ -29,9 +29,9 @@ const validResult = {
 
 const pinnedVersions = {
   model_id: "gpt-5.6-terra",
-  prompt_version: "terra-analysis.v5",
+  prompt_version: "terra-analysis.v6",
   schema_version: "analysis-result.v1",
-  rules_version: "india-category-rules.v1",
+  rules_version: "india-category-rules.v2",
   services_version: "india-consumer-services.v1",
 };
 

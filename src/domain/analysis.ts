@@ -107,6 +107,8 @@ export interface ProductAnalysis {
   identity: ProductIdentity;
   category: ProductCategory;
   nutrition?: ExtractedNutrition | null;
+  ingredientTokens?: string[];
+  claimsAsPrinted?: string[];
   coverage: Coverage;
   summary: string;
   findings: Finding[];

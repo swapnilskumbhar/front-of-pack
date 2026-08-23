@@ -81,6 +81,27 @@ export const RULE_PACKS = [
     ],
   },
   {
+    id: "in.fssai.advertising-claims-2018.v1",
+    version: 1,
+    title: "FSSAI Advertising and Claims Regulations, 2018",
+    status: "official",
+    categories: ["food", "beverage", "supplement"],
+    coverageTier: "category_rules",
+    machineContext:
+      "For printed food claims, preserve the exact wording and supporting package facts. Non-addition claims such as no added sugar require the conditions in regulation 6; do not declare compliance or violation from an image when compound ingredients or other required context are unreadable.",
+    source: {
+      publisher: "Food Safety and Standards Authority of India",
+      title: "Food Safety and Standards (Advertising and Claims) Regulations, 2018 — compendium",
+      url: "https://www.fssai.gov.in/upload/uploadfiles/files/Compendium_Advertising_Claims_Regulations_04_10_2022.pdf",
+      effectiveDate: "2019-07-01",
+      accessedDate: ACCESSED_DATE,
+    },
+    limitations: [
+      "Literal claim/ingredient consistency is not a laboratory, compliance, or enforcement conclusion.",
+      "Compound ingredients, naturally occurring sugars, substitutions, exemptions, and later amendments can change the assessment.",
+    ],
+  },
+  {
     id: "experimental.in.fssai.inr-draft-2022.v1",
     version: 1,
     title: "Experimental Indian Nutrition Rating presentation (2022 draft)",

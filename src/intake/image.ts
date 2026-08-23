@@ -6,9 +6,9 @@ export const NORMALIZATION_VERSION = "validated-original.v2";
 
 export const INTAKE_VERSION = {
   model: "gpt-5.6-terra",
-  prompt: "terra-analysis.v5",
+  prompt: "terra-analysis.v6",
   schema: "analysis-result.v1",
-  rules: "india-category-rules.v1",
+  rules: "india-category-rules.v2",
   services: "india-consumer-services.v1",
   normalization: NORMALIZATION_VERSION,
 } as const;

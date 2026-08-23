@@ -19,6 +19,7 @@ test("enabled id sets change only through an intentional snapshot update", () =>
     "in.fssai.labelling-display-2020.v1",
     "in.legal-metrology.packaged-commodities-2011.v1",
     "in.cdsco.cosmetics-rules-2020-labelling.v1",
+    "in.fssai.advertising-claims-2018.v1",
     "experimental.in.fssai.inr-draft-2022.v1",
   ]);
   assert.deepEqual(ENABLED_SERVICE_IDS, [
