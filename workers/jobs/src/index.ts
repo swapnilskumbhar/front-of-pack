@@ -1,8 +1,16 @@
 import { AnalysisRepository } from "../../../src/data/analysis-repository.ts";
 import { validateAnalysisResult } from "../../../src/validation/analysis-result.ts";
+import {
+  ENABLED_RULE_PACK_ID_SET,
+  ENABLED_SERVICE_ID_SET,
+  RULE_PACKS,
+  SERVICE_DIRECTORY,
+} from "../../../src/knowledge/index.ts";
 import { callTerraOnce } from "./openai/client.ts";
 import { TerraError } from "./openai/errors.ts";
 import type { TerraProviderResult } from "./openai/types.ts";
+import { prepareWhatsAppAnalysis, parseWhatsAppAnalysisJob } from "./whatsapp/analysis.ts";
+import { cleanupExpiredWhatsAppJobs, consumeDelivery } from "./whatsapp/delivery.ts";
 
 const PINNED_ANALYSIS_VERSIONS = {
   model_id: "gpt-5.6-terra",
@@ -23,12 +31,18 @@ export interface Env {
   ENVIRONMENT: string;
   DB: D1Database;
   MEDIA: R2Bucket;
+  IMAGES: import("../../../src/intake/contracts.ts").ImagesBindingLike;
   OPENAI_API_KEY?: string;
   MODEL_ANALYSIS?: string;
   TERRA_REASONING_EFFORT?: "low" | "medium" | "high";
+  DELIVERY_QUEUE: Queue<{ version: 1; whatsapp_job_id: string }>;
+  DELIVERY_ENCRYPTION_KEY?: string;
+  WHATSAPP_ACCESS_TOKEN?: string;
+  WHATSAPP_PHONE_NUMBER_ID?: string;
+  WHATSAPP_GRAPH_VERSION?: string;
 }
 
-type AnalysisMessage = Pick<Message<unknown>, "body" | "ack">;
+type AnalysisMessage = Pick<Message<unknown>, "body" | "ack"> & Partial<Pick<Message<unknown>, "retry">>;
 
 export function parseWebAnalysisMessage(value: unknown): WebAnalysisQueueMessage | null {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
@@ -178,13 +192,13 @@ export async function consumeWebAnalysis(
     const provider = await callTerraOnce(env, {
       imageUrl: `data:${contentType(media)};base64,${bytesToBase64(imageBytes)}`,
       language: analysis.language,
-      verifiedRuleContext: [],
-      verifiedServiceDirectory: [],
+      verifiedRuleContext: RULE_PACKS,
+      verifiedServiceDirectory: SERVICE_DIRECTORY,
     }, fetcher);
     assertProviderSources(provider);
     const validation = validateAnalysisResult(provider.result, {
-      allowedRuleIds: new Set(),
-      allowedServiceIds: new Set(),
+      allowedRuleIds: ENABLED_RULE_PACK_ID_SET,
+      allowedServiceIds: ENABLED_SERVICE_ID_SET,
     });
     if (!validation.valid) {
       throw new Error(`Analysis validation failed: ${JSON.stringify(validation.errors)}`);
@@ -224,9 +238,58 @@ export default {
   },
 
   async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {
-    if (batch.queue !== "front-of-pack-analysis") {
-      throw new Error(`Unsupported queue: ${batch.queue}`);
+    if (batch.queue === "front-of-pack-delivery") {
+      if (!env.DELIVERY_ENCRYPTION_KEY || !env.WHATSAPP_ACCESS_TOKEN || !env.WHATSAPP_PHONE_NUMBER_ID || !env.WHATSAPP_GRAPH_VERSION) {
+        throw new Error("WhatsApp delivery secrets are not configured");
+      }
+      for (const message of batch.messages) await consumeDelivery(message, {
+        DB: env.DB, DELIVERY_ENCRYPTION_KEY: env.DELIVERY_ENCRYPTION_KEY,
+        accessToken: env.WHATSAPP_ACCESS_TOKEN, phoneNumberId: env.WHATSAPP_PHONE_NUMBER_ID,
+        apiVersion: env.WHATSAPP_GRAPH_VERSION,
+      });
+      return;
     }
-    for (const message of batch.messages) await consumeWebAnalysis(message, env);
+    if (batch.queue !== "front-of-pack-analysis") throw new Error(`Unsupported queue: ${batch.queue}`);
+    for (const message of batch.messages) {
+      const web = parseWebAnalysisMessage(message.body);
+      if (web) { await consumeWebAnalysis(message, env); continue; }
+      const whatsapp = parseWhatsAppAnalysisJob(message.body);
+      if (!whatsapp || !env.DELIVERY_ENCRYPTION_KEY || !env.WHATSAPP_ACCESS_TOKEN ||
+          !env.WHATSAPP_PHONE_NUMBER_ID || !env.WHATSAPP_GRAPH_VERSION) {
+        throw new Error("Invalid or unconfigured WhatsApp analysis job");
+      }
+      const prepared = await prepareWhatsAppAnalysis(whatsapp, {
+        DB: env.DB, MEDIA: env.MEDIA, IMAGES: env.IMAGES, DELIVERY_QUEUE: env.DELIVERY_QUEUE,
+        DELIVERY_ENCRYPTION_KEY: env.DELIVERY_ENCRYPTION_KEY,
+        accessToken: env.WHATSAPP_ACCESS_TOKEN, phoneNumberId: env.WHATSAPP_PHONE_NUMBER_ID,
+        apiVersion: env.WHATSAPP_GRAPH_VERSION,
+      });
+      if (!prepared.cacheHit) {
+        await consumeWebAnalysis({ body: { version: 1, trigger: "web", analysis_id: prepared.analysisId,
+          attempt_number: prepared.attemptNumber }, ack() {} }, env);
+      }
+      const result = await env.DB.prepare(`SELECT status FROM analyses WHERE id = ? LIMIT 1`)
+        .bind(prepared.analysisId).first<{ status: string }>();
+      if (result?.status === "complete") {
+        await env.DB.prepare(`UPDATE whatsapp_jobs SET status = 'ready' WHERE id = ? AND status IN ('queued','processing')`)
+          .bind(whatsapp.whatsapp_job_id).run();
+        await env.DELIVERY_QUEUE.send({ version: 1, whatsapp_job_id: whatsapp.whatsapp_job_id });
+      } else if (result?.status === "failed") {
+        await env.DB.prepare(`UPDATE whatsapp_jobs SET status = 'failed', last_error_code = 'analysis_failed',
+          media_id_ciphertext = NULL, media_id_nonce = NULL, recipient_ciphertext = NULL, recipient_nonce = NULL,
+          completed_at = ? WHERE id = ?`).bind(new Date().toISOString(), whatsapp.whatsapp_job_id).run();
+      } else if (result?.status === "queued" || result?.status === "processing") {
+        if (!message.retry) throw new Error("analysis_pending_retry_unavailable");
+        message.retry({ delaySeconds: 15 });
+        continue;
+      } else {
+        throw new Error("analysis_state_invalid");
+      }
+      message.ack();
+    }
+  },
+
+  async scheduled(_controller: ScheduledController, env: Env): Promise<void> {
+    await cleanupExpiredWhatsAppJobs(env.DB);
   },
 } satisfies ExportedHandler<Env>;

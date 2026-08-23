@@ -32,3 +32,25 @@ export interface R2BucketLike {
 export interface QueueLike<T> {
   send(message: T): Promise<void>;
 }
+
+export interface ImageInfoLike {
+  width: number;
+  height: number;
+  format?: string;
+  fileSize?: number;
+}
+
+export interface ImagesOutputLike {
+  response(): Response;
+}
+
+export interface ImagesInputLike {
+  transform(options: { width?: number; height?: number; fit?: "scale-down" }): ImagesInputLike;
+  output(options: { format: "image/webp"; quality?: number; anim?: boolean }): Promise<ImagesOutputLike>;
+}
+
+/** Structural subset of the Cloudflare Images raw-byte binding used at intake. */
+export interface ImagesBindingLike {
+  info(stream: ReadableStream<Uint8Array>): Promise<ImageInfoLike>;
+  input(stream: ReadableStream<Uint8Array>): ImagesInputLike;
+}

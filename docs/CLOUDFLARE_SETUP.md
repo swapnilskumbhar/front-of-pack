@@ -81,7 +81,7 @@ Verified on this machine:
 | GitHub CLI | Not installed |
 | Front of Pack Git repository | Initialized on `main`; baseline `914ad7dc0ab57f13a0259417065052efb47d9ea4` pushed to `origin/main` |
 | Front of Pack application | Next.js 16/OpenNext scaffold exists locally |
-| Current workspace | Scaffold, domain contracts, initial D1 migration, Jobs Worker shell, and documentation; not deployed |
+| Current workspace | Working local web analysis, Images normalization, profiles, knowledge packs, mocked durable WhatsApp transport, registry, grievance, and protected officer surfaces; deployment remains |
 
 The GitHub remote is `https://github.com/swapnilskumbhar/front-of-pack`. Local Wrangler deployment remains the release mechanism; connecting Cloudflare Builds is optional.
 
@@ -272,7 +272,7 @@ npx wrangler secret put WHATSAPP_ACCESS_TOKEN --config workers/jobs/wrangler.jso
 
 The OpenAI and WhatsApp send tokens must not be bound to the public Worker. The webhook verification secrets must not be bound to the Jobs Worker.
 
-For local development use one ignored `.dev.vars` file per Worker. At the current phase, only `workers/jobs/.dev.vars` is needed. Meta and public-Worker secrets wait until Phase 4 and completion of the legacy credential-rotation gate. Never commit either file.
+For local development use one ignored `.dev.vars` file per Worker. The Jobs file contains the configured OpenAI key; public/Meta values remain absent until completion of the legacy credential-rotation gate. Never commit either file.
 
 ### Phase 8 — migrate D1
 
@@ -302,6 +302,8 @@ npm run cf-typegen
 npm run preview
 npm run deploy:dry-run
 ~~~
+
+Current merged local snapshot is 43 passing root tests and 21 passing Jobs Worker tests, plus successful production builds. This does not replace the remote Images, real-product, live Meta, or release gates.
 
 Deploy:
 
@@ -354,6 +356,8 @@ Cloudflare is connected when:
 - local and remote D1 migrations pass;
 - private R2 put/get/delete passes;
 - Analysis and Delivery Queue round trips pass through the Jobs Worker;
+- Images normalization passes remotely with the same dimension, pixel and WebP output caps proven locally;
+- a real Meta test-number image completes intake, analysis, localized delivery, replay safety and cleanup after credential rotation;
 - secret scans are clean;
 - the public Worker lacks OpenAI/Meta send secrets;
 - the Jobs Worker lacks unnecessary webhook/profile/admin secrets.
@@ -363,6 +367,11 @@ A custom domain is not required to satisfy this definition.
 ---
 
 ## 5. Official references
+
+The public Worker also has an `IMAGES` binding. Local `wrangler dev` uses Cloudflare's
+limited, offline Images simulation. Before release, run the image-normalization gate
+with `wrangler dev --remote`; this requires Cloudflare authentication and each unique
+source/parameter combination may count as billable Images transformation usage.
 
 - [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/)
 - [Workers limits](https://developers.cloudflare.com/workers/platform/limits/)
@@ -374,6 +383,7 @@ A custom domain is not required to satisfy this definition.
 - [Workers Git integration](https://developers.cloudflare.com/workers/ci-cd/builds/git-integration/)
 - [Register a domain](https://developers.cloudflare.com/registrar/get-started/register-domain/)
 - [Custom Domains](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/)
+- [Images binding and local fidelity](https://developers.cloudflare.com/images/optimization/binding/)
 
 ---
 
@@ -382,8 +392,11 @@ A custom domain is not required to satisfy this definition.
 ~~~text
 secure old Meta/n8n credentials
 → preserve completed Git/GitHub baseline 914ad7d
-→ complete and verify the existing OpenNext/D1/Jobs foundations locally
-→ add OPENAI_API_KEY only to ignored workers/jobs/.dev.vars when Phase 3 begins
+→ preserve the verified local OpenNext/D1/R2/Queue/Images/profile/pack/WhatsApp foundations
+→ keep the configured OPENAI_API_KEY only in ignored workers/jobs/.dev.vars
+→ run remote Images and real-product fixtures
+→ rotate Meta credentials and prove the live test-number flow
+→ rehearse registry, grievance and officer minimums with release fixtures
 → npx wrangler login + whoami
 → confirm Workers Paid/credit coverage
 → create D1 + private R2 + Analysis/Delivery Queues

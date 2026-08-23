@@ -1,0 +1,2 @@
+import Link from "next/link"; import RegistryClient from "./registry-client";
+export default function RegistryPage() { return <main className="service-page"><Link href="/">← Front of Pack</Link><p className="eyebrow">Synthetic demonstration</p><h1>Exact registry lookup</h1><p>Try <strong>10000000000001</strong> or <strong>CM/L-0000000001</strong>. No fuzzy matching and no live government query.</p><RegistryClient /></main>; }

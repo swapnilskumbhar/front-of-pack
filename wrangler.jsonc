@@ -26,6 +26,9 @@
       "preview_bucket_name": "front-of-pack-private-media-preview"
     }
   ],
+  "images": {
+    "binding": "IMAGES"
+  },
   "queues": {
     "producers": [
       {

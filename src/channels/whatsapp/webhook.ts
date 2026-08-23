@@ -34,10 +34,6 @@ export type WhatsAppEvent =
       recipient?: string;
     };
 
-export type DispatchResult =
-  | { accepted: true }
-  | { accepted: false; reason: "persistence_and_enqueue_not_configured" };
-
 type UnknownRecord = Record<string, unknown>;
 
 function record(value: unknown): UnknownRecord | undefined {
@@ -181,9 +177,3 @@ export function verifySubscription(
  * may return accepted. Returning false makes the webhook fail visibly instead
  * of acknowledging work that would be lost.
  */
-export async function dispatchWhatsAppEvents(
-  events: readonly WhatsAppEvent[],
-): Promise<DispatchResult> {
-  void events;
-  return { accepted: false, reason: "persistence_and_enqueue_not_configured" };
-}

@@ -6,6 +6,7 @@ html { overflow-x:clip; scroll-behavior:smooth; }
 body { margin:0; overflow-x:clip; background:var(--paper); color:var(--ink); font-family:Arial,Helvetica,sans-serif; -webkit-font-smoothing:antialiased; }
 a { color:inherit; text-decoration:none; }
 button,input,select { font:inherit; }
+textarea { font:inherit; }
 button,select,label { -webkit-tap-highlight-color:transparent; }
 .site-header { align-items:center; display:flex; justify-content:space-between; margin:auto; max-width:1280px; padding:22px 28px; }
 .brand,.footer-brand { align-items:center; display:flex; font-size:17px; font-weight:800; gap:10px; letter-spacing:-.02em; }
@@ -114,3 +115,11 @@ footer>a { font-size:12px; font-weight:800; text-align:right; }
   footer { padding:38px 18px; }
 }
 @media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
+.service-page { margin:auto; max-width:900px; min-height:100vh; padding:56px 28px 100px; }
+.service-page>a { font-size:13px; font-weight:800; }.service-page>.eyebrow { margin-top:64px; }
+.service-page h1 { font-size:clamp(44px,7vw,72px); }.service-page>p:not(.eyebrow) { color:var(--muted); line-height:1.7; max-width:700px; }
+.service-card { background:white; border:1px solid var(--line); border-radius:20px; box-shadow:0 18px 50px rgba(39,49,42,.08); margin-top:36px; padding:28px; }
+.service-card label { display:block; font-size:13px; font-weight:800; margin:16px 0; }.service-card input,.service-card select,.service-card textarea { background:#faf9f5; border:1px solid var(--line); border-radius:10px; display:block; margin-top:7px; min-height:46px; padding:11px; width:100%; }
+.service-card textarea { min-height:90px; resize:vertical; }.service-card .draft-area { min-height:280px; }.service-output { overflow:auto; white-space:pre-wrap; }
+.service-buttons { display:flex; gap:12px; }.service-buttons button { background:var(--cream); border:1px solid var(--line); border-radius:10px; cursor:pointer; font-weight:800; padding:12px 18px; }
+.service-card table { border-collapse:collapse; width:100%; }.service-card th,.service-card td { border-bottom:1px solid var(--line); padding:12px; text-align:left; }

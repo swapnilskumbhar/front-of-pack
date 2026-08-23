@@ -14,15 +14,21 @@ export class ScanRequestRepository {
     analysisId: string;
     idempotencyKey: string;
     accessTokenDigest: string;
+    profileId?: string;
     language: LanguageCode;
     createdAt: string;
   }): Promise<boolean> {
-    const result = await this.db.prepare(`
+    const result = await this.db.prepare(input.profileId ? `
+      INSERT OR IGNORE INTO scan_requests (
+        id, profile_id, analysis_id, channel, idempotency_key, access_token_digest, language, created_at
+      ) VALUES (?, ?, ?, 'web', ?, ?, ?, ?)
+    ` : `
       INSERT OR IGNORE INTO scan_requests (
         id, profile_id, analysis_id, channel, idempotency_key, access_token_digest, language, created_at
       ) VALUES (?, NULL, ?, 'web', ?, ?, ?, ?)
     `).bind(
       input.id,
+      ...(input.profileId ? [input.profileId] : []),
       input.analysisId,
       input.idempotencyKey,
       input.accessTokenDigest,

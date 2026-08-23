@@ -102,9 +102,9 @@ Tasks:
 
 - [x] Define 12-language, profile, analysis, cache, product, evidence, citation, coverage, and Queue contracts.
 - [x] Add the initial D1-compatible SQLite migration.
-- [x] Add runtime schema validation for the queued provider result; full evidence/rule/service policy validation and serialized-result size enforcement remain.
-- [x] Add the D1 analysis repository and exact-attempt provider claim; profile and cleanup repositories remain.
-- [ ] Implement web-device profile identity and remembered language.
+- [x] Add runtime schema validation for the queued provider result, including evidence/rule/service policy and serialized-result size enforcement.
+- [x] Add D1 analysis, profile, WhatsApp, delivery, and cleanup repositories plus the exact-attempt provider claim.
+- [x] Implement web-device profile identity with an HttpOnly cookie, digest-only D1 identity, and remembered language; local proof persisted English → Urdu across requests.
 - [ ] Complete stale-attempt rejection, expiry, and cleanup primitives; the exact provider claim is implemented.
 - [x] Apply the D1 migration in the combined local `workerd` environment and exercise analysis persistence; broader repository tests remain.
 
@@ -116,50 +116,49 @@ State: IN PROGRESS — the local queued miss-to-result and exact-image cache-hit
 
 Tasks:
 
-- [ ] Complete image validation for supported MIME, 12 MB cap, dimensions, and one-to-six product contract; current intake performs only foundational checks.
-- [ ] Normalize metadata safely in the Workers runtime and compute a canonical image hash.
+- [x] Validate supported input type, 12 MB input size, decoded dimensions/pixel count, normalized WebP output size, and one-to-six product contract.
+- [x] Decode and re-encode through the Cloudflare Images binding to WebP, stripping source metadata, and compute the canonical normalized-image hash in the Workers runtime.
 - [x] Store temporary media in the simulated private R2 binding and enqueue identifiers plus attempt number only in the combined local runtime.
 - [x] Implement the direct, Jobs-only `gpt-5.6-terra` Responses client with image input, strict structured output, and optional hosted web search inside the same request.
 - [x] Prove the client with a live synthetic smoke on 2026-08-23: one Responses request completed successfully with web search disabled.
 - [x] Enforce no automatic provider retry; another provider call requires an explicit new attempt.
-- [x] Validate the returned evidence graph, provider citation ID+URL pairs, allow-listed coverage/service IDs, prohibited wording, and serialized size; real rule/service packs remain.
+- [x] Validate the returned evidence graph, provider citation ID+URL pairs, allow-listed coverage/service IDs, prohibited wording, and serialized size against the wired FSSAI, Legal Metrology, CDSCO, experimental INR, FoSCoS, BIS Care, and NCH packs.
 - [x] Persist a validated provider result, protect polling with a per-scan 256-bit capability whose digest alone is stored, and render the consumer result.
 - [x] Implement versioned exact-image cache identity and prove an authorized zero-call cache hit; production version-pack coverage remains.
 - [ ] Wire explicit retry to durable attempt state; never automatically repeat a provider-started call.
 
-Current proof (2026-08-23): combined multi-config local `workerd` runs used simulated D1, R2, and Queue bindings. A fresh upload returned `202`, made exactly one Terra request, persisted the completed result, and returned it through capability-authorized polling. Polling without the capability returned `404`. The identical image/language then returned HTTP `200` from cache without another Queue job. Tests stand at 21 root and 12 Jobs Worker cases. A deliberately corrupt PNG-signature fixture also persisted the provider failure path. This is a verified local foundation, not deployment readiness.
+Current proof (2026-08-23): combined multi-config local `workerd` runs used simulated D1, R2, Queue, and Images bindings. The image was decoded and re-encoded to bounded WebP before private storage. A Gujarati fresh upload made exactly one Terra request, persisted the validated localized result, and returned it through capability-authorized polling; the identical image/language cache hit made zero additional model calls. Browser profile proof persisted English → Urdu through an HttpOnly cookie while D1 stored only the identity digest. The merged snapshot stands at 43 root and 21 Jobs Worker tests. This is verified local proof, not production readiness; real product fixtures remain open.
 
 Exit proof: instrumentation proves zero Terra calls on a fresh cache hit and exactly one on a cache miss.
 
 ### Phase 4 — Direct WhatsApp channel
 
-State: ENDPOINT FOUNDATION DONE; full channel BLOCKED until legacy Meta credential rotation and durable intake/delivery wiring are complete
+State: LOCAL IMPLEMENTATION DONE; live Meta end-to-end BLOCKED until legacy credential rotation and test credentials are supplied
 
 Tasks:
 
 - [x] Implement and test GET challenge-token verification and POST raw-body HMAC verification on `/api/whatsapp`.
-- [ ] Replace the intentional signed-POST `503` response with durable D1 deduplication plus Queue dispatch before deployment.
-- [ ] Acknowledge quickly, deduplicate every inbound message ID, and enqueue IDs only.
-- [ ] Fetch media using fixed Meta Graph endpoints and validate type/size.
-- [ ] Encrypt short-lived recipient/media routing values in D1.
-- [ ] Reuse the same analysis contracts and saved language preference.
-- [ ] Render WhatsApp-safe output and retry delivery independently from semantic analysis.
-- [ ] Clear encrypted routing fields and temporary media after terminal processing.
+- [x] Persist inbound events idempotently in D1 and publish ID-only Queue messages before acknowledgement.
+- [x] Fetch media through fixed Meta Graph endpoints with mocked clients and type/size validation.
+- [x] Encrypt short-lived recipient/media routing values in D1.
+- [x] Reuse the analysis contracts and persistent language profile, including 12-language text commands.
+- [x] Render stored WhatsApp-safe output and retry Graph delivery independently from semantic analysis.
+- [x] Clear encrypted routing fields and temporary media through terminal cleanup paths.
 
-Pre-deploy gate: signed POST currently returns `503` intentionally so Meta cannot receive a false acknowledgement before durable D1 and Queue dispatch exist. Do not configure the production Meta callback until this gate is complete.
+Pre-deploy gate: the transport is implemented and covered with mocked Graph clients. Do not configure the production Meta callback until the exposed predecessor credential is rotated and a real Meta test-number flow proves signature, media retrieval, replay safety, delivery, and cleanup.
 
 Exit proof: forged signatures fail; valid events are durably recorded and acknowledged only after Queue dispatch; webhook replay and Queue redelivery cause zero duplicate Terra calls; a real image receives the localized stored result.
 
 ### Phase 5 — Public-service and operational surfaces
 
-State: TODO
+State: IN PROGRESS — registry and grievance minimums are complete; officer release-fixture depth and operations remain
 
 Tasks:
 
-- [ ] Add allow-listed FSSAI/FoSCoS, BIS Care, and NCH service routes.
-- [ ] Add exact registry checks only where the identifier and service support them.
-- [ ] Add an editable grievance draft with no automatic submission or fake docket.
-- [ ] Add the minimum officer dashboard with evidence, filters, aggregation, and drill-down.
+- [x] Add allow-listed FoSCoS, BIS Care, and NCH service routes to the analyzer and validator.
+- [x] Add exact synthetic registry checks only; no fuzzy or live-government lookup claim.
+- [x] Add an editable local grievance draft with no automatic submission or fake docket.
+- [x] Add the protected minimum officer aggregate dashboard; richer release-fixture filters/drill-down remain.
 - [ ] Add audit events, redacted logs, metrics, cost counters, and hourly cleanup.
 - [ ] Enforce honest category coverage and non-official experimental FOP wording.
 
@@ -209,9 +208,8 @@ No agent deploys, purchases a domain, creates paid resources, or receives a real
 
 ## 5. Immediate next tasks
 
-1. Harden web intake with Workers-safe normalization/EXIF removal, complete MIME/dimension/size checks, and canonical hashing.
-2. Add durable browser profile/language persistence; capability-authorized result polling is implemented.
-3. Complete evidence/rule/service validation, real verified packs, stale/redelivery assertions, delivery publishing, and cleanup coverage.
-4. Persist browser and WhatsApp language preferences through the D1 profile repositories.
-5. Wire `/api/whatsapp` signed POST to encrypted D1 deduplication and ID-only Queue dispatch before Meta configuration or deployment.
-6. Keep Cloudflare production resources, production secrets, and deployment blocked until the local gates pass; keep the full WhatsApp channel blocked until the legacy Meta credential rotation is confirmed.
+1. Run Cloudflare Images through `wrangler dev --remote` and verify high-fidelity normalization against real multi-product fixtures.
+2. Complete stale/redelivery, retention, maximum-memory, secret-scan, and deployment-oriented audit gates.
+3. Rehearse registry, grievance, and officer surfaces with release fixtures and finish operational/audit evidence.
+4. Rotate the legacy Meta credential, configure a test number, and run the real WhatsApp image/replay/delivery journey.
+5. Replace placeholder Cloudflare resource IDs, configure scoped production secrets, migrate remote D1, and deploy only after the remaining gates pass.

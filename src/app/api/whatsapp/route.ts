@@ -1,10 +1,10 @@
 import { getWhatsAppSecrets } from "@/channels/whatsapp/env";
 import {
-  dispatchWhatsAppEvents,
   parseWhatsAppEvents,
   verifyMetaSignature,
   verifySubscription,
 } from "@/channels/whatsapp/webhook";
+import { persistAndEnqueueWhatsAppEvents, type WhatsAppIntakeBindings } from "@/channels/whatsapp/intake";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +28,7 @@ export async function GET(request: Request): Promise<Response> {
 }
 
 export async function POST(request: Request): Promise<Response> {
-  const { appSecret } = await getWhatsAppSecrets();
+  const { appSecret, env } = await getWhatsAppSecrets();
   if (!appSecret) {
     return Response.json(
       { error: "webhook_not_configured" },
@@ -64,12 +64,18 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  const dispatch = await dispatchWhatsAppEvents(events);
-  if (!dispatch.accepted) {
+  const bindings = env as unknown as Partial<WhatsAppIntakeBindings> | undefined;
+  if (!bindings?.DB || !bindings.ANALYSIS_QUEUE || !bindings.PROFILE_HMAC_SECRET || !bindings.DELIVERY_ENCRYPTION_KEY) {
     return Response.json(
-      { error: dispatch.reason },
+      { error: "persistence_and_enqueue_not_configured" },
       { status: 503, headers: noStoreHeaders },
     );
+  }
+
+  try {
+    await persistAndEnqueueWhatsAppEvents(events, bindings as WhatsAppIntakeBindings);
+  } catch {
+    return Response.json({ error: "durable_intake_failed" }, { status: 503, headers: noStoreHeaders });
   }
 
   return Response.json({ received: true }, { status: 200, headers: noStoreHeaders });

@@ -2,3 +2,7 @@
 # OPENAI_API_KEY belongs only to the private Jobs Worker.
 OPENAI_API_KEY="replace-with-a-new-local-development-key"
 ENVIRONMENT="local"
+# Private Jobs Worker only. Add these when testing Meta locally; never commit real values.
+WHATSAPP_ACCESS_TOKEN="replace-with-local-meta-token"
+WHATSAPP_PHONE_NUMBER_ID="replace-with-phone-number-id"
+DELIVERY_ENCRYPTION_KEY="replace-with-base64-encoded-32-byte-key"

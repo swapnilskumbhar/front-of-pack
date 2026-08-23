@@ -33,8 +33,23 @@ export default function UploadAnalyser() {
   const stopped = useRef(false);
 
   useEffect(() => {
-    return () => { stopped.current = true; };
+    let active = true;
+    void fetch("/api/profile", { cache: "no-store" })
+      .then(async (response) => response.ok ? response.json() as Promise<{ preferredLanguage: LanguageCode }> : Promise.reject())
+      .then((profile) => { if (active && languages.some(([code]) => code === profile.preferredLanguage)) setLanguage(profile.preferredLanguage); })
+      .catch(() => { /* localStorage remains the offline fallback. */ });
+    return () => { active = false; stopped.current = true; };
   }, []);
+
+  function changeLanguage(next: LanguageCode) {
+    setLanguage(next);
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, next);
+    void fetch("/api/profile", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ preferredLanguage: next }),
+    }).catch(() => { /* Keep the local fallback when profile storage is unavailable. */ });
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -99,10 +114,10 @@ export default function UploadAnalyser() {
     <>
       <form className="upload-card" id="upload" onSubmit={submit}>
         <div className="card-heading"><div><p className="step-label">Start here</p><h2>Check a product label</h2></div><span className="private-pill">Temporary image</span></div>
-        <label className="language-field"><span>Response language</span><select name="language" value={language} onChange={(event) => { const next = event.target.value as LanguageCode; setLanguage(next); localStorage.setItem(LANGUAGE_STORAGE_KEY, next); }}>{languages.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select><small>Your choice is remembered for next time.</small></label>
+        <label className="language-field"><span>Response language</span><select name="language" value={language} onChange={(event) => changeLanguage(event.target.value as LanguageCode)}>{languages.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select><small>Your choice is remembered for next time.</small></label>
         <label className="drop-zone"><input type="file" name="image" required accept="image/jpeg,image/png,image/webp" onChange={(event) => setFileName(event.target.files?.[0]?.name ?? "")} /><span className="camera-icon"><CameraIcon /></span><strong>{fileName || "Take a photo or choose an image"}</strong><span>Show the label clearly · JPG, PNG or WebP · up to 12 MB</span></label>
         <button type="submit" className="primary-button" disabled={pending} aria-describedby="upload-note">{pending ? "Analysing…" : "Analyse label"} {!pending && <ArrowIcon />}</button>
-        <p className="upload-note" id="upload-note">Your image is stored temporarily for this analysis. Image normalization is pending.</p>
+        <p className="upload-note" id="upload-note">Your image is re-encoded to remove metadata, stored temporarily, then deleted after analysis.</p>
         <p className="analysis-message" aria-live="polite">{message}</p>
       </form>
       {result && <AnalysisResultView result={result} />}

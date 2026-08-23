@@ -2,6 +2,7 @@ import type { AnalysisCacheIdentityInputs } from "../domain/cache";
 
 export const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
 export const MAX_MULTIPART_BYTES = MAX_IMAGE_BYTES + 1024 * 1024;
+export const NORMALIZATION_VERSION = "cloudflare-images-webp.v1";
 
 export const INTAKE_VERSION = {
   model: "gpt-5.6-terra",
@@ -9,6 +10,7 @@ export const INTAKE_VERSION = {
   schema: "analysis-result.v1",
   rules: "india-category-rules.v1",
   services: "india-consumer-services.v1",
+  normalization: NORMALIZATION_VERSION,
 } as const;
 
 export type SupportedImageMime = "image/jpeg" | "image/png" | "image/webp";

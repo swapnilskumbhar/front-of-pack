@@ -113,6 +113,8 @@ function createHarness(db = createDb()) {
     calls.fetch += 1;
     const request = JSON.parse(init.body);
     assert.match(JSON.stringify(request.input), /data:image\/png;base64,AQID/);
+    assert.match(JSON.stringify(request.input), /in\.fssai\.labelling-display-2020\.v1/);
+    assert.match(JSON.stringify(request.input), /in\.consumer-affairs\.nch\.v1/);
     return Response.json({ id: "resp_1", output_text: JSON.stringify(validResult), output: [] });
   };
   return { calls, db, env, message, okFetch };

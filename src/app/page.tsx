@@ -46,9 +46,9 @@ export default function Home() {
       <section className="actions section" aria-labelledby="actions-title">
         <div className="action-intro"><p className="eyebrow light">Beyond an explanation</p><h2 id="actions-title">When you need to go further</h2><p>Useful official routes, without pretending to be the authority.</p></div>
         <div className="action-list">
-          <article><span>01</span><div><h3>Check a registry</h3><p>Open the relevant official product or licence lookup when one is available.</p></div></article>
-          <article><span>02</span><div><h3>Find the right office</h3><p>See the appropriate regulator or consumer support channel for the issue.</p></div></article>
-          <article><span>03</span><div><h3>Prepare a grievance</h3><p>Create an editable draft from the facts you confirm. Nothing is submitted for you.</p></div></article>
+          <article><span>01</span><div><h3><a href="/registry">Check a registry →</a></h3><p>Try an exact identifier against clearly synthetic demonstration data.</p></div></article>
+          <article><span>02</span><div><h3><a href="/officer">Officer dashboard →</a></h3><p>Restricted, redacted aggregate analysis counts—never raw images or personal data.</p></div></article>
+          <article><span>03</span><div><h3><a href="/grievance">Prepare a grievance →</a></h3><p>Create an editable draft from facts you confirm. Nothing is submitted for you.</p></div></article>
         </div>
       </section>
 

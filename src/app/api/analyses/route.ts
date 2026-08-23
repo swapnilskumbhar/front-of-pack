@@ -11,6 +11,7 @@ import {
   isFresh,
   MAX_IMAGE_BYTES,
   MAX_MULTIPART_BYTES,
+  normalizeImage,
   ScanRequestRepository,
   sha256Hex,
   validateImageBytes,
@@ -18,6 +19,8 @@ import {
   type CreatedAnalysisResponse,
   type SafeAnalysisResponse,
 } from "@/intake";
+import { BROWSER_PROFILE_COOKIE, resolveBrowserProfile } from "@/profile";
+import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
@@ -47,23 +50,36 @@ export async function POST(request: Request): Promise<Response> {
   const language = parseLanguage(form.get("language"));
   if (!language) return error("Choose a supported response language.", 400);
 
-  let bytes: Uint8Array;
-  let detectedMime: string;
+  let rawBytes: Uint8Array;
+  let normalized: Awaited<ReturnType<typeof normalizeImage>>;
   try {
-    bytes = new Uint8Array(await image.arrayBuffer());
-    detectedMime = validateImageBytes(bytes);
+    rawBytes = new Uint8Array(await image.arrayBuffer());
+    const detectedMime = validateImageBytes(rawBytes);
     if (image.type !== detectedMime) {
       return error("The file type does not match its image contents.", 400);
     }
+    normalized = await normalizeImage(rawBytes, bindings.IMAGES);
   } catch (cause) {
     if (cause instanceof ImageValidationError) return error(cause.message, 400);
     return error("The image could not be read.", 400);
   }
 
   const now = new Date().toISOString();
-  const imageHash = await sha256Hex(bytes);
+  let profileId: string;
+  try {
+    const cookieStore = await cookies();
+    const resolved = await resolveBrowserProfile(bindings.DB, cookieStore.get(BROWSER_PROFILE_COOKIE)?.value, now);
+    profileId = resolved.profileId;
+    cookieStore.set(BROWSER_PROFILE_COOKIE, resolved.token, {
+      httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production",
+      path: "/", maxAge: 60 * 60 * 24 * 365, priority: "high",
+    });
+  } catch {
+    return error("The browser profile could not be loaded.", 503);
+  }
+  const imageHash = await sha256Hex(normalized.bytes);
   const cacheKey = await buildAnalysisCacheKey({
-    normalizedImageHash: imageHash,
+    normalizedImageHash: `${normalized.normalizationVersion}:${imageHash}`,
     language,
     modelId: INTAKE_VERSION.model,
     promptVersion: INTAKE_VERSION.prompt,
@@ -82,7 +98,7 @@ export async function POST(request: Request): Promise<Response> {
 
   const cached = await analyses.findByCacheKey(cacheKey);
   if (cached) {
-    if (!await insertScan(scans, cached.id, idempotencyKey, accessTokenDigest, language, now)) {
+    if (!await insertScan(scans, cached.id, idempotencyKey, accessTokenDigest, profileId, language, now)) {
       return error("The scan could not be recorded. Try again.", 503);
     }
     if (cached.status === "complete" && isFresh(cached.expiresAt)) {
@@ -105,12 +121,15 @@ export async function POST(request: Request): Promise<Response> {
   const analysisId = crypto.randomUUID();
   const mediaObjectKey = `analyses/${analysisId}/${crypto.randomUUID()}`;
   try {
-    await bindings.MEDIA.put(mediaObjectKey, bytes, {
-      httpMetadata: { contentType: detectedMime },
+    await bindings.MEDIA.put(mediaObjectKey, normalized.bytes, {
+      httpMetadata: { contentType: normalized.mime },
       customMetadata: {
         analysisId,
         imageHash,
-        normalization: "pending",
+        normalization: "complete",
+        normalizationVersion: normalized.normalizationVersion,
+        normalizedWidth: String(normalized.width),
+        normalizedHeight: String(normalized.height),
       },
     });
   } catch {
@@ -142,7 +161,7 @@ export async function POST(request: Request): Promise<Response> {
     await deleteOwnUpload(bindings.MEDIA, mediaObjectKey);
     const winner = await analyses.findByCacheKey(cacheKey);
     if (!winner) return error("The upload could not be recorded. Try again.", 503);
-    if (!await insertScan(scans, winner.id, idempotencyKey, accessTokenDigest, language, now)) {
+    if (!await insertScan(scans, winner.id, idempotencyKey, accessTokenDigest, profileId, language, now)) {
       return error("The scan could not be recorded. Try again.", 503);
     }
     if (winner.status === "complete" && isFresh(winner.expiresAt)) {
@@ -160,7 +179,7 @@ export async function POST(request: Request): Promise<Response> {
     return error("This analysis is no longer fresh. Start an explicit retry.", 409);
   }
 
-  if (!await insertScan(scans, analysisId, idempotencyKey, accessTokenDigest, language, now)) {
+  if (!await insertScan(scans, analysisId, idempotencyKey, accessTokenDigest, profileId, language, now)) {
     return error("The scan could not be recorded. Try again.", 503);
   }
   try {
@@ -205,6 +224,7 @@ async function insertScan(
   analysisId: string,
   idempotencyKey: string,
   accessTokenDigest: string,
+  profileId: string,
   language: LanguageCode,
   createdAt: string,
 ): Promise<boolean> {
@@ -214,6 +234,7 @@ async function insertScan(
       analysisId,
       idempotencyKey,
       accessTokenDigest,
+      profileId,
       language,
       createdAt,
     });

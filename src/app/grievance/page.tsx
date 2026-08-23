@@ -1,0 +1,2 @@
+import Link from "next/link"; import GrievanceClient from "./grievance-client";
+export default function GrievancePage(){return <main className="service-page"><Link href="/">← Front of Pack</Link><p className="eyebrow">You stay in control</p><h1>Prepare a grievance</h1><p>Confirm and edit every fact. This tool creates a local draft; it never files a complaint or invents a docket.</p><GrievanceClient /></main>}

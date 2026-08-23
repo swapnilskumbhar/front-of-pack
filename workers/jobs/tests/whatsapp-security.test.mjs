@@ -1,0 +1,162 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { downloadWhatsAppMedia, isAllowedMetaMediaUrl } from "../src/whatsapp/graph.ts";
+import { consumeDelivery, parseDeliveryJob, renderWhatsAppChunks } from "../src/whatsapp/delivery.ts";
+
+const config = { accessToken: "top-secret", apiVersion: "v23.0", phoneNumberId: "123" };
+
+test("Meta media URL allow-list rejects attacker, HTTP, credentials and deceptive suffixes", () => {
+  assert.equal(isAllowedMetaMediaUrl("https://lookaside.fbsbx.com/file"), true);
+  assert.equal(isAllowedMetaMediaUrl("https://scontent.xx.fbcdn.net/file"), true);
+  assert.equal(isAllowedMetaMediaUrl("https://evil.test/file"), false);
+  assert.equal(isAllowedMetaMediaUrl("https://facebook.com.evil.test/file"), false);
+  assert.equal(isAllowedMetaMediaUrl("http://lookaside.fbsbx.com/file"), false);
+  assert.equal(isAllowedMetaMediaUrl("https://user:pass@lookaside.fbsbx.com/file"), false);
+});
+
+test("access token is never sent to a media URL controlled by an attacker", async () => {
+  const calls = [];
+  await assert.rejects(() => downloadWhatsAppMedia("media_1", config, async (url, init) => {
+    calls.push({ url: String(url), auth: init?.headers?.authorization });
+    return Response.json({ url: "https://attacker.test/steal" });
+  }), /untrusted_media_download_url/);
+  assert.equal(calls.length, 1);
+  assert.match(calls[0].url, /^https:\/\/graph\.facebook\.com\/v23\.0\/media_1$/);
+});
+
+test("safe metadata download uses no redirects and bounded recognized media", async () => {
+  const jpg = Uint8Array.from([0xff, 0xd8, 0xff, 0x00]);
+  const calls = [];
+  const result = await downloadWhatsAppMedia("media_1", config, async (url, init) => {
+    calls.push({ url: String(url), init });
+    if (calls.length === 1) return Response.json({ url: "https://lookaside.fbsbx.com/file", mime_type: "image/jpeg", file_size: 4 });
+    return new Response(jpg, { headers: { "content-type": "image/jpeg", "content-length": "4" } });
+  });
+  assert.deepEqual(result.bytes, jpg);
+  assert.equal(calls[1].init.redirect, "error");
+  assert.equal(calls[1].init.headers.authorization, "Bearer top-secret");
+});
+
+test("delivery contract is ID-only and renderer emits one Unicode-safe bounded message", () => {
+  assert.deepEqual(parseDeliveryJob({ version: 1, whatsapp_job_id: "job" }), { version: 1, whatsapp_job_id: "job" });
+  assert.equal(parseDeliveryJob({ version: 1, whatsapp_job_id: "job", recipient: "9199" }), null);
+  const chunks = renderWhatsAppChunks({ summary: "x".repeat(20_000) });
+  assert.equal(chunks.length, 1);
+  assert.equal(Array.from(chunks[0]).length, 3500);
+  const localized = renderWhatsAppChunks({
+    wholeImageSummary: "लेबल विश्लेषण पूर्ण झाले.",
+    items: [{ identity: { brandAsPrinted: "ब्रँड" }, summary: "पॅकवरील माहिती." }],
+    disclaimer: "ही शैक्षणिक माहिती आहे.",
+  });
+  assert.match(localized.join("\n"), /लेबल विश्लेषण पूर्ण झाले/);
+  assert.match(localized.join("\n"), /पॅकवरील माहिती/);
+});
+
+test("successful delivery reads stored output and clears all routing ciphertext", async () => {
+  const keyBytes = new Uint8Array(32).fill(9);
+  const key = await crypto.subtle.importKey("raw", keyBytes, "AES-GCM", false, ["encrypt"]);
+  const nonce = new Uint8Array(12).fill(3);
+  const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, key, new TextEncoder().encode("919876543210"));
+  let cleaned = false;
+  const db = { prepare(sql) { return {
+    bind() { return this; },
+    async first() { return sql.includes("SELECT w.recipient") ? {
+      recipient_ciphertext: ciphertext, recipient_nonce: nonce.buffer, status: "ready",
+      send_attempts: 0,
+      expires_at: new Date(Date.now() + 60_000).toISOString(),
+      result_json: JSON.stringify({ summary: "Stored result only" }),
+    } : null; },
+    async run() { if (sql.includes("recipient_ciphertext = NULL")) cleaned = true;
+      return { success: true, meta: { changes: 1 } }; },
+  }; } };
+  let acknowledged = false;
+  const calls = [];
+  await consumeDelivery({ body: { version: 1, whatsapp_job_id: "job" }, ack() { acknowledged = true; } }, {
+    DB: db, DELIVERY_ENCRYPTION_KEY: Buffer.from(keyBytes).toString("base64"), ...config,
+  }, async (url, init) => { calls.push({ url, body: init.body }); return new Response("{}", { status: 200 }); });
+  assert.equal(calls.length, 1);
+  assert.match(calls[0].body, /Stored result only/);
+  assert.equal(cleaned, true);
+  assert.equal(acknowledged, true);
+});
+
+async function deliveryFixture({ attempts = 0 } = {}) {
+  const keyBytes = new Uint8Array(32).fill(7);
+  const key = await crypto.subtle.importKey("raw", keyBytes, "AES-GCM", false, ["encrypt"]);
+  const nonce = new Uint8Array(12).fill(5);
+  const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, key,
+    new TextEncoder().encode("919876543210"));
+  const state = { status: "ready", attempts, cleared: false, error: null };
+  const db = { prepare(sql) { return {
+    values: [], bind(...values) { this.values = values; return this; },
+    async first() { return {
+      recipient_ciphertext: ciphertext, recipient_nonce: nonce.buffer, status: state.status,
+      send_attempts: state.attempts,
+      expires_at: new Date(Date.now() + 60_000).toISOString(),
+      result_json: JSON.stringify({ summary: "नमस्कार 🌿" }),
+    }; },
+    async run() {
+      if (sql.includes("send_attempts = send_attempts + 1")) {
+        if (state.status !== "ready" || state.attempts >= 3) return { meta: { changes: 0 } };
+        state.status = "processing"; state.attempts += 1; return { meta: { changes: 1 } };
+      }
+      if (sql.includes("CASE WHEN send_attempts < 3")) {
+        state.status = state.attempts < 3 ? "ready" : "failed"; state.error = this.values[0];
+        if (state.status === "failed") state.cleared = true;
+        return { meta: { changes: 1 } };
+      }
+      if (sql.includes("status = 'sent'")) { state.status = "sent"; state.cleared = true; return { meta: { changes: 1 } }; }
+      if (sql.includes("status = 'failed'")) { state.status = "failed"; state.cleared = true; state.error = this.values[0]; }
+      return { meta: { changes: 1 } };
+    },
+  }; } };
+  return { db, state, key: Buffer.from(keyBytes).toString("base64") };
+}
+
+test("atomic claim lets only one concurrent duplicate send", async () => {
+  const fixture = await deliveryFixture();
+  let sends = 0;
+  const fetcher = async () => { sends += 1; await new Promise((resolve) => setTimeout(resolve, 5));
+    return new Response("{}", { status: 200 }); };
+  const env = { DB: fixture.db, DELIVERY_ENCRYPTION_KEY: fixture.key, ...config };
+  await Promise.all([1, 2].map(() => consumeDelivery({ body: { version: 1, whatsapp_job_id: "job" }, ack() {} }, env, fetcher)));
+  assert.equal(sends, 1);
+  assert.equal(fixture.state.attempts, 1);
+  assert.equal(fixture.state.status, "sent");
+  assert.equal(fixture.state.cleared, true);
+});
+
+test("retryable Graph failure restores ownership until capped", async () => {
+  const fixture = await deliveryFixture({ attempts: 2 });
+  let retries = 0;
+  await consumeDelivery({ body: { version: 1, whatsapp_job_id: "job" }, ack() {}, retry() { retries += 1; } },
+    { DB: fixture.db, DELIVERY_ENCRYPTION_KEY: fixture.key, ...config },
+    async () => new Response("busy", { status: 503 }));
+  assert.equal(retries, 0);
+  assert.equal(fixture.state.attempts, 3);
+  assert.equal(fixture.state.status, "failed");
+  assert.equal(fixture.state.cleared, true);
+});
+
+test("retryable Graph failure preserves ciphertext before the attempt cap", async () => {
+  const fixture = await deliveryFixture({ attempts: 0 });
+  let retries = 0;
+  await consumeDelivery({ body: { version: 1, whatsapp_job_id: "job" }, ack() {}, retry() { retries += 1; } },
+    { DB: fixture.db, DELIVERY_ENCRYPTION_KEY: fixture.key, ...config },
+    async () => new Response("rate limited", { status: 429 }));
+  assert.equal(retries, 1);
+  assert.equal(fixture.state.status, "ready");
+  assert.equal(fixture.state.attempts, 1);
+  assert.equal(fixture.state.cleared, false);
+});
+
+test("ambiguous network failure is terminal to prevent duplicate sends", async () => {
+  const fixture = await deliveryFixture();
+  let acknowledged = false;
+  await consumeDelivery({ body: { version: 1, whatsapp_job_id: "job" }, ack() { acknowledged = true; } },
+    { DB: fixture.db, DELIVERY_ENCRYPTION_KEY: fixture.key, ...config }, async () => { throw new Error("socket reset"); });
+  assert.equal(fixture.state.status, "failed");
+  assert.equal(fixture.state.error, "delivery_ambiguous");
+  assert.equal(fixture.state.cleared, true);
+  assert.equal(acknowledged, true);
+});
