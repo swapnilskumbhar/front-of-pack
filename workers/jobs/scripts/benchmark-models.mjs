@@ -6,7 +6,8 @@ import { detectImageMime, validateImageBytes } from "../../../src/intake/image.t
 import { validateAnalysisResult } from "../../../src/validation/analysis-result.ts";
 import { callTerraOnce } from "../src/openai/client.ts";
 
-const imagePath = process.argv[2];
+const fullOutput = process.argv.includes("--full");
+const imagePath = process.argv.slice(2).find((argument) => argument !== "--full");
 if (!imagePath) throw new Error("Usage: npm run benchmark:models -- <absolute-or-relative-image-path>");
 
 const secretFile = readFileSync(new URL("../.dev.vars", import.meta.url), "utf8");
@@ -72,5 +73,6 @@ for (const model of ["gpt-5.6-terra", "gpt-5.6-luna"]) {
     analyzedCount: provider.result.analyzedCount,
     findingCount: provider.result.items.reduce((total, item) => total + item.findings.length, 0),
     summary: provider.result.wholeImageSummary,
+    ...(fullOutput ? { result: provider.result } : {}),
   }));
 }
