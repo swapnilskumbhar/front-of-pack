@@ -10,7 +10,7 @@ import { callTerraOnce } from "./openai/client.ts";
 import { TerraError } from "./openai/errors.ts";
 import type { TerraProviderResult } from "./openai/types.ts";
 import { prepareWhatsAppAnalysis, parseWhatsAppAnalysisJob } from "./whatsapp/analysis.ts";
-import { cleanupExpiredWhatsAppJobs, consumeDelivery } from "./whatsapp/delivery.ts";
+import { cleanupExpiredWhatsAppJobs, consumeDelivery, sendWhatsAppAnalysisFailure } from "./whatsapp/delivery.ts";
 import { attachDecisions } from "../../../src/engine/index.ts";
 
 const PINNED_ANALYSIS_VERSIONS = {
@@ -153,11 +153,34 @@ function assertProviderSources(result: TerraProviderResult<unknown>): void {
       if (!citation || typeof citation.providerSourceId !== "string" || citation.providerSourceId.length === 0) {
         throw new Error("Hosted-search evidence is missing its provider source id");
       }
-      const source = returnedById.get(citation.providerSourceId);
-      if (!source || typeof citation.url !== "string" || source.url !== citation.url) {
+      if (typeof citation.url !== "string") {
+        throw new Error("Hosted-search citation does not match the provider source id and URL");
+      }
+      const citationUrl = canonicalSourceUrl(citation.url);
+      const sourceById = returnedById.get(citation.providerSourceId);
+      const sourceByUrl = result.searchSources.find((candidate) => canonicalSourceUrl(candidate.url) === citationUrl);
+      const providerIdAsUrl = canonicalSourceUrl(citation.providerSourceId);
+      const source = sourceById ?? (providerIdAsUrl === citationUrl ? sourceByUrl : undefined);
+      if (!source || canonicalSourceUrl(source.url) !== citationUrl) {
         throw new Error("Hosted-search citation does not match the provider source id and URL");
       }
     }
+  }
+}
+
+function canonicalSourceUrl(value: string): string | null {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:") return null;
+    url.hash = "";
+    for (const key of [...url.searchParams.keys()]) {
+      if (key.toLowerCase().startsWith("utm_")) url.searchParams.delete(key);
+    }
+    url.hostname = url.hostname.toLowerCase();
+    url.pathname = url.pathname.replace(/\/+$/u, "") || "/";
+    return url.toString();
+  } catch {
+    return null;
   }
 }
 
@@ -180,6 +203,7 @@ export async function consumeWebAnalysis(
   env: Env,
   fetcher: typeof fetch = fetch,
   initialTimings: Record<string, number> = {},
+  requireWebSearch = false,
 ): Promise<void> {
   const job = parseWebAnalysisMessage(message.body);
   if (job === null) throw new Error("Invalid web analysis queue message");
@@ -216,6 +240,7 @@ export async function consumeWebAnalysis(
       language: analysis.language,
       verifiedRuleContext: MODEL_RULE_CONTEXT,
       verifiedServiceDirectory: MODEL_SERVICE_DIRECTORY,
+      requireWebSearch,
     }, fetcher);
     const providerDurationMs = Date.now() - providerStartedAtMs;
     assertProviderSources(provider);
@@ -290,7 +315,7 @@ export default {
       });
       if (!prepared.cacheHit) {
         await consumeWebAnalysis({ body: { version: 1, trigger: "web", analysis_id: prepared.analysisId,
-          attempt_number: prepared.attemptNumber }, ack() {} }, env, fetch, prepared.preparationTimings);
+          attempt_number: prepared.attemptNumber }, ack() {} }, env, fetch, prepared.preparationTimings, true);
       }
       const result = await env.DB.prepare(`SELECT status FROM analyses WHERE id = ? LIMIT 1`)
         .bind(prepared.analysisId).first<{ status: string }>();
@@ -299,6 +324,11 @@ export default {
           .bind(whatsapp.whatsapp_job_id).run();
         await env.DELIVERY_QUEUE.send({ version: 1, whatsapp_job_id: whatsapp.whatsapp_job_id });
       } else if (result?.status === "failed") {
+        await sendWhatsAppAnalysisFailure(whatsapp.whatsapp_job_id, {
+          DB: env.DB, DELIVERY_ENCRYPTION_KEY: env.DELIVERY_ENCRYPTION_KEY,
+          accessToken: env.WHATSAPP_ACCESS_TOKEN, phoneNumberId: env.WHATSAPP_PHONE_NUMBER_ID,
+          apiVersion: env.WHATSAPP_GRAPH_VERSION,
+        });
         await env.DB.prepare(`UPDATE whatsapp_jobs SET status = 'failed', last_error_code = 'analysis_failed',
           media_id_ciphertext = NULL, media_id_nonce = NULL, recipient_ciphertext = NULL, recipient_nonce = NULL,
           completed_at = ? WHERE id = ?`).bind(new Date().toISOString(), whatsapp.whatsapp_job_id).run();

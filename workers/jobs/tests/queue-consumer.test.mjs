@@ -201,6 +201,26 @@ test("hosted citation must match both provider source id and URL", async () => {
   assert.equal(harness.calls.ack, 1);
 });
 
+test("hosted citation accepts a returned canonical URL when provider source id is omitted", async () => {
+  const harness = createHarness();
+  const result = { ...validResult, analyzedCount: 1, items: [{
+    position: 1, identity: { nameAsPrinted: "Product", brandAsPrinted: "Brand", variantAsPrinted: null, gtin: null, confidence: "high" },
+    category: "food", coverage: { tier: "category_rules", rulePackIds: [], limitations: [] }, summary: "Product",
+    findings: [], claimAudits: [], serviceRoute: null, needsClearerImage: false, retakeGuidance: null,
+    citations: [{ id: "citation-1", title: "Official", url: "https://official.example/product", providerSourceId: "https://official.example/product/?utm_source=openai" }],
+    evidence: [{ id: "e1", origin: "hosted_web_search", excerptOrObservation: "Online fact", citationId: "citation-1", visibleOnPackage: false }],
+  }] };
+  const fetchWithUrlSource = async () => {
+    harness.calls.fetch += 1;
+    return Response.json({ id: "resp_1", output_text: JSON.stringify(result), output: [
+      { type: "web_search_call", action: { sources: [{ title: "Official", url: "https://official.example/product/" }] } },
+    ] });
+  };
+  await consumeWebAnalysis(harness.message, harness.env, fetchWithUrlSource);
+  assert.equal(harness.db.state.status, "complete");
+  assert.equal(harness.calls.ack, 1);
+});
+
 test("post-claim persistence failure is terminal, explicitly marked ambiguous, and acknowledged", async () => {
   const harness = createHarness(createDb({ failCompletionPersistence: true }));
   await consumeWebAnalysis(harness.message, harness.env, harness.okFetch);

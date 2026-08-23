@@ -9,6 +9,21 @@ export interface DeliveryEnv extends GraphConfig {
   DELIVERY_ENCRYPTION_KEY: string;
 }
 
+const FAILURE_COPY: Record<string, string> = {
+  en: "We couldn't verify this label reliably. Please resend the image or photograph the back panel clearly.",
+  hi: "हम इस लेबल की विश्वसनीय जाँच नहीं कर सके। कृपया तस्वीर दोबारा भेजें या पीछे का पैनल साफ़ भेजें।",
+  mr: "या लेबलची विश्वसनीय तपासणी झाली नाही. कृपया फोटो पुन्हा किंवा मागील पॅनल स्पष्ट पाठवा.",
+  bn: "লেবেলটি নির্ভরযোগ্যভাবে যাচাই করা যায়নি। ছবিটি আবার বা পিছনের প্যানেলটি পরিষ্কার করে পাঠান।",
+  ta: "இந்த லேபலை நம்பகமாகச் சரிபார்க்க முடியவில்லை. படத்தை மீண்டும் அல்லது பின்புறப் பலகையைத் தெளிவாக அனுப்பவும்.",
+  te: "ఈ లేబుల్‌ను నమ్మకంగా ధృవీకరించలేకపోయాం. చిత్రాన్ని మళ్లీ లేదా వెనుక ప్యానెల్‌ను స్పష్టంగా పంపండి.",
+  kn: "ಈ ಲೇಬಲ್ ಅನ್ನು ವಿಶ್ವಾಸಾರ್ಹವಾಗಿ ಪರಿಶೀಲಿಸಲಾಗಲಿಲ್ಲ. ಚಿತ್ರವನ್ನು ಮತ್ತೆ ಅಥವಾ ಹಿಂಭಾಗದ ಫಲಕವನ್ನು ಸ್ಪಷ್ಟವಾಗಿ ಕಳುಹಿಸಿ.",
+  gu: "આ લેબલ વિશ્વસનીય રીતે ચકાસી શકાયું નથી. કૃપા કરીને તસવીર ફરી અથવા પાછળનું પેનલ સ્પષ્ટ મોકલો.",
+  ml: "ഈ ലേബൽ വിശ്വസനീയമായി പരിശോധിക്കാനായില്ല. ചിത്രം വീണ്ടും അല്ലെങ്കിൽ പിൻ പാനൽ വ്യക്തമായി അയയ്ക്കുക.",
+  pa: "ਇਸ ਲੇਬਲ ਦੀ ਭਰੋਸੇਯੋਗ ਜਾਂਚ ਨਹੀਂ ਹੋ ਸਕੀ। ਤਸਵੀਰ ਦੁਬਾਰਾ ਜਾਂ ਪਿਛਲਾ ਪੈਨਲ ਸਾਫ਼ ਭੇਜੋ।",
+  or: "ଏହି ଲେବଲ୍‌କୁ ବିଶ୍ୱସନୀୟ ଭାବେ ଯାଞ୍ଚ କରିହେଲା ନାହିଁ। ଛବିଟି ପୁଣି କିମ୍ବା ପଛ ପ୍ୟାନେଲ୍ ସ୍ପଷ୍ଟ ପଠାନ୍ତୁ।",
+  ur: "اس لیبل کی قابلِ اعتماد جانچ نہیں ہو سکی۔ تصویر دوبارہ یا پچھلا پینل واضح طور پر بھیجیں۔",
+};
+
 export function parseDeliveryJob(value: unknown): DeliveryJob | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const row = value as Record<string, unknown>;
@@ -141,6 +156,24 @@ export async function consumeDelivery(
     recipient_nonce = NULL, media_id_ciphertext = NULL, media_id_nonce = NULL WHERE id = ? AND status = 'processing'`)
     .bind(new Date().toISOString(), job.whatsapp_job_id).run();
   message.ack();
+}
+
+export async function sendWhatsAppAnalysisFailure(
+  jobId: string,
+  env: DeliveryEnv,
+  fetcher: typeof fetch = fetch,
+): Promise<void> {
+  const row = await env.DB.prepare(`SELECT recipient_ciphertext, recipient_nonce, language
+    FROM whatsapp_jobs WHERE id = ? LIMIT 1`).bind(jobId).first<{
+      recipient_ciphertext: ArrayBuffer | null; recipient_nonce: ArrayBuffer | null; language: string;
+    }>();
+  if (!row?.recipient_ciphertext || !row.recipient_nonce) return;
+  try {
+    const recipient = await decryptIdentifier(row.recipient_ciphertext, row.recipient_nonce, env.DELIVERY_ENCRYPTION_KEY);
+    await sendWhatsAppText(recipient, FAILURE_COPY[row.language] ?? FAILURE_COPY.en, env, fetcher);
+  } catch {
+    // The analysis is already terminal. Never retry it merely because the failure notice could not be sent.
+  }
 }
 
 export async function clearWhatsAppCiphertext(db: D1Database, jobId: string, code: string): Promise<void> {
