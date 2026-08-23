@@ -108,8 +108,8 @@ export function validateAnalysisResult(
   }
   for (const field of ["unknownCount", "flaggedCount"] as const) {
     const value = input[field];
-    if (!isInteger(value) || value < 0 || value > items.length) {
-      add("count_mismatch", `$.${field}`, `${field} must be an integer between zero and items.length.`);
+    if (!isInteger(value) || value < 0 || value > MAX_PRODUCTS_PER_ANALYSIS) {
+      add("count_mismatch", `$.${field}`, `${field} must be an integer between zero and ${MAX_PRODUCTS_PER_ANALYSIS}.`);
     }
   }
 

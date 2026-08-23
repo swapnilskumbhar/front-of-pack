@@ -70,10 +70,10 @@ test("reports cross-product evidence references and duplicate positions", () => 
   assert.ok(codes.includes("unresolved_evidence"));
 });
 
-test("accepts Terra semantic counters when they remain within item bounds", () => {
+test("accepts Terra semantic counters without re-deriving them from item count", () => {
   const result = validResult();
   result.unknownCount = 1;
-  result.flaggedCount = 0;
+  result.flaggedCount = 2;
   assert.equal(validateAnalysisResult(result, options).valid, true);
 });
 

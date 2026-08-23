@@ -52,6 +52,24 @@ export async function prepareWhatsAppAnalysis(
     rulesVersion: INTAKE_VERSION.rules, servicesVersion: INTAKE_VERSION.services });
   const repository = new AnalysisRepository(env.DB);
   let analysis = await repository.findByCacheKey(cacheKey);
+  if (analysis?.status === "failed") {
+    const retryObjectKey = `analyses/${analysis.id}/${crypto.randomUUID()}`;
+    await env.MEDIA.put(retryObjectKey, normalized.bytes, {
+      httpMetadata: { contentType: normalized.mime },
+      customMetadata: {
+        normalization: normalized.normalizationVersion,
+        retryAttempt: String(analysis.attemptNumber + 1),
+      },
+    });
+    const retried = await repository.retry(
+      analysis.id,
+      analysis.attemptNumber,
+      new Date().toISOString(),
+      retryObjectKey,
+    );
+    if (!retried) await env.MEDIA.delete(retryObjectKey);
+    analysis = await repository.findByCacheKey(cacheKey);
+  }
   if (!analysis) {
     const analysisId = crypto.randomUUID();
     const objectKey = `analyses/${analysisId}/${crypto.randomUUID()}`;
