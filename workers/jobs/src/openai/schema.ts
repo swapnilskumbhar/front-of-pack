@@ -49,8 +49,8 @@ const finding = {
     id: { type: "string", maxLength: 80 },
     kind: { type: "string", enum: ["label_fact", "ingredient", "nutrition", "claim_audit", "regulatory_context", "experimental_fop"] },
     level: { type: "string", enum: ["information", "attention", "unknown"] },
-    title: { type: "string", maxLength: 100 },
-    explanation: { type: "string", maxLength: 300 },
+    title: { type: "string", maxLength: 60 },
+    explanation: { type: "string", maxLength: 180 },
     evidenceIds: stringArray,
     ruleIds: stringArray,
     experimental: { type: "boolean" },
@@ -68,8 +68,8 @@ export const ANALYSIS_RESULT_SCHEMA: Record<string, unknown> = {
     unknownCount: { type: "integer", minimum: 0, maximum: 6 },
     flaggedCount: { type: "integer", minimum: 0, maximum: 6 },
     truncated: { type: "boolean" },
-    wholeImageSummary: { type: "string", maxLength: 320 },
-    strongestMaterialFinding: { type: ["string", "null"], maxLength: 220 },
+    wholeImageSummary: { type: "string", maxLength: 160 },
+    strongestMaterialFinding: { type: ["string", "null"], maxLength: 160 },
     items: {
       type: "array",
       maxItems: 6,
@@ -91,11 +91,11 @@ export const ANALYSIS_RESULT_SCHEMA: Record<string, unknown> = {
               limitations: { type: "array", maxItems: 4, items: { type: "string", maxLength: 240 } },
             },
           },
-          summary: { type: "string", maxLength: 280 },
-          findings: { type: "array", maxItems: 4, items: finding },
+          summary: { type: "string", maxLength: 160 },
+          findings: { type: "array", maxItems: 3, items: finding },
           claimAudits: {
             type: "array",
-            maxItems: 4,
+            maxItems: 2,
             items: {
               type: "object",
               additionalProperties: false,
@@ -108,8 +108,8 @@ export const ANALYSIS_RESULT_SCHEMA: Record<string, unknown> = {
               },
             },
           },
-          evidence: { type: "array", maxItems: 12, items: evidence },
-          citations: { type: "array", maxItems: 6, items: citation },
+          evidence: { type: "array", maxItems: 6, items: evidence },
+          citations: { type: "array", maxItems: 4, items: citation },
           serviceRoute: {
             anyOf: [
               { type: "null" },

@@ -6,7 +6,7 @@ export const NORMALIZATION_VERSION = "validated-original.v1";
 
 export const INTAKE_VERSION = {
   model: "gpt-5.6-terra",
-  prompt: "terra-analysis.v3",
+  prompt: "terra-analysis.v4",
   schema: "analysis-result.v1",
   rules: "india-category-rules.v1",
   services: "india-consumer-services.v1",

@@ -18,10 +18,6 @@ export function parseDeliveryJob(value: unknown): DeliveryJob | null {
 export function renderWhatsAppChunks(result: unknown): string[] {
   const source = result && typeof result === "object" ? result as Record<string, unknown> : {};
   const sections: string[] = [];
-  if (typeof source.wholeImageSummary === "string") sections.push(source.wholeImageSummary);
-  else if (typeof source.summary === "string") sections.push(source.summary);
-  if (typeof source.strongestMaterialFinding === "string") sections.push(source.strongestMaterialFinding);
-  const sourceLinks: string[] = [];
   if (Array.isArray(source.items)) {
     for (const value of source.items) {
       if (!value || typeof value !== "object") continue;
@@ -30,10 +26,23 @@ export function renderWhatsAppChunks(result: unknown): string[] {
         ? item.identity as Record<string, unknown> : {};
       const name = [identity.brandAsPrinted, identity.nameAsPrinted, identity.variantAsPrinted]
         .filter((part): part is string => typeof part === "string" && part.length > 0).join(" — ");
-      if (name) sections.push(name);
-      if (typeof item.summary === "string") sections.push(item.summary);
+      const findings = Array.isArray(item.findings)
+        ? item.findings.filter((finding) => finding && typeof finding === "object") as Record<string, unknown>[] : [];
+      const orderedFindings = [...findings].sort((left, right) =>
+        Number(right.level === "attention") - Number(left.level === "attention"));
+      const primary = orderedFindings[0];
+      if (primary) {
+        const title = typeof primary.title === "string" ? primary.title.toUpperCase() : "WHAT MATTERS";
+        const explanation = typeof primary.explanation === "string" ? primary.explanation : "";
+        sections.push(`${primary.level === "attention" ? "⚠️" : "ℹ️"} *${title}*${explanation ? `\n${explanation}` : ""}`);
+      } else if (typeof source.strongestMaterialFinding === "string") {
+        sections.push(`ℹ️ *WHAT MATTERS*\n${source.strongestMaterialFinding}`);
+      } else if (typeof source.wholeImageSummary === "string") {
+        sections.push(source.wholeImageSummary);
+      }
+      if (name) sections.push(`📦 ${name}`);
       if (Array.isArray(item.findings)) {
-        for (const findingValue of item.findings.slice(0, 3)) {
+        for (const findingValue of orderedFindings.slice(1, 3)) {
           if (!findingValue || typeof findingValue !== "object") continue;
           const finding = findingValue as Record<string, unknown>;
           const title = typeof finding.title === "string" ? finding.title : "";
@@ -41,35 +50,13 @@ export function renderWhatsAppChunks(result: unknown): string[] {
           if (title || explanation) sections.push(`• ${title}${title && explanation ? ": " : ""}${explanation}`);
         }
       }
-      if (Array.isArray(item.claimAudits)) {
-        const claim = item.claimAudits.find((value) => value && typeof value === "object" &&
-          (value as Record<string, unknown>).status !== "supported") as Record<string, unknown> | undefined;
-        if (claim) {
-          const printed = typeof claim.claimAsPrinted === "string" ? claim.claimAsPrinted : "";
-          const assessment = typeof claim.assessment === "string" ? claim.assessment : "";
-          if (printed || assessment) sections.push(`? ${printed}${printed && assessment ? ": " : ""}${assessment}`);
-        }
-      }
-      if (item.needsClearerImage === true && typeof item.retakeGuidance === "string") {
-        sections.push(`📷 ${item.retakeGuidance}`);
-      }
-      if (Array.isArray(item.citations)) {
-        for (const citationValue of item.citations) {
-          if (sourceLinks.length >= 2 || !citationValue || typeof citationValue !== "object") continue;
-          const citation = citationValue as Record<string, unknown>;
-          if (typeof citation.url !== "string") continue;
-          const url = citation.url;
-          const title = typeof citation.title === "string" ? citation.title : "Source";
-          if (!sourceLinks.some((entry) => entry.endsWith(url))) sourceLinks.push(`↗ ${title}\n${url}`);
-        }
-      }
     }
   }
-  if (sourceLinks.length > 0) sections.push(sourceLinks.join("\n\n"));
-  if (typeof source.disclaimer === "string") sections.push(source.disclaimer);
+  if (sections.length === 0 && typeof source.wholeImageSummary === "string") sections.push(source.wholeImageSummary);
+  if (sections.length === 0 && typeof source.summary === "string") sections.push(source.summary);
   const summary = sections.length > 0 ? sections.join("\n\n") : "Your label analysis is ready.";
   const codePoints = Array.from(summary);
-  return [codePoints.slice(0, 3500).join("") || "Your label analysis is ready."];
+  return [codePoints.slice(0, 700).join("") || "Your label analysis is ready."];
 }
 
 export async function consumeDelivery(

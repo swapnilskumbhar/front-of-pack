@@ -129,22 +129,23 @@ function AnalysisResultView({ result }: { result: AnalysisResult }) {
   return (
     <section className="analysis-result" aria-live="polite" aria-labelledby="analysis-result-title">
       <p className="eyebrow">Quick label check</p>
-      <h2 id="analysis-result-title">{result.wholeImageSummary}</h2>
       {result.strongestMaterialFinding && <p className="analysis-callout">{result.strongestMaterialFinding}</p>}
+      <h2 id="analysis-result-title">{result.wholeImageSummary}</h2>
       <div className="analysis-items">{result.items.map((item) => {
-        const visibleFindings = item.findings.slice(0, 3);
+        const visibleFindings = [...item.findings]
+          .sort((left, right) => Number(right.level === "attention") - Number(left.level === "attention"))
+          .slice(0, 3);
         const claimCheck = item.claimAudits.find((claim) => claim.status !== "supported") ?? item.claimAudits[0];
         return <article key={item.position}>
           <div className="analysis-item-heading">
             <span>Product {item.position}</span>
             <div className="analysis-badges"><b>{categoryLabel(item.category)}</b><b>{item.coverage.tier.replaceAll("_", " ")}</b></div>
           </div>
-          <h3>{item.identity.nameAsPrinted || item.identity.brandAsPrinted || "Product identified from the image"}</h3>
-          <p className="analysis-summary">{item.summary}</p>
           {visibleFindings.length > 0 && <div className="analysis-key-findings">
             <h4>What matters</h4>
             <ul>{visibleFindings.map((finding) => <li key={finding.id}><strong>{finding.title}</strong><span>{finding.explanation}</span></li>)}</ul>
           </div>}
+          <h3>{item.identity.nameAsPrinted || item.identity.brandAsPrinted || "Product identified from the image"}</h3>
           {claimCheck && <div className="analysis-claim"><small>Claim check</small><strong>{claimCheck.claimAsPrinted}</strong><p>{claimCheck.assessment}</p></div>}
           {item.needsClearerImage && item.retakeGuidance && <p className="analysis-retake">📷 {item.retakeGuidance}</p>}
           {item.serviceRoute && <a className="analysis-next-step" href="/grievance">See your next-step options →</a>}

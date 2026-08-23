@@ -38,7 +38,7 @@ export function buildTerraRequest(env: TerraEnv, input: TerraInput): ResponsesRe
         schema: ANALYSIS_RESULT_SCHEMA,
       },
     },
-    max_output_tokens: 6_000,
+    max_output_tokens: 4_000,
   };
   if (input.enableWebSearch !== false) {
     request.tools = [{ type: "web_search" }];

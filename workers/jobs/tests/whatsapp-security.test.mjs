@@ -85,30 +85,36 @@ test("delivery contract is ID-only and renderer emits one Unicode-safe bounded m
   assert.equal(parseDeliveryJob({ version: 1, whatsapp_job_id: "job", recipient: "9199" }), null);
   const chunks = renderWhatsAppChunks({ summary: "x".repeat(20_000) });
   assert.equal(chunks.length, 1);
-  assert.equal(Array.from(chunks[0]).length, 3500);
+  assert.equal(Array.from(chunks[0]).length, 700);
   const localized = renderWhatsAppChunks({
     wholeImageSummary: "लेबल विश्लेषण पूर्ण झाले.",
     items: [{ identity: { brandAsPrinted: "ब्रँड" }, summary: "पॅकवरील माहिती." }],
     disclaimer: "ही शैक्षणिक माहिती आहे.",
   });
   assert.match(localized.join("\n"), /लेबल विश्लेषण पूर्ण झाले/);
-  assert.match(localized.join("\n"), /पॅकवरील माहिती/);
 });
 
-test("WhatsApp rendering limits findings and keeps one uncertain claim", () => {
+test("WhatsApp rendering puts attention first and removes secondary prose", () => {
   const message = renderWhatsAppChunks({
     wholeImageSummary: "Quick summary",
     items: [{
       identity: { nameAsPrinted: "Product" }, summary: "Short product summary",
-      findings: [1, 2, 3, 4].map((number) => ({ title: `Finding ${number}`, explanation: `Detail ${number}` })),
+      findings: [
+        { title: "Info first in model", explanation: "Info", level: "information" },
+        { title: "Warning", explanation: "Act on this", level: "attention" },
+        { title: "Second fact", explanation: "Useful", level: "information" },
+        { title: "Hidden fact", explanation: "Extra", level: "information" },
+      ],
       claimAudits: [{ claimAsPrinted: "Marketing claim", assessment: "Needs more evidence", status: "not_established" }],
       citations: [{ title: "Official source", url: "https://example.test/source" }],
     }],
   })[0];
-  assert.match(message, /Finding 3/);
-  assert.doesNotMatch(message, /Finding 4/);
-  assert.match(message, /Marketing claim: Needs more evidence/);
-  assert.match(message, /https:\/\/example\.test\/source/);
+  assert.ok(message.indexOf("WARNING") < message.indexOf("Product"));
+  assert.match(message, /Info first in model/);
+  assert.match(message, /Second fact/);
+  assert.doesNotMatch(message, /Hidden fact/);
+  assert.doesNotMatch(message, /Marketing claim/);
+  assert.doesNotMatch(message, /example\.test/);
 });
 
 test("successful delivery reads stored output and clears all routing ciphertext", async () => {
