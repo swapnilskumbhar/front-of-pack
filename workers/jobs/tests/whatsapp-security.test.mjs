@@ -1,9 +1,51 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { runInNewContext } from "node:vm";
 import { downloadWhatsAppMedia, isAllowedMetaMediaUrl } from "../src/whatsapp/graph.ts";
 import { consumeDelivery, parseDeliveryJob, renderWhatsAppChunks } from "../src/whatsapp/delivery.ts";
+import { decryptIdentifier } from "../src/whatsapp/crypto.ts";
 
 const config = { accessToken: "top-secret", apiVersion: "v23.0", phoneNumberId: "123" };
+
+test("D1-style binary views are copied into valid Web Crypto BufferSources", async () => {
+  const keyBytes = new Uint8Array(32).fill(4);
+  const nonce = new Uint8Array(12).fill(8);
+  const key = await crypto.subtle.importKey("raw", keyBytes, "AES-GCM", false, ["encrypt"]);
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv: nonce },
+    key,
+    new TextEncoder().encode("media-id"),
+  );
+  assert.equal(
+    await decryptIdentifier(
+      new DataView(ciphertext),
+      new Uint8Array(nonce),
+      Buffer.from(keyBytes).toString("base64"),
+    ),
+    "media-id",
+  );
+});
+
+test("cross-realm D1 ArrayBuffers retain nonce and ciphertext bytes", async () => {
+  const keyBytes = new Uint8Array(32).fill(6);
+  const nonce = new Uint8Array(12).fill(2);
+  const key = await crypto.subtle.importKey("raw", keyBytes, "AES-GCM", false, ["encrypt"]);
+  const ciphertext = new Uint8Array(await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv: nonce },
+    key,
+    new TextEncoder().encode("cross-realm-media"),
+  ));
+  const crossRealm = (bytes) => runInNewContext(`Uint8Array.from(${JSON.stringify([...bytes])}).buffer`);
+  assert.equal(crossRealm(nonce) instanceof ArrayBuffer, false);
+  assert.equal(
+    await decryptIdentifier(
+      crossRealm(ciphertext),
+      crossRealm(nonce),
+      Buffer.from(keyBytes).toString("base64"),
+    ),
+    "cross-realm-media",
+  );
+});
 
 test("Meta media URL allow-list rejects attacker, HTTP, credentials and deceptive suffixes", () => {
   assert.equal(isAllowedMetaMediaUrl("https://lookaside.fbsbx.com/file"), true);
