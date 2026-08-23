@@ -161,6 +161,7 @@ function AnalysisResultView({ result }: { result: AnalysisResult }) {
           .sort((left, right) => Number(right.level === "attention") - Number(left.level === "attention"))
           .slice(0, 3);
         const claimCheck = item.claimAudits.find((claim) => claim.status !== "supported") ?? item.claimAudits[0];
+        const onlineEvidence = item.evidence.filter((evidence) => evidence.origin === "hosted_web_search");
         return <article key={item.position}>
           <div className="analysis-item-heading">
             <span>Product {item.position}</span>
@@ -173,6 +174,11 @@ function AnalysisResultView({ result }: { result: AnalysisResult }) {
           </div>}
           <h3>{item.identity.nameAsPrinted || item.identity.brandAsPrinted || "Product identified from the image"}</h3>
           {claimCheck && <div className="analysis-claim"><small>Claim check</small><strong>{claimCheck.claimAsPrinted}</strong><p>{claimCheck.assessment}</p></div>}
+          {onlineEvidence.length > 0 && <div className="analysis-online">
+            <small>Found online · verify against your pack</small>
+            {onlineEvidence.map((evidence) => <p key={evidence.id}>{evidence.excerptOrObservation}</p>)}
+            {item.citations.slice(0, 2).map((citation) => <a key={citation.id} href={citation.url} target="_blank" rel="noreferrer nofollow">{citation.title} ↗</a>)}
+          </div>}
           {item.needsClearerImage && item.retakeGuidance && <p className="analysis-retake">📷 {item.retakeGuidance}</p>}
           {item.serviceRoute && <a className="analysis-next-step" href="/grievance">See your next-step options →</a>}
           <details className="analysis-evidence">

@@ -61,6 +61,19 @@ export function renderWhatsAppChunks(result: unknown): string[] {
           if (title || explanation) sections.push(`• ${title}${title && explanation ? ": " : ""}${explanation}`);
         }
       }
+      const onlineEvidence = Array.isArray(item.evidence)
+        ? item.evidence.find((candidate) => candidate && typeof candidate === "object" &&
+          (candidate as Record<string, unknown>).origin === "hosted_web_search") as Record<string, unknown> | undefined
+        : undefined;
+      const onlineCitation = Array.isArray(item.citations)
+        ? item.citations.find((candidate) => candidate && typeof candidate === "object" &&
+          typeof (candidate as Record<string, unknown>).url === "string") as Record<string, unknown> | undefined
+        : undefined;
+      if (onlineEvidence) {
+        const observation = typeof onlineEvidence.excerptOrObservation === "string" ? onlineEvidence.excerptOrObservation : "";
+        const sourceUrl = typeof onlineCitation?.url === "string" ? onlineCitation.url : "";
+        sections.push(`🌐 *ONLINE MATCH — VERIFY PACK*${observation ? `\n${observation}` : ""}${sourceUrl ? `\n${sourceUrl}` : ""}`);
+      }
     }
   }
   if (sections.length === 0 && typeof source.wholeImageSummary === "string") sections.push(source.wholeImageSummary);

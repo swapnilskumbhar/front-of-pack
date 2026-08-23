@@ -71,6 +71,7 @@ h1 em { color:var(--green); font-weight:400; }
 .analysis-claim { background:#fff4df; border-radius:10px; display:grid; gap:4px; margin-top:18px; padding:14px; }
 .analysis-claim small { color:#9a4d24; font-size:9px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
 .analysis-claim p { margin:2px 0 0; }
+.analysis-online { background:#edf6f0; border:1px solid #cfe0d5; border-radius:10px; display:grid; gap:7px; margin-top:18px; padding:14px; }.analysis-online small { color:var(--green); font-size:9px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }.analysis-online p { margin:0; }.analysis-online a { color:var(--green); font-size:12px; font-weight:800; text-decoration:underline; }
 .analysis-retake { background:#f2eee5; border-radius:8px; padding:11px 13px; }
 .analysis-next-step { color:var(--green); display:inline-block; font-size:13px; font-weight:800; margin-top:12px; }
 .analysis-evidence { border-top:1px solid var(--line); margin-top:20px; padding-top:15px; }

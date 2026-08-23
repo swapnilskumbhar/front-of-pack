@@ -117,6 +117,17 @@ test("WhatsApp rendering puts attention first and removes secondary prose", () =
   assert.doesNotMatch(message, /example\.test/);
 });
 
+test("WhatsApp marks searched evidence as online and includes one source", () => {
+  const message = renderWhatsAppChunks({ language: "en", items: [{
+    position: 1, identity: { nameAsPrinted: "Ratlami Sev" },
+    findings: [{ title: "Back panel needed", explanation: "Confirm the recipe.", level: "attention" }],
+    evidence: [{ origin: "hosted_web_search", excerptOrObservation: "Official 200 g page lists chickpea flour and clove powder." }],
+    citations: [{ title: "Official product page", url: "https://example.test/ratlami-sev" }],
+  }] })[0];
+  assert.match(message, /ONLINE MATCH/);
+  assert.match(message, /example\.test\/ratlami-sev/);
+});
+
 test("successful delivery reads stored output and clears all routing ciphertext", async () => {
   const keyBytes = new Uint8Array(32).fill(9);
   const key = await crypto.subtle.importKey("raw", keyBytes, "AES-GCM", false, ["encrypt"]);

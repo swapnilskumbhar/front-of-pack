@@ -42,8 +42,8 @@ export function buildTerraRequest(env: TerraEnv, input: TerraInput): ResponsesRe
   };
   if (input.enableWebSearch !== false) {
     request.tools = [{ type: "web_search" }];
-    request.tool_choice = "auto";
-    request.max_tool_calls = 2;
+    request.tool_choice = input.requireWebSearch ? "required" : "auto";
+    request.max_tool_calls = 1;
     request.include = ["web_search_call.action.sources"];
   }
   return request;

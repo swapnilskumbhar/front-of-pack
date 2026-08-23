@@ -7,7 +7,11 @@ import { validateAnalysisResult } from "../../../src/validation/analysis-result.
 import { callTerraOnce } from "../src/openai/client.ts";
 
 const fullOutput = process.argv.includes("--full");
-const imagePath = process.argv.slice(2).find((argument) => argument !== "--full");
+const requireWebSearch = process.argv.includes("--search");
+const enableWebSearch = requireWebSearch || process.argv.includes("--search-auto");
+const terraOnly = process.argv.includes("--terra-only");
+const flags = new Set(["--full", "--search", "--search-auto", "--terra-only"]);
+const imagePath = process.argv.slice(2).find((argument) => !flags.has(argument));
 if (!imagePath) throw new Error("Usage: npm run benchmark:models -- <absolute-or-relative-image-path>");
 
 const secretFile = readFileSync(new URL("../.dev.vars", import.meta.url), "utf8");
@@ -37,7 +41,7 @@ const pricing = {
   "gpt-5.6-luna": { input: 0.2, cached: 0.02, output: 1.2 },
 };
 
-for (const model of ["gpt-5.6-terra", "gpt-5.6-luna"]) {
+for (const model of terraOnly ? ["gpt-5.6-terra"] : ["gpt-5.6-terra", "gpt-5.6-luna"]) {
   const started = performance.now();
   const provider = await callTerraOnce(
     { OPENAI_API_KEY: apiKey, MODEL_ANALYSIS: model, TERRA_REASONING_EFFORT: "low" },
@@ -46,7 +50,8 @@ for (const model of ["gpt-5.6-terra", "gpt-5.6-luna"]) {
       language: "en",
       verifiedRuleContext: ruleContext,
       verifiedServiceDirectory: serviceContext,
-      enableWebSearch: false,
+      enableWebSearch,
+      requireWebSearch,
     },
   );
   const validation = validateAnalysisResult(provider.result, {
@@ -73,6 +78,8 @@ for (const model of ["gpt-5.6-terra", "gpt-5.6-luna"]) {
     analyzedCount: provider.result.analyzedCount,
     findingCount: provider.result.items.reduce((total, item) => total + item.findings.length, 0),
     summary: provider.result.wholeImageSummary,
+    webSearchUsed: provider.webSearchUsed,
+    searchSources: provider.searchSources,
     ...(fullOutput ? { result: provider.result } : {}),
   }));
 }
