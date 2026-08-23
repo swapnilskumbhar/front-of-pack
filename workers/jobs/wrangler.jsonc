@@ -5,13 +5,12 @@
   "compatibility_date": "2026-08-23",
   "workers_dev": true,
 
-  // Production D1 ID plus the same deterministic local preview ID as the web Worker.
+  // Production D1 ID; Wrangler still simulates it locally unless remote mode is requested.
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "front-of-pack",
       "database_id": "7b69f749-7449-4155-ae96-58c15c413a56",
-      "preview_database_id": "00000000-0000-0000-0000-000000000001",
       "migrations_dir": "../../migrations"
     }
   ],
@@ -54,7 +53,7 @@
 
   // Do not copy OPENAI_API_KEY or Meta send credentials into the public Worker.
   "vars": {
-    "ENVIRONMENT": "local",
+    "ENVIRONMENT": "production",
     "WHATSAPP_GRAPH_VERSION": "v23.0"
   },
   "triggers": {

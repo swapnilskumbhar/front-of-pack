@@ -4,7 +4,7 @@
 > **Created:** 23 August 2026
 > **Deadline:** 28 August 2026, 8:00 PM IST
 > **Submission target:** 28 August 2026, 12:00 PM IST
-> **Current implementation state:** combined local `workerd` proof covers bounded Images-to-WebP normalization, capability-authorized one-call Gujarati analysis, an English → Urdu digest-only browser profile, verified knowledge/service packs, durable encrypted WhatsApp D1/ID-only Queue/Graph flows with mocked clients, exact synthetic registry, editable grievance, and protected officer surfaces; real product fixtures, live Meta credentials, Cloudflare resource IDs, and deployment remain; no Cloudflare deployment exists yet
+> **Current implementation state:** public OpenNext and Jobs Workers are deployed with production D1/R2/Images/Queues/Cron; a live synthetic production upload completed one Terra call and the identical image returned a zero-call cache hit. Exact registry and grievance are public; WhatsApp and officer remain fail-closed until owner credentials are supplied. Real product fixtures, live Meta, and final release rehearsal remain.
 > **Scope authority:** [FINAL_PLAN.md](./FINAL_PLAN.md)
 > **Architecture:** [HLD.md](./HLD.md)
 > **Implementation contract:** [LLD.md](./LLD.md)
@@ -548,7 +548,7 @@ The scaffold must expose these stable commands so later agents do not invent dif
 
 Until a script exists, the owning task cannot be DONE. CI runs lint, typecheck, tests and build on every release candidate.
 
-Current local verification snapshot (2026-08-23): combined multi-config `workerd` runs with simulated D1, R2, Queues and Images proved bounded decode/re-encode to WebP, a fresh Gujarati analysis with exactly one Terra call, capability-authorized polling, and a zero-additional-call cache hit. An HttpOnly digest-only browser profile persisted English → Urdu. FSSAI, Legal Metrology, CDSCO, experimental INR, FoSCoS, BIS Care and NCH packs are wired through Terra and the validator. Durable encrypted WhatsApp intake/delivery, ID-only Queues, Graph clients, cleanup, atomic delivery ownership and 12-language commands pass mocked coverage. Exact synthetic registry, editable no-submit grievance, and protected redacted officer surfaces are implemented. The merged snapshot is 43/43 root and 21/21 Jobs Worker tests. This is local proof only: real product fixtures, live Meta end-to-end, real Cloudflare resource IDs and deployment remain open, so G3–G6 are not complete.
+Current verification snapshot (2026-08-23): combined local `workerd` runs proved bounded Images normalization, one-call analysis, authorization, profiles and zero-call cache hits. Production then proved public TLS, Images/R2/D1/Analysis Queue/Jobs/Terra completion in Tamil and an identical-image HTTP `200` cache hit. FSSAI, Legal Metrology, CDSCO, experimental INR, FoSCoS, BIS Care and NCH packs are wired through Terra and validation. Durable encrypted WhatsApp transport and officer auth pass mocked coverage but await owner credentials and live rehearsal. Exact synthetic registry and editable no-submit grievance are public. Tests stand at 43/43 root and 21/21 Jobs Worker cases. Real product fixtures and live Meta keep G3–G6 incomplete.
 
 ---
 
