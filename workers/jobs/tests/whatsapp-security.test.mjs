@@ -167,7 +167,7 @@ test("Red Bull response names caffeine and sugar instead of an umbrella caution"
   }] })[0];
   assert.match(message, /^🔴 \*CAFFEINE WARNING\*/u);
   assert.match(message, /🔴 \*HIGH SUGAR\*\n27 g per 250 ml can/u);
-  assert.match(message, /→ Limit this high-sugar caffeinated drink/);
+  assert.doesNotMatch(message, /→/);
   assert.doesNotMatch(message, /SOME CAUTION|Product match|https?:\/\//);
 });
 

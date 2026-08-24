@@ -29,7 +29,7 @@ const validResult = {
 
 const pinnedVersions = {
   model_id: "gpt-5.6-terra",
-  prompt_version: "terra-analysis.v11",
+  prompt_version: "terra-analysis.v12",
   schema_version: "analysis-result.v1",
   rules_version: "india-category-rules.v2",
   services_version: "india-consumer-services.v1",
@@ -138,6 +138,19 @@ test("successful processing makes one provider call, persists, deletes media, an
   assert.equal(harness.db.state.complete, true);
   assert.deepEqual(harness.calls.deleted, ["media/a"]);
   assert.equal(harness.calls.ack, 1);
+});
+
+test("WhatsApp-style processing requires hosted search", async () => {
+  const harness = createHarness();
+  const requiredSearchFetch = async (_url, init) => {
+    harness.calls.fetch += 1;
+    const request = JSON.parse(init.body);
+    assert.equal(request.tool_choice, "required");
+    assert.equal(request.max_tool_calls, 2);
+    return Response.json({ id: "resp_1", output_text: JSON.stringify(validResult), output: [] });
+  };
+  await consumeWebAnalysis(harness.message, harness.env, requiredSearchFetch, {}, true);
+  assert.equal(harness.db.state.complete, true);
 });
 
 test("duplicate or stale attempt makes zero provider calls", async () => {

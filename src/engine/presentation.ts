@@ -137,7 +137,8 @@ export function getDecisionFindings(item: ProductAnalysis): Finding[] {
     if (finding.level === "unknown" || isMissingInformationFinding(finding.title, finding.explanation)) return false;
     const reliesOnWeb = (finding.evidenceIds ?? []).some((id) => onlineEvidenceIds.has(id));
     if (reliesOnWeb && item.webMatchConfidence !== "high" && item.webMatchConfidence !== "medium") return false;
-    return finding.level === "attention" || finding.kind !== "label_fact";
+    return finding.level === "attention" || finding.kind !== "label_fact" ||
+      /(?:vegetarian|\bveg\b|non-veg|caffeine)/iu.test(`${finding.title} ${finding.explanation}`);
   });
 }
 
@@ -184,8 +185,19 @@ export function buildShopperIndicators(
     const title = signal.kind === "whole_pack_rda" && signal.severity === "high"
       ? `${highWord(language)} ${COPY[language]?.nutrients[signal.nutrient] ?? COPY.en.nutrients[signal.nutrient]}`.toUpperCase()
       : copy.title.toUpperCase();
-    if (!indicators.some((indicator) => sameIndicator(indicator, title, copy.headline))) {
+    if (!indicators.some((indicator) => sameIndicator(indicator, title, copy.headline) || indicatorTopic(indicator.title) === indicatorTopic(title))) {
       indicators.push({ tone, title, detail: copy.headline, evidenceIds: [] });
+    }
+  }
+
+  if (item.webMatchConfidence === "high" || item.webMatchConfidence === "medium") {
+    for (const evidence of item.evidence ?? []) {
+      if (evidence.origin !== "hosted_web_search") continue;
+      for (const indicator of indicatorsFromWebEvidence(evidence.id, evidence.excerptOrObservation)) {
+        if (!indicators.some((existing) => indicatorTopic(existing.title) === indicatorTopic(indicator.title))) {
+          indicators.push(indicator);
+        }
+      }
     }
   }
 
@@ -214,6 +226,35 @@ function sameIndicator(indicator: ShopperIndicator, title: string, detail: strin
   const existing = normalize(`${indicator.title} ${indicator.detail}`);
   const incoming = normalize(`${title} ${detail}`);
   return existing === incoming || existing.includes(incoming) || incoming.includes(existing);
+}
+
+function indicatorsFromWebEvidence(evidenceId: string, detail: string): ShopperIndicator[] {
+  const normalized = detail.toLocaleLowerCase();
+  const indicators: ShopperIndicator[] = [];
+  if (/(?:allergen|may contain|contains? (?:wheat|milk|peanut|nuts?|sesame|soy)|containing (?:wheat|milk|peanut|nuts?|sesame|soy))/iu.test(normalized)) {
+    indicators.push({ tone: "red", title: "ALLERGEN INFO", detail, evidenceIds: [evidenceId] });
+  }
+  if (/(?:palm oil|palm olein|palmolein)/iu.test(normalized)) {
+    const absent = /(?:no|without|free from) palm/iu.test(normalized);
+    indicators.push({ tone: absent ? "green" : "red", title: absent ? "NO PALM OIL" : "CONTAINS PALM OIL", detail, evidenceIds: [evidenceId] });
+  }
+  if (/saturated fat/iu.test(normalized)) indicators.push({ tone: "amber", title: "SATURATED FAT", detail, evidenceIds: [evidenceId] });
+  if (/\bsodium\b/iu.test(normalized)) indicators.push({ tone: "amber", title: "SODIUM", detail, evidenceIds: [evidenceId] });
+  if (/\b(?:added )?sugars?\b/iu.test(normalized)) indicators.push({ tone: "amber", title: "SUGAR", detail, evidenceIds: [evidenceId] });
+  if (/\bcaffeine\b/iu.test(normalized)) indicators.push({ tone: "amber", title: "CAFFEINE", detail, evidenceIds: [evidenceId] });
+  return indicators;
+}
+
+function indicatorTopic(title: string): string {
+  const normalized = title.toLocaleLowerCase();
+  if (/sugar/iu.test(normalized)) return "sugar";
+  if (/saturated fat/iu.test(normalized)) return "saturated-fat";
+  if (/sodium/iu.test(normalized)) return "sodium";
+  if (/caffeine/iu.test(normalized)) return "caffeine";
+  if (/palm/iu.test(normalized)) return "palm-oil";
+  if (/allergen|wheat|milk|peanut|sesame|soy/iu.test(normalized)) return "allergen";
+  if (/claim/iu.test(normalized)) return "claim";
+  return normalized.replace(/[^\p{L}\p{N}]+/gu, "-");
 }
 
 function highWord(language: LanguageCode): string {

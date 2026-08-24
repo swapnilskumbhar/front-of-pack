@@ -73,6 +73,32 @@ test("whole-pack signal becomes a named high nutrient indicator", () => {
   assert.equal(indicators[0].tone, "red");
 });
 
+test("material searched nutrition evidence cannot disappear from the shopper response", () => {
+  const indicators = buildShopperIndicators(item({
+    webMatchConfidence: "medium",
+    evidence: [{ id: "web", origin: "hosted_web_search", excerptOrObservation: "Exact 200 g listing reports 14.37 g saturated fat per 100 g.", citationId: null, visibleOnPackage: false }],
+  }), [], "en");
+  assert.equal(indicators[0].title, "SATURATED FAT");
+  assert.equal(indicators[0].tone, "amber");
+});
+
+test("a printed vegetarian indicator remains useful without a back panel", () => {
+  const indicators = buildShopperIndicators(item({ findings: [{
+    id: "veg", kind: "label_fact", level: "information", title: "Vegetarian",
+    explanation: "Green vegetarian symbol is printed.", evidenceIds: [], ruleIds: [], experimental: false,
+  }] }), [], "en");
+  assert.equal(indicators[0].title, "VEGETARIAN");
+  assert.equal(indicators[0].tone, "green");
+});
+
+test("model and deterministic sugar facts collapse into one indicator", () => {
+  const indicators = buildShopperIndicators(item({ findings: [{
+    id: "f", kind: "nutrition", level: "attention", title: "High sugar",
+    explanation: "27 g per can.", evidenceIds: [], ruleIds: [], experimental: false,
+  }] }), [sugarSignal], "en");
+  assert.equal(indicators.filter((indicator) => /sugar/iu.test(indicator.title)).length, 1);
+});
+
 test("completed readable checks with no signal do not claim safety", () => {
   const result = buildAttentionIndicator(item({ ingredientTokens: ["water"] }), [], "en");
   assert.equal(result.level, "no_major_concern");

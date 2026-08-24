@@ -56,10 +56,6 @@ export function renderWhatsAppChunks(result: unknown): string[] {
         const icon = indicator.tone === "red" ? "🔴" : indicator.tone === "amber" ? "🟠" : indicator.tone === "green" ? "🟢" : "⚪";
         sections.push(`${icon} *${indicator.title}*\n${indicator.detail}`);
       }
-      const bottomLine = typeof item.summary === "string" ? item.summary.trim() : "";
-      if (bottomLine && indicators.every((indicator) => indicator.detail !== bottomLine) && indicators[0]?.tone !== "grey") {
-        sections.push(`→ ${bottomLine}`);
-      }
       if (name) sections.push(`📦 *${name}*`);
     }
   }
