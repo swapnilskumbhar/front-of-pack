@@ -1,6 +1,6 @@
 # Front of Pack — submission package
 
-> Drafted 24 August 2026. This is a preparation document, not proof that the submission is complete. No demo video has been recorded or uploaded, and no custom domain has been purchased or attached. Recheck every status below immediately before submitting.
+> Drafted 24 August 2026 and updated 25 August 2026. A final 1:54.8 local demo video has been rendered but not uploaded; no custom domain has been purchased or attached. Recheck every status below immediately before submitting.
 
 The [official builder brief](https://buildwhatmovesindia.com/brief) sets the deadline at **28 August 2026, 8:00 PM IST**, with no grace period. It requires a public browser link, a video no longer than two minutes, and a project summary under 250 words. The [official FAQ](https://buildwhatmovesindia.com/faq) adds that every demonstrated feature must work, Codex must have contributed meaningfully, and mocks and limitations must be disclosed.
 
@@ -57,7 +57,7 @@ Use this answer only after the final release checks confirm every listed impleme
 | Government systems | No live government API, registry, login, OTP, payment, complaint submission, or case tracking is connected. Public official pages are used only as cited sources and external handoffs. | State this plainly. |
 | Custom domain | None is claimed. A custom domain is optional; the `workers.dev` host is the fallback. | Submit whichever public link passes the final no-access check. |
 | Link preview | Canonical, Open Graph and Twitter large-card metadata use an original 1200×630 result-style image with no product photograph. | Re-send the public link in a fresh chat and verify the preview immediately before submission. |
-| Demo video | None exists yet. | Record, upload, and verify the final ≤2:00 public link before submitting. |
+| Demo video | A captioned 1:54.8, 1080p H.264/AAC cut exists at `video/output/front-of-pack-demo.mp4`; it is intentionally ignored by Git. | Watch it end to end, upload it publicly, and verify the link while signed out before submitting. |
 
 ## Compliance checklist
 
@@ -91,7 +91,7 @@ The organizers require an independent build, synthetic data where production acc
 
 ### Video and form
 
-- [ ] Record and edit the video to 1:55 or less; verify the actual player duration is no longer than 2:00.
+- [x] Render and verify a captioned 1:54.8 video at 1080p; automated decode and stream checks pass.
 - [ ] Upload it to a public link that opens without requesting access. No video link currently exists.
 - [ ] Watch once muted for readable captions and once with audio for accurate narration; confirm the first minute is citizen demo and the second explains the build and choices.
 - [ ] Copy the 205-word summary exactly; do not add text that pushes it to 250 words or more.

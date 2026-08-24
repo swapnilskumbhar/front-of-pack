@@ -1,0 +1,5 @@
+# Copy to video/.dev.vars. Never commit the real value.
+ELEVENLABS_API_KEY=
+
+# Optional. When omitted, the production script selects a suitable English voice.
+ELEVENLABS_VOICE_ID=
