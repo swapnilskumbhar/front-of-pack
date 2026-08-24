@@ -1,4 +1,11 @@
-import type { DerivedNutrient, ExtractedNutrition, WholePackSignal } from "./types.ts";
+import type { DerivedNutrient, ExtractedNutrition, ReferenceRdaSignal, WholePackSignal } from "./types.ts";
+
+export const FSSAI_ADULT_RDA_REFERENCE = {
+  added_sugars: { amount: 50, unit: "g" },
+  saturated_fat: { amount: 22, unit: "g" },
+  sodium: { amount: 2_000, unit: "mg" },
+  sourceUrl: "https://fssai.gov.in/upload/advisories/2022/02/6214c8ca94fedMinutes_FOPL_22_02_2022.pdf",
+} as const;
 
 const NUTRIENTS = [
   { nutrient: "added_sugars", value: "addedSugarsG", percent: "addedSugars", unit: "g" },
@@ -37,6 +44,44 @@ export function evaluateWholePack(nutrition: ExtractedNutrition | null): WholePa
     });
   }
   return signals.sort((left, right) => right.wholePackRdaPercent - left.wholePackRdaPercent);
+}
+
+export function evaluateReferenceRda(nutrition: ExtractedNutrition | null): ReferenceRdaSignal[] {
+  if (!nutrition?.basis) return [];
+  const configs = [
+    { nutrient: "added_sugars", value: "addedSugarsG", percent: "addedSugars" },
+    { nutrient: "saturated_fat", value: "saturatedFatG", percent: "saturatedFat" },
+    { nutrient: "sodium", value: "sodiumMg", percent: "sodium" },
+  ] as const;
+  const netQuantity = positive(nutrition.netQuantity) ? nutrition.netQuantity : null;
+  const servingSize = positive(nutrition.servingSize) ? nutrition.servingSize : null;
+  const scope = netQuantity ? "whole_pack" : servingSize ? "per_serving" : nutrition.basis;
+  const scopeAmount = netQuantity ?? servingSize ?? 100;
+  const multiplier = scopeAmount / 100;
+  const signals: ReferenceRdaSignal[] = [];
+  for (const config of configs) {
+    if (positive(nutrition.printedPerServeRdaPct[config.percent])) continue;
+    const per100 = nutrition.values[config.value];
+    if (!positive(per100)) continue;
+    const reference = FSSAI_ADULT_RDA_REFERENCE[config.nutrient];
+    const amount = per100 * multiplier;
+    const rdaPercent = amount / reference.amount * 100;
+    signals.push({
+      kind: "reference_rda",
+      nutrient: config.nutrient,
+      severity: rdaPercent >= 50 ? "high" : rdaPercent >= 25 ? "moderate" : "info",
+      amount: round(amount, reference.unit === "mg" ? 0 : 1),
+      unit: reference.unit,
+      rdaPercent: round(rdaPercent, 1),
+      referenceAmount: reference.amount,
+      scope,
+      scopeAmount,
+      source: nutrition.source === "hosted_web_search" ? "hosted_web_search" : "package",
+      evidenceIds: nutrition.evidenceIds ?? [],
+      basis: "fssai_adult_reference",
+    });
+  }
+  return signals.sort((left, right) => right.rdaPercent - left.rdaPercent);
 }
 
 function positive(value: number | null): value is number {

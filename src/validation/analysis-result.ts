@@ -198,6 +198,24 @@ export function validateAnalysisResult(
       });
     };
 
+    if (rawItem.nutrition !== null && rawItem.nutrition !== undefined) {
+      const nutrition = rawItem.nutrition;
+      if (!isRecord(nutrition)) {
+        add("invalid_shape", `${base}.nutrition`, "Nutrition must be an object or null.");
+      } else {
+        validateEvidenceRefs(nutrition, `${base}.nutrition`);
+        if (nutrition.source !== "package" && nutrition.source !== "hosted_web_search") {
+          add("invalid_enum", `${base}.nutrition.source`, "Nutrition source is not supported.");
+        }
+        const expectedOrigin = nutrition.source;
+        const hasMatchingEvidence = asArray(nutrition.evidenceIds).some((id) =>
+          evidence.some((candidate) => isRecord(candidate) && candidate.id === id && candidate.origin === expectedOrigin));
+        if (!hasMatchingEvidence) {
+          add("invalid_evidence_relationship", `${base}.nutrition.evidenceIds`, "Nutrition must reference evidence with the declared provenance.");
+        }
+      }
+    }
+
     const findingIds = new Set<string>();
     asArray(rawItem.findings).forEach((finding, index) => {
       const path = `${base}.findings[${index}]`;

@@ -1,9 +1,11 @@
-export const ENGINE_VERSION = "decision-engine.v6" as const;
+export const ENGINE_VERSION = "decision-engine.v7" as const;
 
 export type NutritionBasis = "per_100g" | "per_100ml";
 export type DerivedNutrient = "added_sugars" | "saturated_fat" | "sodium" | "total_fat";
 
 export interface ExtractedNutrition {
+  source?: "package" | "hosted_web_search" | null;
+  evidenceIds?: string[];
   basis: NutritionBasis | null;
   servingSize: number | null;
   netQuantity: number | null;
@@ -19,6 +21,21 @@ export interface ExtractedNutrition {
     sodium: number | null;
     totalFat: number | null;
   };
+}
+
+export interface ReferenceRdaSignal {
+  kind: "reference_rda";
+  nutrient: "added_sugars" | "saturated_fat" | "sodium";
+  severity: "high" | "moderate" | "info";
+  amount: number;
+  unit: "g" | "mg";
+  rdaPercent: number;
+  referenceAmount: number;
+  scope: "per_100g" | "per_100ml" | "per_serving" | "whole_pack";
+  scopeAmount: number;
+  source: "package" | "hosted_web_search";
+  evidenceIds: string[];
+  basis: "fssai_adult_reference";
 }
 
 export interface WholePackSignal {
@@ -86,7 +103,7 @@ export interface AllergenSignal {
 
 export type DietarySignal = DietProfileSignal | VegMarkConflictSignal | SourceUnclearSignal | AllergenSignal;
 
-export type DerivedSignal = WholePackSignal | ClaimContradictionSignal | DietarySignal;
+export type DerivedSignal = WholePackSignal | ReferenceRdaSignal | ClaimContradictionSignal | DietarySignal;
 
 export interface DerivedItemDecision {
   position: number;

@@ -220,7 +220,7 @@ Terra returns one atomic `AnalysisResult` containing:
 - zero or more product items,
 - product identity and category,
 - visible and web-derived facts with field-level provenance,
-- nutrition and ingredient observations,
+- nutrition and ingredient observations, including printed %RDA or clearly labelled FSSAI-reference calculations beside absolute values,
 - only visibly printed claims and their evidence-backed status; no claim section is rendered when the submitted image contains no claim,
 - every material warning, followed by an evidence-linked experimental rating, factual profile, verdict and supporting analysis,
 - localized consumer explanation,

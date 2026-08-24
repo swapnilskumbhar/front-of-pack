@@ -486,6 +486,8 @@ All properties are required and additionalProperties is false.
 
 The deployed `analysis-result.v2` product item also carries `rating { score, dimension, label, basis, evidenceIds, experimental }` and up to six evidence-linked factual profile tags. It retains up to twelve findings, twenty evidence observations, eight citations and eight claim audits. Every material warning renders before rating/profile/verdict; supporting information follows without repeating warning topics. A Claims section renders only for claims visibly transcribed from the submitted package and records supported, partially supported, contradicted, not established or not assessable status. The rating is explicitly experimental and is omitted when the evidence threshold is not met.
 
+Nutrition carries package/web provenance and evidence IDs. Printed per-serving %RDA is preferred. When it is unavailable, decision-engine v7 calculates and labels %RDA using the FSSAI adult references for added sugar (50 g), saturated fat (22 g) and sodium (2,000 mg). Scope is per 100 g/ml unless exact serving or net quantity is available; whole-pack percentages are never inferred from an unknown pack size.
+
 ~~~ts
 type AnalysisResult = {
   schema_version: "analysis-result.v2";

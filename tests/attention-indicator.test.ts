@@ -101,6 +101,33 @@ test("model and deterministic sugar facts collapse into one indicator", () => {
   assert.equal(indicators.filter((indicator) => /sugar/iu.test(indicator.title)).length, 1);
 });
 
+test("RDA enrichment keeps one nutrient line with absolute and percentage values", () => {
+  const indicators = buildShopperIndicators(item({ findings: [{
+    id: "f", kind: "nutrition", level: "attention", title: "Added sugar",
+    explanation: "16.6 g per 100 g · online listing.", evidenceIds: ["web"], ruleIds: [], experimental: false,
+  }] }), [{
+    kind: "reference_rda", nutrient: "added_sugars", severity: "moderate", amount: 16.6, unit: "g",
+    rdaPercent: 33.2, referenceAmount: 50, scope: "per_100g", scopeAmount: 100,
+    source: "hosted_web_search", evidenceIds: ["web"], basis: "fssai_adult_reference",
+  }], "en");
+  const sugar = indicators.filter((indicator) => /sugar/iu.test(indicator.title));
+  assert.equal(sugar.length, 1);
+  assert.match(sugar[0].detail, /16\.6 g \/ 100 g · ~33\.2% RDA \(calculated\)/);
+});
+
+test("localized nutrient titles still merge with calculated RDA", () => {
+  const indicators = buildShopperIndicators(item({ findings: [{
+    id: "f", kind: "nutrition", level: "attention", title: "अतिरिक्त चीनी",
+    explanation: "16.6 ग्राम प्रति 100 ग्राम।", evidenceIds: ["web"], ruleIds: [], experimental: false,
+  }] }), [{
+    kind: "reference_rda", nutrient: "added_sugars", severity: "moderate", amount: 16.6, unit: "g",
+    rdaPercent: 33.2, referenceAmount: 50, scope: "per_100g", scopeAmount: 100,
+    source: "hosted_web_search", evidenceIds: ["web"], basis: "fssai_adult_reference",
+  }], "hi");
+  assert.equal(indicators.length, 1);
+  assert.match(indicators[0].detail, /33\.2% RDA/);
+});
+
 test("completed readable checks with no signal do not claim safety", () => {
   const result = buildAttentionIndicator(item({ ingredientTokens: ["water"] }), [], "en");
   assert.equal(result.level, "no_major_concern");

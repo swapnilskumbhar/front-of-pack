@@ -125,3 +125,13 @@ test("rejects unsupported or ungrounded experimental rating metadata", () => {
   assert.ok(codes.includes("invalid_experimental_semantics"));
   assert.ok(codes.includes("unresolved_evidence"));
 });
+
+test("nutrition provenance must resolve to evidence of the declared origin", () => {
+  const result = validResult();
+  result.items[0].nutrition = {
+    source: "hosted_web_search", evidenceIds: ["evidence-1"], basis: "per_100g", servingSize: null, netQuantity: null,
+    values: { addedSugarsG: 10, saturatedFatG: null, sodiumMg: null, totalFatG: null },
+    printedPerServeRdaPct: { addedSugars: null, saturatedFat: null, sodium: null, totalFat: null },
+  };
+  assert.ok(validateAnalysisResult(result, options).errors.some(({ code }) => code === "invalid_evidence_relationship"));
+});

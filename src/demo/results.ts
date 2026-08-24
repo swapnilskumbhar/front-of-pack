@@ -51,7 +51,7 @@ bread.printedVegMark = "veg";
 bread.rating = { score: 6, dimension: "nutrition", label: "Nutrition", basis: "High fibre, with notable sodium and multiple allergens.", evidenceIds: ["be1", "be2"], experimental: true };
 bread.profile = [{ label: "VEG MARK", evidenceIds: ["be3"] }, { label: "HIGH FIBRE", evidenceIds: ["be2"] }, { label: "MULTIPLE ALLERGENS", evidenceIds: ["be1"] }];
 bread.ingredientTokens = ["whole wheat flour", "oats", "soy flour", "sesame seeds", "wheat gluten", "sugar"];
-bread.nutrition = { basis: "per_100g", servingSize: 55, netQuantity: 400,
+bread.nutrition = { source: "package", evidenceIds: ["be2"], basis: "per_100g", servingSize: 55, netQuantity: 400,
   values: { addedSugarsG: 1.93, saturatedFatG: 1.1, sodiumMg: 435, totalFatG: 3.09 },
   printedPerServeRdaPct: { addedSugars: 2, saturatedFat: 2.8, sodium: 12, totalFat: 3 } };
 bread.coverage = { tier: "category_rules", rulePackIds: ["in.fssai.labelling-display-2020.v1"], limitations: [] };

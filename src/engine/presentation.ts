@@ -1,5 +1,5 @@
 import type { LanguageCode } from "../domain/language.ts";
-import type { ClaimContradictionSignal, DerivedNutrient, DerivedSignal, DietarySignal, WholePackSignal } from "./types.ts";
+import type { ClaimContradictionSignal, DerivedNutrient, DerivedSignal, DietarySignal, ReferenceRdaSignal, WholePackSignal } from "./types.ts";
 import type { Finding, ProductAnalysis } from "../domain/analysis.ts";
 
 const COPY: Record<LanguageCode, { whole: string; daily: string; label: string; pack: string; nutrients: Record<DerivedNutrient, string> }> = {
@@ -24,6 +24,36 @@ export function formatWholePackSignal(signal: WholePackSignal, language: Languag
     title: copy.whole,
     headline: `${number.format(signal.wholePackAmount)} ${signal.unit} ${copy.nutrients[signal.nutrient]} · ~${number.format(signal.wholePackRdaPercent)}% ${copy.daily}`,
     detail: `${copy.label} ${number.format(signal.printedServingRdaPercent)}% / ${number.format(signal.servingSize)} ${signal.quantityUnit}; ${copy.pack} ${number.format(signal.netQuantity)} ${signal.quantityUnit}.`,
+  };
+}
+
+const RDA_SCOPE_COPY: Record<LanguageCode, { serving: string; pack: string; calculated: string; online: string }> = {
+  en: { serving: "serving", pack: "whole pack", calculated: "calculated", online: "online match" },
+  hi: { serving: "सर्विंग", pack: "पूरा पैक", calculated: "गणना", online: "ऑनलाइन मिलान" },
+  mr: { serving: "सर्व्हिंग", pack: "संपूर्ण पॅक", calculated: "गणना", online: "ऑनलाइन जुळणी" },
+  bn: { serving: "পরিবেশন", pack: "পুরো প্যাক", calculated: "গণনা", online: "অনলাইন মিল" },
+  ta: { serving: "பரிமாறல்", pack: "முழு பேக்", calculated: "கணக்கீடு", online: "இணையப் பொருத்தம்" },
+  te: { serving: "సర్వింగ్", pack: "మొత్తం ప్యాక్", calculated: "లెక్కింపు", online: "ఆన్‌లైన్ సరిపోలిక" },
+  kn: { serving: "ಸರ್ವಿಂಗ್", pack: "ಪೂರ್ಣ ಪ್ಯಾಕ್", calculated: "ಲೆಕ್ಕ", online: "ಆನ್‌ಲೈನ್ ಹೊಂದಾಣಿಕೆ" },
+  gu: { serving: "સર્વિંગ", pack: "આખું પેક", calculated: "ગણતરી", online: "ઓનલાઇન મેળ" },
+  ml: { serving: "സെർവിംഗ്", pack: "മുഴുവൻ പാക്ക്", calculated: "കണക്കാക്കിയത്", online: "ഓൺലൈൻ പൊരുത്തം" },
+  pa: { serving: "ਸਰਵਿੰਗ", pack: "ਪੂਰਾ ਪੈਕ", calculated: "ਗਣਨਾ", online: "ਆਨਲਾਈਨ ਮੇਲ" },
+  or: { serving: "ସର୍ଭିଂ", pack: "ସମ୍ପୂର୍ଣ୍ଣ ପ୍ୟାକ୍", calculated: "ଗଣନା", online: "ଅନଲାଇନ୍ ମେଳ" },
+  ur: { serving: "سرونگ", pack: "پورا پیک", calculated: "حساب", online: "آن لائن مماثلت" },
+};
+
+export function formatReferenceRdaSignal(signal: ReferenceRdaSignal, language: LanguageCode): { title: string; headline: string; detail: string } {
+  const copy = COPY[language] ?? COPY.en;
+  const scopeCopy = RDA_SCOPE_COPY[language] ?? RDA_SCOPE_COPY.en;
+  const number = new Intl.NumberFormat(language, { maximumFractionDigits: 1 });
+  const scope = signal.scope === "whole_pack" ? scopeCopy.pack
+    : signal.scope === "per_serving" ? scopeCopy.serving
+      : signal.scope === "per_100ml" ? "100 ml" : "100 g";
+  const provenance = signal.source === "hosted_web_search" ? ` · ${scopeCopy.online}` : "";
+  return {
+    title: copy.nutrients[signal.nutrient],
+    headline: `${number.format(signal.amount)} ${signal.unit} / ${scope} · ~${number.format(signal.rdaPercent)}% RDA (${scopeCopy.calculated})${provenance}`,
+    detail: `FSSAI adult reference: ${number.format(signal.referenceAmount)} ${signal.unit}.`,
   };
 }
 
@@ -73,6 +103,7 @@ export function formatDietSignal(signal: DietarySignal, language: LanguageCode):
 
 export function formatDerivedSignal(signal: DerivedSignal, language: LanguageCode): { title: string; headline: string; detail: string } {
   if (signal.kind === "whole_pack_rda") return formatWholePackSignal(signal, language);
+  if (signal.kind === "reference_rda") return formatReferenceRdaSignal(signal, language);
   if (signal.kind === "claim_contradiction") return formatClaimSignal(signal, language);
   return formatDietSignal(signal, language);
 }
@@ -186,8 +217,13 @@ export function buildShopperIndicators(
     const title = signal.kind === "whole_pack_rda" && signal.severity === "high"
       ? `${highWord(language)} ${COPY[language]?.nutrients[signal.nutrient] ?? COPY.en.nutrients[signal.nutrient]}`.toUpperCase()
       : copy.title.toUpperCase();
-    if (!indicators.some((indicator) => sameIndicator(indicator, title, copy.headline) || indicatorTopic(indicator.title) === indicatorTopic(title))) {
-      indicators.push({ tone, title, detail: copy.headline, evidenceIds: [] });
+    const sameTopic = indicators.find((indicator) => indicatorTopic(indicator.title) === indicatorTopic(title));
+    if (sameTopic && (signal.kind === "whole_pack_rda" || signal.kind === "reference_rda")) {
+      sameTopic.detail = copy.headline;
+      sameTopic.tone = strongerTone(sameTopic.tone, tone);
+      if (signal.kind === "reference_rda") sameTopic.evidenceIds = [...new Set([...sameTopic.evidenceIds, ...signal.evidenceIds])];
+    } else if (!indicators.some((indicator) => sameIndicator(indicator, title, copy.headline))) {
+      indicators.push({ tone, title, detail: copy.headline, evidenceIds: signal.kind === "reference_rda" ? signal.evidenceIds : [] });
     }
   }
 
@@ -222,6 +258,11 @@ function compareIndicators(left: ShopperIndicator, right: ShopperIndicator): num
   return warning(left) - warning(right) || tone(left) - tone(right);
 }
 
+function strongerTone(left: ShopperIndicatorTone, right: ShopperIndicatorTone): ShopperIndicatorTone {
+  const order: ShopperIndicatorTone[] = ["red", "amber", "green", "grey"];
+  return order.indexOf(left) <= order.indexOf(right) ? left : right;
+}
+
 function sameIndicator(indicator: ShopperIndicator, title: string, detail: string): boolean {
   const normalize = (value: string) => value.toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
   const existing = normalize(`${indicator.title} ${indicator.detail}`);
@@ -248,10 +289,10 @@ function indicatorsFromWebEvidence(evidenceId: string, detail: string): ShopperI
 
 function indicatorTopic(title: string): string {
   const normalized = title.toLocaleLowerCase();
-  if (/sugar/iu.test(normalized)) return "sugar";
-  if (/saturated fat/iu.test(normalized)) return "saturated-fat";
-  if (/sodium/iu.test(normalized)) return "sodium";
-  if (/caffeine/iu.test(normalized)) return "caffeine";
+  if (/(?:sugar|चीनी|शक्कर|साखर|চিনি|சர்க்கரை|చక్కెర|ಸಕ್ಕರೆ|ખાંડ|പഞ്ചസാര|ਖੰਡ|ଚିନି|شکر)/iu.test(normalized)) return "sugar";
+  if (/(?:saturated fat|संतृप्त वसा|सॅच्युरेटेड फॅट|স্যাচুরেটেড ফ্যাট|செறிவுற்ற கொழுப்பு|సంతృప్త కొవ్వు|ಸ್ಯಾಚುರೇಟೆಡ್ ಕೊಬ್ಬು|સંતૃપ્ત ચરબી|പൂരിത കൊഴുപ്പ്|ਸੈਚੁਰੇਟਿਡ ਫੈਟ|ସାଚୁରେଟେଡ୍ ଫ୍ୟାଟ୍|سیر شدہ چکنائی)/iu.test(normalized)) return "saturated-fat";
+  if (/(?:sodium|सोडियम|সোডিয়াম|சோடியம்|సోడియం|ಸೋಡಿಯಂ|સોડિયમ|സോഡിയം|ਸੋਡੀਅਮ|ସୋଡିୟମ୍|سوڈیم)/iu.test(normalized)) return "sodium";
+  if (/(?:caffeine|कैफीन|कॅफीन|ক্যাফেইন|கஃபைன்|కెఫీన్|ಕೆಫೀನ್|કેફીન|കഫീൻ|ਕੈਫੀਨ|କ୍ୟାଫେଇନ୍|کیفین)/iu.test(normalized)) return "caffeine";
   if (/palm/iu.test(normalized)) return "palm-oil";
   if (/allergen|wheat|milk|peanut|sesame|soy/iu.test(normalized)) return "allergen";
   if (/claim/iu.test(normalized)) return "claim";

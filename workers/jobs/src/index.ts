@@ -15,11 +15,11 @@ import { attachDecisions } from "../../../src/engine/index.ts";
 
 const PINNED_ANALYSIS_VERSIONS = {
   model_id: "gpt-5.6-terra",
-  prompt_version: "terra-analysis.v14",
+  prompt_version: "terra-analysis.v15",
   schema_version: "analysis-result.v2",
   rules_version: "india-category-rules.v2",
   services_version: "india-consumer-services.v1",
-  engine_version: "decision-engine.v6",
+  engine_version: "decision-engine.v7",
 } as const;
 
 const MODEL_RULE_CONTEXT = RULE_PACKS.map((pack) => ({

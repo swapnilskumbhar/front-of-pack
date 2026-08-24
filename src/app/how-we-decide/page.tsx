@@ -49,6 +49,10 @@ export default function HowWeDecidePage() {
       <code>whole-pack % = whole-pack amount ÷ derived RDA × 100</code>
       <div className="worked-example"><b>Worked example</b><span>12.6 g saturated fat / 100 g · 20 g serving · 11% printed RDA · 52 g packet</span><strong>Whole packet ≈ 29%</strong></div>
       <p className="decision-note">A signal appears only when the whole pack is at least 25% of the pack-derived reference and at least 1.5× its printed serving percentage. “Moderate” and “high” are presentation bands, not regulatory classifications.</p>
+      <h3>When printed %RDA is unavailable</h3>
+      <code>calculated %RDA = nutrient amount ÷ FSSAI adult reference × 100</code>
+      <p>References: 50 g added sugar · 22 g saturated fat · 2,000 mg sodium. The response shows the absolute value and calculated percentage together, labelled by scope: per 100 g/ml, per serving, or whole pack.</p>
+      <p className="decision-note">Printed %RDA always wins. A calculated percentage is explicitly labelled and uses whole-pack scope only when exact net quantity is available. Web-derived nutrition remains marked as an online match. <a href="https://fssai.gov.in/upload/advisories/2022/02/6214c8ca94fedMinutes_FOPL_22_02_2022.pdf" target="_blank" rel="noreferrer">Official FSSAI reference context ↗</a></p>
     </section>
 
     <section className="service-card">

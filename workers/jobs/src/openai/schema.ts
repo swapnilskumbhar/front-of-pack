@@ -12,8 +12,10 @@ const nutrition = {
     {
       type: "object",
       additionalProperties: false,
-      required: ["basis", "servingSize", "netQuantity", "values", "printedPerServeRdaPct"],
+      required: ["source", "evidenceIds", "basis", "servingSize", "netQuantity", "values", "printedPerServeRdaPct"],
       properties: {
+        source: { type: "string", enum: ["package", "hosted_web_search"] },
+        evidenceIds: stringArray,
         basis: { type: ["string", "null"], enum: ["per_100g", "per_100ml", null] },
         servingSize: nullableNumber,
         netQuantity: nullableNumber,
