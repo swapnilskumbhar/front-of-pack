@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 export const SITE_ORIGIN = "https://front-of-pack.front-of-pack-jobs-worker.workers.dev";
+export const WHATSAPP_URL = "https://wa.me/919325835971";
 export const SITE_TITLE = "Front of Pack — Understand a product label from one photo";
 export const SITE_DESCRIPTION = "See whole-pack nutrition, warnings, ingredients, claims and the evidence behind them on web or WhatsApp.";
 export const HOME_SHARE_TITLE = "The label shows one serving. See what the whole pack means.";

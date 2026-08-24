@@ -8,6 +8,7 @@ import {
   HOME_OG_IMAGE,
   HOME_SHARE_TITLE,
   SITE_ORIGIN,
+  WHATSAPP_URL,
 } from "../src/site-metadata.ts";
 
 test("homepage share metadata uses absolute production URLs and a large preview card", () => {
@@ -22,6 +23,10 @@ test("homepage share metadata uses absolute production URLs and a large preview 
   assert.match(serialized, /summary_large_image/);
   assert.match(serialized, /twitter|whole-pack added sugar and sodium/i);
   assert.match(serialized, new RegExp(HOME_OG_IMAGE.url.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+});
+
+test("public WhatsApp CTA uses the configured live number", () => {
+  assert.equal(WHATSAPP_URL, "https://wa.me/919325835971");
 });
 
 test("committed Open Graph image is a compact 1200 by 630 PNG", () => {

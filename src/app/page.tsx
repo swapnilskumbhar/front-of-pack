@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import UploadAnalyser from "./scan/upload-analyser";
-import { HOME_METADATA } from "@/site-metadata";
+import { HOME_METADATA, WHATSAPP_URL } from "@/site-metadata";
 
 export const metadata: Metadata = HOME_METADATA;
 
@@ -69,7 +69,7 @@ export default function Home() {
 
       <section className="whatsapp section" aria-labelledby="whatsapp-title">
         <div className="phone-preview" aria-hidden="true"><div className="phone-top"><span /><span /><span /></div><div className="message outgoing">Product photo</div><div className="message incoming result-message"><b className="preview-red">🔴 HIGH ADDED SUGAR</b><span>31.5 g · ~63% whole-pack RDA</span><b className="preview-amber">🟠 SODIUM</b><span>678 mg · ~33.8% whole-pack RDA</span><small>Rating 5/10 · 10 − 3 − 2 · Evidence retained</small></div></div>
-        <div className="whatsapp-copy"><p className="eyebrow">Live · WhatsApp</p><h2 id="whatsapp-title">The same useful answer, right where you shop.</h2><p>Send a photo immediately—English is the default. Choose another language once and future replies remember it.</p><span className="status-chip">Live channel · English by default · 12 languages</span></div>
+        <div className="whatsapp-copy"><p className="eyebrow">Live · WhatsApp</p><h2 id="whatsapp-title">The same useful answer, right where you shop.</h2><p>Send a photo immediately—English is the default. Choose another language once and future replies remember it.</p><a className="status-chip" href={WHATSAPP_URL} target="_blank" rel="noreferrer">Open WhatsApp · English default · 12 languages →</a></div>
       </section>
     </main>
   );
