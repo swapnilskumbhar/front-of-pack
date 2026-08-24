@@ -591,7 +591,7 @@ The engine starts a reproducible rating at 10 and applies fixed deductions, dedu
 | Explicit animal/insect-derived diet-profile match | −1 |
 | Informational diet/source-unclear signal | 0 |
 
-The score floors at 0 and is `null` with an empty deduction list—there is no unexplained 10/10 when no reproducible deduction exists. The rating is explicitly experimental, and neither it nor a warning can by itself make a grievance ready for review.
+The score floors at 0 and is `null` with an empty deduction list—there is no unexplained 10/10 when no reproducible deduction exists. Presentation checks whether nutrition, ingredient, claim or derived checks actually ran and the image was not marked for retake. A null score then reads `No deductions from checks that ran`; otherwise it reads `Not enough rule-based evidence`. The rating is explicitly experimental, and neither it nor a warning can by itself make a grievance ready for review.
 
 Presentation combines model findings and engine signals as `ShopperIndicator` values. Only `origin: "engine"` may be red and link a non-null `ruleId`; model attention or uncertainty is amber, and a moderate engine signal is amber. The required model `Finding.topic` keeps total sugar distinct from added sugar and ingredient names such as sodium benzoate distinct from sodium nutrition. Nutrient/allergen signals merge only an exact structured topic and replace the visible title/detail with engine-formatted content; arbitrary title text never controls severity. Ordering uses structured topic/tone/origin fields, not translated title text, so all twelve languages follow the same priority.
 

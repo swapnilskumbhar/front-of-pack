@@ -1,6 +1,7 @@
 import type { LanguageCode } from "../domain/language.ts";
 import type { ClaimContradictionSignal, DerivedNutrient, DerivedSignal, DietarySignal, ReferenceRdaSignal, WholePackSignal } from "./types.ts";
 import type { Finding, FindingKind, FindingTopic, ProductAnalysis } from "../domain/analysis.ts";
+import { didAnyRuleBasedCheckRun } from "./rating.ts";
 
 const COPY: Record<LanguageCode, { whole: string; daily: string; label: string; pack: string; nutrients: Record<DerivedNutrient, string> }> = {
   en: { whole: "WHOLE PACK", daily: "of the pack's daily reference", label: "Label shows", pack: "whole pack is", nutrients: { added_sugars: "added sugar", saturated_fat: "saturated fat", sodium: "sodium", total_fat: "total fat" } },
@@ -142,7 +143,7 @@ export function buildAttentionIndicator(item: ProductAnalysis, signals: readonly
   if (uncertainSignal) {
     return { level: "some_caution", title: indicatorTitle("some_caution", language), summary: formatDerivedSignal(uncertainSignal, language).headline };
   }
-  const ranAnyCheck = Boolean(item.ingredientTokens?.length || item.nutrition?.basis || item.claimsAsPrinted?.length);
+  const ranAnyCheck = didAnyRuleBasedCheckRun(item, signals);
   if (ranAnyCheck && !item.needsClearerImage) {
     return { level: "no_major_concern", title: indicatorTitle("no_major_concern", language), summary: item.summary ?? "" };
   }
@@ -253,7 +254,7 @@ export function buildShopperIndicators(
 
   if (indicators.length > 0) return indicators.sort(compareIndicators);
 
-  const ranAnyCheck = Boolean(item.ingredientTokens?.length || item.nutrition?.basis || item.claimsAsPrinted?.length);
+  const ranAnyCheck = didAnyRuleBasedCheckRun(item, signals);
   if (ranAnyCheck && !item.needsClearerImage) {
     return [{ tone: "green", origin: "model", topic: "label", ruleId: null, title: indicatorTitle("no_major_concern", language), detail: item.summary, evidenceIds: [] }];
   }

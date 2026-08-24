@@ -1,3 +1,4 @@
+import type { ProductAnalysis } from "../domain/analysis.ts";
 import type {
   DerivedNutrient,
   DerivedRating,
@@ -20,13 +21,27 @@ const RATING_POINTS = Object.fromEntries(
   RATING_DEDUCTION_RULES.map((rule) => [rule.id, rule.points]),
 ) as Record<RatingDeductionRuleId, number>;
 
-export function ratingBand(score: number | null): string {
-  if (score === null) return "Not enough rule-based evidence";
+export function ratingBand(score: number | null, checksRan = false): string {
+  if (score === null) return checksRan
+    ? "No deductions from checks that ran"
+    : "Not enough rule-based evidence";
   if (score >= 9) return "Few rule-based deductions";
   if (score >= 7) return "Limited deductions";
   if (score >= 5) return "Mixed label signals";
   if (score >= 3) return "Several material deductions";
   return "Strong caution from available evidence";
+}
+
+export function didAnyRuleBasedCheckRun(
+  item: Pick<ProductAnalysis, "claimsAsPrinted" | "ingredientTokens" | "nutrition"> &
+    Partial<Pick<ProductAnalysis, "needsClearerImage">>,
+  signals: readonly DerivedSignal[],
+): boolean {
+  return !item.needsClearerImage && (signals.length > 0 || Boolean(
+    item.ingredientTokens?.length ||
+    item.nutrition?.basis ||
+    item.claimsAsPrinted?.length,
+  ));
 }
 
 interface DeductionCandidate extends RatingDeduction {

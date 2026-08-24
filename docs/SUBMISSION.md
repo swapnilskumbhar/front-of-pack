@@ -10,14 +10,14 @@ Target a **1:55 final cut**. Record narration in English, keep the browser zoom 
 
 Release gates before recording:
 
-- Use a PII-free shopping-cart screenshot only after it completes the deployed journey. The repository's current six-product cart fixture is synthetic and has no image; do not present it as a real upload.
+- Open with the cached, PII-free grocery-grid demonstration. It is a screenshot captured from a public BigBasket search page without login, address, phone, order or payment data; it produced three validated products through the current schema. Call it a grocery grid, not a cart.
 - The live Meta test-number journey has already completed end to end. Before recording, rehearse the exact owned image again, verify intake, analysis, and delivery, and keep secrets, recipient identifiers, logs, and dashboards out of frame. If the channel is temporarily unavailable, use the web-only alternate shot and describe the interruption accurately.
 - Show only release behavior that has passed the final regression suite. In particular, marked red warnings and the score must come from published engine rules, not model-authored severity.
 
 | Time | Screen and action | Narration cue |
 |---|---|---|
 | 0:00–0:08 | Open the public homepage in a clean browser. | “A label shows one serving; shoppers need to know what the whole pack means and what evidence supports it.” |
-| 0:08–0:18 | Choose an owned, PII-free cart screenshot from the file picker—no camera permission or physical pack required. | “One image can start the citizen journey, including a shopping screenshot with several products.” |
+| 0:08–0:18 | Click the cached **Three products** grocery-grid demo; show the image-backed result appearing instantly. | “One storefront screenshot identifies three products. This cached result needs no camera, physical pack or live model call during the demo.” |
 | 0:18–0:42 | Open the AloFrut cached demonstration and frame the whole-bottle result: 31.5 g added sugar, about 63% RDA; 678 mg sodium, about 33.8%. Expand the supporting evidence briefly. | “The serving panel hides the bottle-level picture. Front of Pack shows the arithmetic, the source, and uncertainty together. This labelled demo is cached; clicking it makes no model call.” |
 | 0:42–0:58 | **Primary cut:** send the same owned image to the live Meta test number and show the returned English brief. **Outage fallback:** open the editable grievance draft and show that the citizen—not the prototype—submits it through the official service. | Primary: “The same result reaches WhatsApp; English is the default unless the user chooses another supported language.” Fallback: “The prototype prepares confirmed facts, but never files a complaint or invents a docket.” |
 | 0:58–1:00 | Clean cut to `/how-we-decide`. | “Here is why the result is defensible.” |
@@ -49,7 +49,7 @@ Use this answer only after the final release checks confirm every listed impleme
 |---|---|---|
 | Public web application | A `workers.dev` deployment and production web scan/cache proof are recorded in the project runbook. Treat `https://front-of-pack.front-of-pack-jobs-worker.workers.dev` as a candidate link until it passes the final incognito check. | Live upload, result, evidence, transparency page, registry demonstration, and grievance drafting after a clean rehearsal. |
 | Analyzer and storage | OpenAI Responses, hosted search, D1, private R2, Images, and Queues are implemented; the runbook records a one-call production upload and a zero-call exact cache hit. | Re-run the production smoke before recording; do not imply every cached demo is a fresh model call. |
-| Cached product demonstrations | Three demonstrations use real package photographs and cached results. Clicking a demo makes no model call. The six-product cart fixture is synthetic and currently has no image. | Label each cached/synthetic state on screen and in narration. |
+| Cached product demonstrations | Three demonstrations use real package photographs. A fourth uses a PII-free public-storefront grocery-grid screenshot whose current-schema Terra run identified three products with zero validation errors. Clicking any demo makes no model call. | Call the grid a public storefront capture, not a cart or owned product photo; keep the cached-state disclosure visible. |
 | Registry | Public exact-match feature backed by two local synthetic records. It does not verify an FSSAI or BIS identifier. | Show only as a synthetic demonstration. |
 | Grievance | Working local editable draft with official external handoff links. It does not authenticate, submit, register, or track a grievance. | Show drafting and the disclaimer; never claim submission success. |
 | Officer dashboard | Implemented as a restricted, redacted aggregate view, but production demo credentials are currently unset and it fails closed. | Exclude unless mock credentials are configured, tested, and supplied privately to reviewers. Reviewers judge the citizen journey, so this is optional. |
@@ -72,7 +72,7 @@ The organizers require an independent build, synthetic data where production acc
 - [x] The homepage's “Live · WhatsApp” claim is supported by a completed end-to-end journey through the real Meta test number.
 - [ ] Rehearse the exact WhatsApp shot immediately before recording and use the disclosed fallback if the channel is temporarily unavailable.
 - [ ] Confirm ownership or permitted use of every product photograph, icon, font, library, and other third-party asset; record required attributions.
-- [ ] Confirm the final cart screenshot is owned, cropped of names, addresses, phone numbers, order IDs, and payment details, and not the image-less synthetic fixture.
+- [x] The grocery-grid fixture contains no login identity, address, phone number, order ID or payment detail; its cached result matches the exact image.
 - [x] Regression tests prove model-origin prose cannot become red, structured topics prevent unsafe nutrient merges, and the score/deductions reproduce from engine signals.
 - [ ] Run a secret scan and verify that no `.dev.vars`, API token, recipient identifier, password, or credential appears in Git, screenshots, narration, logs, or the video.
 

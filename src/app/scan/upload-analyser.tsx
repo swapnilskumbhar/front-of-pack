@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { AnalysisResult } from "@/domain/analysis";
 import { buildShopperIndicators, type ShopperIndicator } from "@/engine/presentation";
-import { ratingBand } from "@/engine/rating";
+import { didAnyRuleBasedCheckRun, ratingBand } from "@/engine/rating";
 import { DEFAULT_LANGUAGE, type LanguageCode } from "@/domain/language";
 import { INTAKE_VERSION, MAX_IMAGE_BYTES, type CreatedAnalysisResponse, type SafeAnalysisResponse } from "@/intake";
 import { DEMO_LABELS, DEMO_RESULTS } from "@/demo/results";
@@ -155,6 +155,7 @@ function AnalysisResultView({ result }: { result: AnalysisResult }) {
         const decision = result.derived?.items.find((entry) => entry.position === item.position);
         const derivedSignals = decision?.signals ?? [];
         const rating = decision?.rating;
+        const checksRan = didAnyRuleBasedCheckRun(item, derivedSignals);
         const indicators = buildShopperIndicators(item, derivedSignals, result.language);
         const ratingRows = rating?.deductions.map((deduction) => ({
           ...deduction,
@@ -177,7 +178,7 @@ function AnalysisResultView({ result }: { result: AnalysisResult }) {
             {indicator.origin === "engine" && indicator.ruleId && <a className="indicator-rule-link" href={`/how-we-decide#${indicator.ruleId}`}>How this was decided →</a>}
           </div>)}<p className="indicator-legend">Red is reserved for a high engine rule. Amber may be a moderate calculation or evidence-backed label/search context.</p></div>}
           <div className="analysis-overview">
-            <div className="rating-card"><small>Experimental rule-based rating</small><strong>{rating?.score ?? "—"}/10 · {ratingBand(rating?.score ?? null)}</strong>{ratingRows.length ? <details><summary>{ratingArithmetic(rating?.score ?? null, ratingRows.map((deduction) => deduction.points))}</summary><ul>{ratingRows.map((deduction, index) => <li key={`${deduction.ruleId}-${index}`}>−{deduction.points}: {deduction.label}</li>)}</ul></details> : <span>No score without a reproducible deduction.</span>}</div>
+            <div className="rating-card"><small>Experimental rule-based rating</small><strong>{rating?.score ?? "—"}/10 · {ratingBand(rating?.score ?? null, checksRan)}</strong>{ratingRows.length ? <details><summary>{ratingArithmetic(rating?.score ?? null, ratingRows.map((deduction) => deduction.points))}</summary><ul>{ratingRows.map((deduction, index) => <li key={`${deduction.ruleId}-${index}`}>−{deduction.points}: {deduction.label}</li>)}</ul></details> : <span>{checksRan ? "Checks completed; no fixed deduction applied." : "No score without a reproducible deduction."}</span>}</div>
             <div><small>Profile</small><strong>{item.profile?.length ? item.profile.map((tag) => tag.label).join(" · ") : "No reliable tags"}</strong></div>
             <div><small>Evidence confidence</small><strong>{webEvidenceConfidence(item)}</strong>{item.webMatchBasis && <span>{item.webMatchBasis}</span>}</div>
           </div>

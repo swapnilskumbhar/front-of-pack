@@ -56,7 +56,7 @@ GPT-5.6 Terra performs the complete semantic analysis in one pinned request:
 
 There is no separate triage call, crop/segment loop, cart parser, per-product fan-out, product-resolution model, synthesis model, or explanation model.
 
-Application code does not paraphrase Terra's prose. After strict validation, decision-engine v8 derives reproducible whole-pack arithmetic, printed-first or FSSAI-reference %RDA, literal claim consistency, diet/veg-source and allergen signals from provenance-linked structured values. It also computes the experimental 0–10 rating from fixed, published deductions; the score is null when no reproducible deduction applies. The presentation layer merges duplicate nutrient topics and orders structured indicators consistently across languages. Terra does not author the rating or final severity colour/order: red is reserved for engine-origin warnings, while model context may be amber or green. Calculated values are labelled by scope and source; missing inputs produce no derived conclusion.
+Application code does not paraphrase Terra's prose. After strict validation, decision-engine v8 derives reproducible whole-pack arithmetic, printed-first or FSSAI-reference %RDA, literal claim consistency, diet/veg-source and allergen signals from provenance-linked structured values. It also computes the experimental 0–10 rating from fixed, published deductions; the score is null when no reproducible deduction applies. A null score distinguishes completed checks with zero deductions from an unreadable/unchecked product instead of calling both “insufficient evidence.” The presentation layer merges duplicate nutrient topics and orders structured indicators consistently across languages. Terra does not author the rating or final severity colour/order: red is reserved for engine-origin warnings, while model context may be amber or green. Calculated values are labelled by scope and source; missing inputs produce no derived conclusion.
 
 The engine may report that an exact printed “free-from” claim conflicts with an exact transcribed ingredient token. It does not infer chemical classes, formulation, intent, legality, or automatically characterize a cosmetic claim as greenwashing. Every formula, test, reference and limitation is public at `/how-we-decide`.
 
@@ -344,7 +344,7 @@ Next.js App Router, server-rendered and mobile-first. No login is required.
 
 There is no separate basket route or basket analysis engine. A scan naturally contains one or many items.
 
-The homepage includes instant cached demonstrations through the exact production renderer: AloFrut for printed and whole-bottle RDA plus additives/claims; English Oven for whole-pack sodium, allergens and claims; Haldiram for front-only online evidence; and a clearly synthetic six-product cart capacity fixture. Cached demos disclose that no model call runs on click.
+The homepage includes instant cached demonstrations through the exact production renderer: AloFrut for printed and whole-bottle RDA plus additives/claims; English Oven for whole-pack sodium, allergens and claims; Haldiram for front-only online evidence; and a PII-free public-storefront grocery grid whose exact current-schema run identified three products. Cached demos disclose that no model call runs on click, and the grid is never described as a cart or private user screenshot.
 
 ### 8.2 WhatsApp — must-have access channel
 

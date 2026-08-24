@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import type { AnalysisResult } from "../src/domain/analysis.ts";
-import { computeRating, evaluateAnalysis } from "../src/engine/index.ts";
+import { computeRating, didAnyRuleBasedCheckRun, evaluateAnalysis, ratingBand } from "../src/engine/index.ts";
 import type {
   AllergenSignal,
   ClaimContradictionSignal,
@@ -120,6 +120,33 @@ const sourceUnclear: SourceUnclearSignal = {
   matches: [animalMatch],
   basis: "ingredient_source_not_printed",
 };
+
+test("describes a null score without contradicting completed rule checks", () => {
+  assert.equal(didAnyRuleBasedCheckRun({}, []), false);
+  assert.equal(ratingBand(null, false), "Not enough rule-based evidence");
+
+  const rating = computeRating([sourceUnclear]);
+  assert.equal(rating.score, null);
+  assert.equal(didAnyRuleBasedCheckRun({}, [sourceUnclear]), true);
+  assert.equal(ratingBand(rating.score, true), "No deductions from checks that ran");
+});
+
+test("recognizes readable product inputs when a completed check emits no signal", () => {
+  assert.equal(didAnyRuleBasedCheckRun({ ingredientTokens: ["water"] }, []), true);
+  assert.equal(didAnyRuleBasedCheckRun({ ingredientTokens: ["water"], needsClearerImage: true }, []), false);
+  assert.equal(didAnyRuleBasedCheckRun({ claimsAsPrinted: ["No added sugar"] }, []), true);
+  assert.equal(didAnyRuleBasedCheckRun({
+    nutrition: {
+      source: "package",
+      evidenceIds: ["package-nutrition"],
+      basis: "per_100g",
+      servingSize: null,
+      netQuantity: null,
+      values: { addedSugarsG: 0, saturatedFatG: 0, sodiumMg: 0, totalFatG: 0 },
+      printedPerServeRdaPct: { addedSugars: null, saturatedFat: null, sodium: null, totalFat: null },
+    },
+  }, []), true);
+});
 
 test("assigns fixed points to every material signal kind and ignores informational signals", () => {
   const cases: Array<[DerivedSignal, number]> = [

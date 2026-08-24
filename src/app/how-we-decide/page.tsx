@@ -50,7 +50,7 @@ export default function HowWeDecidePage() {
       <code>score = max(0, 10 − fixed deductions)</code>
       <div className="decision-grid">{RATING_DEDUCTION_RULES.map((rule) => <article key={rule.id}><span>−{rule.points}</span><h3>{rule.label}</h3><p>{rule.id.replaceAll("_", " ")}</p></article>)}</div>
       <p className="decision-note">Nutrition keeps only the strongest whole-pack/reference deduction for each nutrient. Each literal claim test is separate; overlapping explicit diet/veg-origin signals deduplicate, and the allergen profile deducts once.</p>
-      <p className="decision-note">No reproducible deduction means no score—not 10/10. This experimental shopper aid is not the draft or official FSSAI Indian Nutrition Rating, a medical assessment, safety certification or compliance decision. <a href="https://www.fssai.gov.in/upload/uploadfiles/files/Draft_Notification_HFSS_20_09_2022.pdf" target="_blank" rel="noreferrer">FSSAI draft context ↗</a></p>
+      <p className="decision-note">No reproducible deduction means no score—not 10/10. When checks ran, the card says “No deductions from checks that ran”; an unreadable or unchecked product says “Not enough rule-based evidence.” This experimental shopper aid is not the draft or official FSSAI Indian Nutrition Rating, a medical assessment, safety certification or compliance decision. <a href="https://www.fssai.gov.in/upload/uploadfiles/files/Draft_Notification_HFSS_20_09_2022.pdf" target="_blank" rel="noreferrer">FSSAI draft context ↗</a></p>
     </section>
 
     <section className="service-card" id="rule-whole-pack-rda">

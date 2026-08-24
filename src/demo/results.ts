@@ -97,20 +97,84 @@ bread.evidence = [
   { id: "be3", origin: "package", excerptOrObservation: "Green vegetarian mark is printed on the pack.", citationId: null, visibleOnPackage: true },
 ];
 
-const cartNames = ["Fruit Drink", "Breakfast Cereal", "Face Wash", "Dishwash Gel", "Baby Lotion", "Pet Treats"];
-const cartCategories: ProductAnalysis["category"][] = ["beverage", "food", "personal_care", "household", "baby_care", "pet_care"];
-const cart = cartNames.map((name, index) => baseItem(index + 1, name, cartCategories[index]));
+const gridQuaker = baseItem(1, "Rolled Oats", "food");
+gridQuaker.identity = { nameAsPrinted: "Rolled Oats", brandAsPrinted: "Quaker", variantAsPrinted: null, gtin: null, confidence: "high" };
+gridQuaker.nutrition = { source: "hosted_web_search", evidenceIds: ["gq2"], basis: "per_100g", servingSize: null, netQuantity: 1000,
+  values: { addedSugarsG: null, saturatedFatG: 1.3, sodiumMg: 4.9, totalFatG: 8.5 },
+  printedPerServeRdaPct: { addedSugars: null, saturatedFat: null, sodium: null, totalFat: null } };
+gridQuaker.webMatchConfidence = "medium";
+gridQuaker.webMatchBasis = "Exact Quaker rolled-oats listing and 1 kg pouch; front image does not confirm the full variant wording.";
+gridQuaker.profile = [{ label: "LOW SODIUM", evidenceIds: ["gq2"] }, { label: "LOW SATURATED FAT", evidenceIds: ["gq2"] }, { label: "SOURCE UNCLEAR", evidenceIds: ["gq1"] }];
+gridQuaker.coverage = { tier: "category_rules", rulePackIds: ["in.fssai.labelling-display-2020.v1", "in.legal-metrology.packaged-commodities-2011.v1"], limitations: ["Back-panel ingredient and date declarations are not visible.", "Online listing may not reflect every batch."] };
+gridQuaker.summary = "Low sodium and saturated fat online; confirm the back label for exact ingredients.";
+gridQuaker.findings = [
+  { id: "gqf1", kind: "nutrition", topic: "sodium", level: "information", title: "LOW SODIUM", explanation: "4.9 mg per 100 g · online listing.", evidenceIds: ["gq2"], ruleIds: [], experimental: false },
+  { id: "gqf2", kind: "nutrition", topic: "saturated_fat", level: "information", title: "LOW SATURATED FAT", explanation: "1.3 g per 100 g · online listing.", evidenceIds: ["gq2"], ruleIds: [], experimental: false },
+];
+gridQuaker.evidence = [
+  { id: "gq1", origin: "package", excerptOrObservation: "Listing visibly identifies Quaker Rolled Oats in a 1 kg pouch.", citationId: null, visibleOnPackage: true },
+  { id: "gq2", origin: "hosted_web_search", excerptOrObservation: "Matched 1 kg listing reports per 100 g: 8.5 g total fat, 1.3 g saturated fat and 4.9 mg sodium.", citationId: "gqc1", visibleOnPackage: false },
+];
+gridQuaker.citations = [{ id: "gqc1", title: "Quaker Natural Wholegrain Rolled Oats — Zepto", url: "https://www.zepto.com/pn/quaker-natural-wholegrain-rolled-oats/pvid/25065907-7921-4fb2-b44b-d7e5cf5c227e", providerSourceId: "https://www.zepto.com/pn/quaker-natural-wholegrain-rolled-oats/pvid/25065907-7921-4fb2-b44b-d7e5cf5c227e?utm_source=openai" }];
+
+const gridMuesli = baseItem(2, "Fruit, Nut & Seeds Muesli 12 in 1 Power Breakfast", "food");
+gridMuesli.identity = { nameAsPrinted: "Fruit, Nut & Seeds Muesli 12 in 1 Power Breakfast", brandAsPrinted: "Kellogg's", variantAsPrinted: null, gtin: null, confidence: "high" };
+gridMuesli.claimsAsPrinted = ["12 in 1 POWER BREAKFAST"];
+gridMuesli.webMatchConfidence = "high";
+gridMuesli.webMatchBasis = "Exact Kellogg’s Fruit, Nut & Seeds Muesli, 750 g Indian pack matched.";
+gridMuesli.profile = [{ label: "ALLERGENS", evidenceIds: ["gm4"] }, { label: "NO PALM OIL", evidenceIds: ["gm3"] }, { label: "NO ADDED PRESERVATIVES", evidenceIds: ["gm3"] }, { label: "MULTIGRAIN", evidenceIds: ["gm4"] }];
+gridMuesli.coverage = { tier: "category_rules", rulePackIds: ["in.fssai.labelling-display-2020.v1", "in.fssai.advertising-claims-2018.v1", "in.legal-metrology.packaged-commodities-2011.v1"], limitations: ["Nutrition panel and batch-specific details are not visible in the image."] };
+gridMuesli.summary = "Contains multiple allergens; matched official recipe says no palm oil or added preservatives.";
+gridMuesli.findings = [
+  { id: "gmf1", kind: "ingredient", topic: "allergen", level: "attention", title: "ALLERGEN: WHEAT, NUTS", explanation: "Wheat, barley, oats, almonds and sulphite · avoid if allergic.", evidenceIds: ["gm4"], ruleIds: [], experimental: false },
+  { id: "gmf2", kind: "ingredient", topic: "palm_oil", level: "information", title: "NO PALM OIL", explanation: "Matched official product page says made without palm oil.", evidenceIds: ["gm3"], ruleIds: [], experimental: false },
+  { id: "gmf3", kind: "ingredient", topic: "preservatives", level: "information", title: "NO ADDED PRESERVATIVES", explanation: "Matched official product page says made without added preservatives.", evidenceIds: ["gm3"], ruleIds: [], experimental: false },
+];
+gridMuesli.claimAudits = [{ claimAsPrinted: "12 in 1 POWER BREAKFAST", assessment: "Official product page describes 12-in-1 fruits, nuts, seeds and grains.", evidenceIds: ["gm3", "gm4"], status: "supported" }];
+gridMuesli.evidence = [
+  { id: "gm1", origin: "package", excerptOrObservation: "Listing visibly identifies Kellogg’s Fruit, Nut & Seeds Muesli, 750 g.", citationId: null, visibleOnPackage: true },
+  { id: "gm2", origin: "package", excerptOrObservation: "Front pack visibly prints “12 in 1 POWER BREAKFAST.”", citationId: null, visibleOnPackage: true },
+  { id: "gm3", origin: "hosted_web_search", excerptOrObservation: "Official page describes a 12-in-1 mix made without palm oil and added preservatives.", citationId: "gmc1", visibleOnPackage: false },
+  { id: "gm4", origin: "hosted_web_search", excerptOrObservation: "Official ingredient/allergen statement lists wheat, barley, oats, almonds and sulphite; may contain other nuts, soy and milk.", citationId: "gmc1", visibleOnPackage: false },
+];
+gridMuesli.citations = [{ id: "gmc1", title: "Kellogg’s Muesli Fruit, Nut & Seeds — official India product page", url: "https://www.kelloggs.com/en-in/products/muesli/kelloggs-muesli-fruit-nuts-seeds.html", providerSourceId: "https://www.kelloggs.com/en-in/products/muesli/kelloggs-muesli-fruit-nuts-seeds.html" }];
+
+const gridCornFlakes = baseItem(3, "Corn Flakes Original Power Breakfast 7 Vitamins", "food");
+gridCornFlakes.identity = { nameAsPrinted: "Corn Flakes Original Power Breakfast 7 Vitamins", brandAsPrinted: "Kellogg's", variantAsPrinted: null, gtin: null, confidence: "high" };
+gridCornFlakes.claimsAsPrinted = ["POWER BREAKFAST", "7 VITAMINS", "1% FAT"];
+gridCornFlakes.webMatchConfidence = "high";
+gridCornFlakes.webMatchBasis = "Exact Indian product line and 1.15 kg listing matched; official page lists the closely corresponding 1.2 kg size.";
+gridCornFlakes.profile = [{ label: "ALLERGENS", evidenceIds: ["gc4"] }, { label: "LOW FAT", evidenceIds: ["gc3"] }, { label: "ADDED SUGAR", evidenceIds: ["gc4"] }, { label: "FORTIFIED", evidenceIds: ["gc3"] }];
+gridCornFlakes.coverage = { tier: "category_rules", rulePackIds: ["in.fssai.labelling-display-2020.v1", "in.fssai.advertising-claims-2018.v1", "in.legal-metrology.packaged-commodities-2011.v1"], limitations: ["Back-panel nutrition and ingredient declarations are not visible in the image.", "The official size is 1.2 kg, while the listing shows 1.15 kg."] };
+gridCornFlakes.summary = "Contains wheat and barley; low-fat claim is supported, but recipe includes sugar.";
+gridCornFlakes.findings = [
+  { id: "gcf1", kind: "ingredient", topic: "allergen", level: "attention", title: "ALLERGEN: WHEAT, BARLEY", explanation: "Official allergen statement lists wheat and barley · avoid if allergic.", evidenceIds: ["gc4"], ruleIds: [], experimental: false },
+  { id: "gcf2", kind: "ingredient", topic: "added_sugars", level: "information", title: "CONTAINS SUGAR", explanation: "Sugar appears in the matched official ingredient list.", evidenceIds: ["gc4"], ruleIds: [], experimental: false },
+  { id: "gcf3", kind: "nutrition", topic: "total_fat", level: "information", title: "LOW FAT", explanation: "1% fat · matched official product statement.", evidenceIds: ["gc3"], ruleIds: [], experimental: false },
+];
+gridCornFlakes.claimAudits = [
+  { claimAsPrinted: "POWER BREAKFAST", assessment: "Marketing wording; no quantitative performance outcome is established.", evidenceIds: ["gc1"], status: "not_assessable" },
+  { claimAsPrinted: "7 VITAMINS", assessment: "Official page states enrichment with seven essential vitamins.", evidenceIds: ["gc3"], status: "supported" },
+  { claimAsPrinted: "1% FAT", assessment: "Official page states the product has only 1% fat.", evidenceIds: ["gc3"], status: "supported" },
+];
+gridCornFlakes.evidence = [
+  { id: "gc1", origin: "package", excerptOrObservation: "Listing visibly identifies Kellogg’s Corn Flakes Original Power Breakfast 7 Vitamins, 1.15 kg.", citationId: null, visibleOnPackage: true },
+  { id: "gc2", origin: "package", excerptOrObservation: "Front pack visibly prints “POWER BREAKFAST,” “7 VITAMINS” and “1% FAT.”", citationId: null, visibleOnPackage: true },
+  { id: "gc3", origin: "hosted_web_search", excerptOrObservation: "Official page states enrichment with seven essential vitamins and only 1% fat.", citationId: "gcc1", visibleOnPackage: false },
+  { id: "gc4", origin: "hosted_web_search", excerptOrObservation: "Official recipe includes sugar; its allergen statement lists wheat and barley.", citationId: "gcc1", visibleOnPackage: false },
+];
+gridCornFlakes.citations = [{ id: "gcc1", title: "Kellogg’s Corn Flakes Original — official India product page", url: "https://www.kelloggs.com/content/Asia/kelloggs_in/en-in/products/corn-flakes-original-and-the-best-cereal.html", providerSourceId: "https://www.kelloggs.com/content/Asia/kelloggs_in/en-in/products/corn-flakes-original-and-the-best-cereal.html?utm_source=openai" }];
 
 export const DEMO_RESULTS: Record<string, AnalysisResult> = {
   alofrut: result([alofrut], "A 300 ml beverage demonstrates printed and whole-bottle RDA, ingredients and claim review."),
   haldirams: result([haldirams], "A front-only Haldiram’s pack triggers a provisional official-source lookup."),
   bread: result([bread], "A real bread label supports whole-pack and allergen checks."),
-  cart: result(cart, "Six products identified from one shopping-cart image.", false),
+  grid: result([gridQuaker, gridMuesli, gridCornFlakes], "Store listing shows three identifiable breakfast cereals; back labels are not visible."),
 };
 
 export const DEMO_LABELS = [
   { id: "alofrut", label: "Sugar + RDA", detail: "Real pack · claims + additives", imageSrc: "/demo/alofrut-annar-aloevera.jpeg" },
   { id: "bread", label: "Whole-pack reality", detail: "Real pack · RDA + allergens", imageSrc: "/demo/english-oven-fibre-up.jpeg" },
   { id: "haldirams", label: "Front-only search", detail: "Real pack · online evidence", imageSrc: "/demo/haldirams-ratlami-sev.jpeg" },
-  { id: "cart", label: "Six products", detail: "Synthetic until photo supplied", imageSrc: null },
+  { id: "grid", label: "Three products", detail: "Public grocery grid · cached result", imageSrc: "/demo/bigbasket-breakfast-grid.png" },
 ] as const;
