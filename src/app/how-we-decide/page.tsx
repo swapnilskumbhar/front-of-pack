@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { ENGINE_VERSION } from "@/engine/types";
+import { INTAKE_VERSION } from "@/intake/image";
 import { CLAIM_TESTS } from "@/knowledge/claim-tests";
 import { INGREDIENT_DICTIONARY } from "@/knowledge/ingredient-dictionary";
 import { RULE_PACKS } from "@/knowledge/rule-packs";
@@ -8,13 +9,25 @@ import { RULE_PACKS } from "@/knowledge/rule-packs";
 export default function HowWeDecidePage() {
   return <main className="service-page decision-page">
     <Link href="/">← Front of Pack</Link>
-    <p className="eyebrow">Open decision logic · {ENGINE_VERSION}</p>
+    <p className="eyebrow">Open decision logic · {INTAKE_VERSION.prompt} · {INTAKE_VERSION.schema} · {ENGINE_VERSION}</p>
     <h1>Every warning keeps its evidence.</h1>
     <p>Terra reads the package and matched sources once. Code validates every evidence link, then adds reproducible package arithmetic without another model call.</p>
 
     <section className="service-card decision-flow">
       <h2>One model call, then reproducible decisions</h2>
-      <ol><li><b>Transcribe</b><span>Printed serving, quantity, %RDA, claims and ingredient names.</span></li><li><b>Validate</b><span>Schema, bounds, evidence and official source IDs.</span></li><li><b>Calculate</b><span>Pure functions—no second model call and no hidden paraphrasing.</span></li></ol>
+      <ol><li><b>Read + research</b><span>Package facts and exact-product sources in one Terra response.</span></li><li><b>Validate</b><span>Schema, bounds, provenance, citations, rating/profile/claim evidence and source IDs.</span></li><li><b>Calculate</b><span>RDA, whole-pack, claim, diet and allergen functions—no second model call.</span></li></ol>
+    </section>
+
+    <section className="service-card">
+      <p className="eyebrow">Required product-evidence search</p>
+      <h2>What does online matching do?</h2>
+      <p>Every fresh analysis gives Terra hosted search access. It researches the exact Indian product and pack across nutrition, ingredients, additives, allergens, claims and warnings instead of stopping at identity or the first issue.</p>
+      <div className="decision-grid">
+        <article><span>01</span><h3>Package wins</h3><p>Clearly readable package facts take priority over conflicting online content.</p></article>
+        <article><span>02</span><h3>Exact source first</h3><p>Manufacturer evidence is preferred; an exact-product retailer can fill a missing panel.</p></article>
+        <article><span>03</span><h3>Match is explicit</h3><p>Brand, variant, market and pack-size differences lower confidence and qualify conclusions.</p></article>
+        <article><span>04</span><h3>Sources remain visible</h3><p>Package and online evidence, citations, limitations and versions stay expandable on the website.</p></article>
+      </div>
     </section>
 
     <section className="service-card">
@@ -37,7 +50,8 @@ export default function HowWeDecidePage() {
         <article><span>9–10</span><h3>Few material concerns</h3><p>Meaningful positive factors are supported by the available evidence.</p></article>
         <article><span>7–8</span><h3>Mostly favourable</h3><p>Minor concerns remain visible below the score.</p></article>
         <article><span>5–6</span><h3>Mixed profile</h3><p>Material concerns and useful positives both matter.</p></article>
-        <article><span>0–4</span><h3>More caution</h3><p>Several material concerns or severe warnings are present.</p></article>
+        <article><span>3–4</span><h3>More caution</h3><p>Several material concerns are present.</p></article>
+        <article><span>0–2</span><h3>Strong caution</h3><p>Multiple severe warnings are present in the available evidence.</p></article>
       </div>
       <p className="decision-note">This is an experimental label-based shopper rating—not an official FSSAI Indian Nutrition Rating, medical assessment, safety certification or compliance decision. Every rating carries an evidence-linked basis; insufficient evidence produces no score. The FSSAI INR proposal remains a draft. <a href="https://www.fssai.gov.in/upload/uploadfiles/files/Draft_Notification_HFSS_20_09_2022.pdf" target="_blank" rel="noreferrer">Read the draft ↗</a></p>
     </section>

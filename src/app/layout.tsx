@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Front of Pack — Understand product labels from one photo",
+  title: "Front of Pack — Evidence-backed shopper briefs from one photo",
   description:
-    "Upload one product photo and get a clear, sourced explanation in your language.",
+    "See every material warning, absolute nutrition plus %RDA, allergens, ingredients, claims, rating and official next steps on web or WhatsApp.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

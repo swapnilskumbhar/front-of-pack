@@ -255,7 +255,15 @@ export function buildShopperIndicators(
 function compareIndicators(left: ShopperIndicator, right: ShopperIndicator): number {
   const warning = (indicator: ShopperIndicator) => /(?:warning|children|pregnan|lactat|avoid)/iu.test(`${indicator.title} ${indicator.detail}`) ? 0 : 1;
   const tone = (indicator: ShopperIndicator) => ({ red: 0, amber: 1, green: 2, grey: 3 })[indicator.tone];
-  return warning(left) - warning(right) || tone(left) - tone(right);
+  const priority = (indicator: ShopperIndicator) => {
+    const text = `${indicator.title} ${indicator.detail}`;
+    if (/(?:allergen|caffeine)/iu.test(text)) return 0;
+    if (/(?:high added sugar|high sugar)/iu.test(text)) return 1;
+    if (/(?:saturated fat|sodium|added sugar)/iu.test(text)) return 2;
+    if (/(?:preservative|colour|color|palm oil|claim)/iu.test(text)) return 3;
+    return 4;
+  };
+  return warning(left) - warning(right) || tone(left) - tone(right) || priority(left) - priority(right);
 }
 
 function strongerTone(left: ShopperIndicatorTone, right: ShopperIndicatorTone): ShopperIndicatorTone {

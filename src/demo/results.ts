@@ -14,11 +14,43 @@ const baseItem = (position: number, name: string, category: ProductAnalysis["cat
 
 function result(items: ProductAnalysis[], summary: string, real = true): AnalysisResult {
   return attachDecisions({ schemaVersion: "analysis-result.v2", language: "en", analyzedCount: items.length,
-    unknownCount: 0, flaggedCount: 0, truncated: false, wholeImageSummary: summary,
-    strongestMaterialFinding: null, items, disclaimer: real
-      ? "Cached result from a real Front of Pack analysis run on 23 August 2026."
+    unknownCount: items.filter((item) => item.identity.confidence === "unknown").length,
+    flaggedCount: items.filter((item) => item.findings.some((finding) => finding.level === "attention")).length,
+    truncated: false, wholeImageSummary: summary,
+    strongestMaterialFinding: items.flatMap((item) => item.findings).find((finding) => finding.level === "attention")?.explanation ?? null,
+    items, disclaimer: real
+      ? "Cached result reconstructed from a real Front of Pack analysis run on 24 August 2026."
       : "Cached demonstration from a fixed synthetic multi-product fixture." });
 }
+
+const alofrut = baseItem(1, "Alofrut Annar Aloevera Juice", "beverage");
+alofrut.identity = { nameAsPrinted: "Alofrut Annar Aloevera Juice", brandAsPrinted: "Alofrut", variantAsPrinted: "Fusion of health and taste", gtin: null, confidence: "high" };
+alofrut.nutrition = { source: "package", evidenceIds: ["ae1"], basis: "per_100ml", servingSize: 150, netQuantity: 300,
+  values: { addedSugarsG: 10.5, saturatedFatG: null, sodiumMg: 226, totalFatG: null },
+  printedPerServeRdaPct: { addedSugars: 31.5, saturatedFat: null, sodium: 16.9, totalFat: null } };
+alofrut.ingredientTokens = ["aloe vera pulp", "reconstituted pomegranate juice", "ins 211", "ins 202", "ins 110", "ins 122", "added sugar"];
+alofrut.claimsAsPrinted = ["Fusion of health and taste"];
+alofrut.rating = { score: 4, dimension: "nutrition", label: "Nutrition", basis: "High added sugar, notable sodium, preservatives and colours.", evidenceIds: ["ae1", "ae2", "ae3"], experimental: true };
+alofrut.profile = [
+  { label: "HIGH ADDED SUGAR", evidenceIds: ["ae1"] }, { label: "SODIUM DECLARED", evidenceIds: ["ae1"] },
+  { label: "PRESERVATIVES", evidenceIds: ["ae2"] }, { label: "ADDED COLOURS", evidenceIds: ["ae2"] },
+  { label: "ALOE VERA 14%", evidenceIds: ["ae3"] },
+];
+alofrut.coverage = { tier: "category_rules", rulePackIds: ["in.fssai.labelling-display-2020.v1", "in.fssai.advertising-claims-2018.v1"], limitations: [] };
+alofrut.summary = "High added sugar and notable sodium; preservatives and added colours are declared.";
+alofrut.findings = [
+  { id: "af1", kind: "nutrition", level: "attention", title: "SODIUM", explanation: "226 mg per 100 ml · 16.9% printed RDA per serving.", evidenceIds: ["ae1"], ruleIds: [], experimental: false },
+  { id: "af2", kind: "ingredient", level: "attention", title: "CONTAINS PRESERVATIVES", explanation: "INS 211 and INS 202 are printed in the ingredient list.", evidenceIds: ["ae2"], ruleIds: [], experimental: false },
+  { id: "af3", kind: "ingredient", level: "attention", title: "ADDED COLOURS", explanation: "INS 110 and INS 122 are printed in the ingredient list.", evidenceIds: ["ae2"], ruleIds: [], experimental: false },
+  { id: "af4", kind: "ingredient", level: "information", title: "LIMITED FRUIT CONTENT", explanation: "Aloe vera 14%; reconstituted pomegranate juice 10% printed.", evidenceIds: ["ae3"], ruleIds: [], experimental: false },
+];
+alofrut.claimAudits = [{ claimAsPrinted: "Fusion of health and taste", assessment: "No direct nutrition or composition basis establishes an overall health benefit; added sugar is declared.", evidenceIds: ["ae1", "ae4"], status: "not_established" }];
+alofrut.evidence = [
+  { id: "ae1", origin: "package", excerptOrObservation: "Per 100 ml: 10.5 g added sugar and 226 mg sodium; serving 150 ml; bottle 300 ml.", citationId: null, visibleOnPackage: true },
+  { id: "ae2", origin: "package", excerptOrObservation: "Ingredients print preservatives INS 211/202 and colours INS 110/122.", citationId: null, visibleOnPackage: true },
+  { id: "ae3", origin: "package", excerptOrObservation: "Aloe vera pulp 14% and reconstituted pomegranate juice 10% are printed.", citationId: null, visibleOnPackage: true },
+  { id: "ae4", origin: "package", excerptOrObservation: "Front/back artwork states “Fusion of health and taste”.", citationId: null, visibleOnPackage: true },
+];
 
 const haldirams = baseItem(1, "RATLAMI SEV", "food");
 haldirams.identity = { nameAsPrinted: "RATLAMI SEV", brandAsPrinted: "Haldiram’s", variantAsPrinted: null, gtin: null, confidence: "high" };
@@ -48,6 +80,7 @@ haldirams.retakeGuidance = null;
 const bread = baseItem(1, "Fibre Up", "food");
 bread.identity = { nameAsPrinted: "Fibre Up", brandAsPrinted: "English Oven", variantAsPrinted: "For a Happy Gut", gtin: "8906001387114", confidence: "high" };
 bread.printedVegMark = "veg";
+bread.claimsAsPrinted = ["FIBRE-UP", "FOR A HAPPY GUT", "3x DAILY FIBRE NEED", "Source of Protein"];
 bread.rating = { score: 6, dimension: "nutrition", label: "Nutrition", basis: "High fibre, with notable sodium and multiple allergens.", evidenceIds: ["be1", "be2"], experimental: true };
 bread.profile = [{ label: "VEG MARK", evidenceIds: ["be3"] }, { label: "HIGH FIBRE", evidenceIds: ["be2"] }, { label: "MULTIPLE ALLERGENS", evidenceIds: ["be1"] }];
 bread.ingredientTokens = ["whole wheat flour", "oats", "soy flour", "sesame seeds", "wheat gluten", "sugar"];
@@ -73,13 +106,15 @@ const cartCategories: ProductAnalysis["category"][] = ["beverage", "food", "pers
 const cart = cartNames.map((name, index) => baseItem(index + 1, name, cartCategories[index]));
 
 export const DEMO_RESULTS: Record<string, AnalysisResult> = {
+  alofrut: result([alofrut], "A 300 ml beverage demonstrates printed and whole-bottle RDA, ingredients and claim review."),
   haldirams: result([haldirams], "A front-only Haldiram’s pack triggers a provisional official-source lookup."),
   bread: result([bread], "A real bread label supports whole-pack and allergen checks."),
   cart: result(cart, "Six products identified from one shopping-cart image.", false),
 };
 
 export const DEMO_LABELS = [
-  { id: "haldirams", label: "Front-only search", detail: "Real pack · online indicators", imageSrc: "/demo/haldirams-ratlami-sev.jpeg" },
-  { id: "bread", label: "Whole-pack reality", detail: "Real pack · allergens", imageSrc: "/demo/english-oven-fibre-up.jpeg" },
+  { id: "alofrut", label: "Sugar + RDA", detail: "Real pack · claims + additives", imageSrc: "/demo/alofrut-annar-aloevera.jpeg" },
+  { id: "bread", label: "Whole-pack reality", detail: "Real pack · RDA + allergens", imageSrc: "/demo/english-oven-fibre-up.jpeg" },
+  { id: "haldirams", label: "Front-only search", detail: "Real pack · online evidence", imageSrc: "/demo/haldirams-ratlami-sev.jpeg" },
   { id: "cart", label: "Six products", detail: "Synthetic until photo supplied", imageSrc: null },
 ] as const;
