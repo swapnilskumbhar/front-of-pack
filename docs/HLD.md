@@ -366,7 +366,7 @@ The delivery consumer may retry Graph message delivery. It reads only the alread
 
 ### 8.3 Registry and officer dashboard — secondary proof
 
-The registry and dashboard are secondary demonstrations; reviewers do not need either to complete the citizen journey. The registry performs exact lookup against clearly synthetic FSSAI/BIS identifiers. The basic-auth-protected officer page exposes only redacted counts grouped by analysis status and language—never images, identifiers, profiles or model output. Location is neither collected nor inferred.
+The registry and dashboard are secondary demonstrations; reviewers do not need either to complete the citizen journey. The registry performs exact lookup against clearly synthetic FSSAI/BIS identifiers. The signed-session-protected, noindex officer page exposes redacted counts plus anonymous per-analysis operational cost telemetry—never images, hashes, analysis IDs, response IDs, product details, profiles or model output. Location is neither collected nor inferred.
 
 ---
 
@@ -394,7 +394,7 @@ Cloudflare D1 is the small SQLite-compatible system of record. Verified regulato
 |---|---|
 | Anonymous Profiles | Preferred language and timestamps; no medical profile |
 | Channel Identities | Keyed browser-token or WhatsApp-number digest mapped to a profile; no silent cross-channel linking |
-| Scans | Status, versioned cache key, validated result JSON, sources, local matches, timing, usage, and error |
+| Scans | Status, versioned cache key, validated result JSON, sources, local matches, timing, usage, exact hosted-search call count, versioned cost estimate, and error |
 | Product Registry | Minimal table reserved for future evidence-backed observations; the public demo uses separate exact synthetic identifiers |
 | Regulatory Context | Versioned category rule packs and source links supplied to Terra |
 | Service Directory | Allow-listed FSSAI/FoSCoS, BIS Care, NCH, and other verified citizen routes |
@@ -435,7 +435,11 @@ D1, R2 and Queue writes are not one transaction. Intake records a re-enqueueable
 
 Image-only cached results remain valid until a version component changes. Web-backed results use a short expiry. Refreshing a stale result creates a new explicit user-initiated scan; the application never silently makes a second model call. The analysis consumer catches all post-provider errors and acknowledges the Queue message after recording failure so automatic Queue redelivery cannot duplicate billing.
 
-Usage, hosted-search use, latency and validation status are stored per scan; public methodology and limitations live on `/how-we-decide`.
+Usage, exact hosted-search call count, latency and validation status are stored per successfully persisted provider response. The Jobs Worker calculates a versioned USD-micro estimate at write time from the Responses usage object; the dashboard never recalculates historical rows using new prices.
+
+There is no truthful fixed “price per image”: image detail, retrieved search context, reasoning and output length change token use. For the pinned standard-tier GPT-5.6 Terra request, the `openai-standard-2026-08-24` basis uses OpenAI's published short-context rates of $2.00/M uncached input tokens, $0.20/M cached input tokens, $2.50/M cache-write tokens and $12.00/M output tokens, plus $0.01 per hosted web-search call. Inputs above 272,000 tokens use the published long-context rates for the full request. Reasoning tokens are already part of output tokens and are not charged twice. See the official [Terra model page](https://developers.openai.com/api/docs/models/gpt-5.6-terra) and [API pricing](https://developers.openai.com/api/docs/pricing).
+
+The officer view shows total estimated OpenAI spend, average per analyzed image, cost-capture coverage and the latest 50 anonymous per-image rows. A cart photo with several products is still one image and one Responses call. A cache hit makes zero new provider calls. Historical or malformed telemetry remains `NULL` and renders as `—`, never `$0`. The estimate is not invoice-exact and excludes Cloudflare, R2, D1, Queues, domain and WhatsApp costs; it covers successful persisted provider responses, not a complete billing ledger for every failed attempt.
 
 Workers Paid/Standard activation is a platform gate: the Jobs Worker needs configurable CPU time, while memory remains 128 MB. Original-image validation, OpenAI fetch, OpenNext bundle and all APIs must pass `workerd` preview and deployed Worker tests. Native `sharp` is not assumed. D1's 2 MB row limit, Queue's 128 KB message limit and Worker bundle/startup limits are treated as build failures, not production surprises.
 

@@ -204,6 +204,46 @@ footer>a { font-size:12px; font-weight:800; text-align:right; }
 .service-card textarea { min-height:90px; resize:vertical; }.service-card .draft-area { min-height:280px; }.service-output { overflow:auto; white-space:pre-wrap; }
 .service-buttons { display:flex; gap:12px; }.service-buttons button { background:var(--cream); border:1px solid var(--line); border-radius:10px; cursor:pointer; font-weight:800; padding:12px 18px; }
 .service-card table { border-collapse:collapse; width:100%; }.service-card th,.service-card td { border-bottom:1px solid var(--line); padding:12px; text-align:left; }
+.officer-page { max-width:1280px; }
+.officer-login-card { max-width:620px; }
+.officer-message { color:#8b2915; font-size:13px; min-height:20px; }
+.officer-dashboard { display:grid; gap:50px; margin-top:38px; }
+.officer-dashboard section { min-width:0; }
+.officer-dashboard h2 { font-family:Georgia,serif; font-size:clamp(28px,4vw,42px); font-weight:400; margin:6px 0 22px; }
+.officer-toolbar { align-items:center; background:var(--green); border-radius:16px; color:white; display:flex; gap:24px; justify-content:space-between; padding:18px 20px; }
+.officer-toolbar p { color:rgba(255,255,255,.75); font-size:12px; line-height:1.55; margin:0; max-width:710px; }
+.officer-toolbar>div { display:flex; gap:8px; }
+.officer-toolbar button { background:white; border:0; border-radius:9px; color:var(--green); cursor:pointer; font-weight:800; padding:10px 14px; white-space:nowrap; }
+.officer-toolbar button:last-child { background:transparent; border:1px solid rgba(255,255,255,.45); color:white; }
+.officer-toolbar button:disabled { cursor:wait; opacity:.6; }
+.officer-kpis { display:grid; gap:10px; grid-template-columns:repeat(5,1fr); }
+.officer-kpis article { background:white; border:1px solid var(--line); border-radius:14px; display:grid; gap:9px; min-height:145px; padding:18px; }
+.officer-kpis small { color:var(--orange); font-size:9px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+.officer-kpis strong { font-family:Georgia,serif; font-size:clamp(22px,2.4vw,34px); font-weight:400; letter-spacing:-.03em; }
+.officer-kpis span { color:var(--muted); font-size:11px; line-height:1.45; }
+.officer-cost-note { background:#edf6f0; border:1px solid #cfe0d5; border-radius:12px; display:grid; gap:7px; margin-top:12px; padding:17px 18px; }
+.officer-cost-note>strong { font-size:13px; }
+.officer-cost-note p { color:var(--muted); font-size:12px; line-height:1.55; margin:0; }
+.officer-cost-note a { color:var(--green); font-size:12px; font-weight:800; margin-top:3px; width:max-content; }
+.officer-section-heading { align-items:end; display:flex; gap:30px; justify-content:space-between; }
+.officer-section-heading h2 { margin-bottom:12px; }
+.officer-section-heading>p { color:var(--muted); font-size:12px; line-height:1.55; max-width:360px; }
+.officer-table-wrap { background:white; border:1px solid var(--line); border-radius:14px; overflow:auto; }
+.officer-table-wrap table { border-collapse:collapse; min-width:100%; width:max-content; }
+.officer-table-wrap th,.officer-table-wrap td { border-bottom:1px solid var(--line); font-size:12px; padding:13px 15px; text-align:left; vertical-align:top; white-space:nowrap; }
+.officer-table-wrap th { color:var(--muted); font-size:9px; letter-spacing:.07em; text-transform:uppercase; }
+.officer-table-wrap tbody tr:last-child td { border-bottom:0; }
+.officer-cost-table td b,.officer-cost-table td small { display:block; }
+.officer-cost-table td small { color:var(--muted); font-size:9px; margin-top:4px; }
+.officer-status { background:#efede8; border-radius:999px; display:inline-block; font-size:9px; font-weight:800; padding:5px 8px; text-transform:uppercase; }
+.officer-status-complete { background:#e5f3e9; color:var(--green); }
+.officer-status-failed { background:#ffe7df; color:#8b2915; }
+@media (max-width:1000px) { .officer-kpis { grid-template-columns:repeat(2,1fr); } }
+@media (max-width:650px) {
+  .officer-toolbar,.officer-section-heading { align-items:flex-start; flex-direction:column; }
+  .officer-toolbar>div { width:100%; }.officer-toolbar button { flex:1; }
+  .officer-kpis { grid-template-columns:1fr; }.officer-kpis article { min-height:auto; }
+}
 .decision-page { max-width:1050px; }
 .decision-page h2 { font-family:Georgia,serif; font-size:clamp(28px,4vw,42px); font-weight:400; margin:6px 0 24px; }
 .decision-page code { background:#f3f0e8; border-radius:8px; display:block; margin:10px 0; overflow:auto; padding:14px; }

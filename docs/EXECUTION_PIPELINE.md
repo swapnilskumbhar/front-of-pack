@@ -460,8 +460,8 @@ Cut tiers:
 | MEDIA-001 | PLATFORM-001,QUEUE-001 | Workers-runtime image validation/R2 lifecycle | Images binding validates decode dimensions/pixels while original encoded bytes and resolution are preserved; real-product fixture proof remains | Codex | IN_PROGRESS | C0 |
 | CLEANUP-001 | DATA-001,QUEUE-001 | Hourly/lazy expiry cleanup | Expired ciphertext/nonces cleared, orphan R2 removed, operation idempotent | Codex | TODO | C0 |
 | DOMAIN-001 | PLATFORM-001 | Stable TLS hostname | Custom domain works without Access; `workers.dev` remains release fallback | User + Codex | BLOCKED_USER | C1 |
-| BUDGET-001 | CF-001 | Cloudflare/OpenAI budget telemetry | Billing exclusions, Worker/D1/R2/Queue use and OpenAI spend documented separately | Codex | TODO | C1 |
-| OBS-001 | DATA-001 | Structured request metrics | Response ID, latency, search use, tokens/cost stored without PII | Codex | TODO | C1 |
+| BUDGET-001 | CF-001 | Cloudflare/OpenAI budget telemetry | Versioned successful-response OpenAI estimate is shown per anonymous image and in aggregate; Cloudflare/Meta/domain exclusions are explicit; invoice reconciliation remains | Codex | IN_PROGRESS | C1 |
+| OBS-001 | DATA-001 | Structured request metrics | Response ID remains private; latency, exact search-call count, normalized usage, cost basis and USD-micro estimate are persisted without PII | Codex | DONE | C1 |
 
 ### 9.3 Model, rules, and services
 
@@ -508,7 +508,7 @@ Cut tiers:
 | PUBLIC-001 | CORE-003,SERVICES-001,WEB-003 | Editable grievance draft | Local editable, allow-listed route selection, explicit no-submit/no-docket behavior and zero calls are tested | Codex | DONE | C0 |
 | REGISTRY-001 | CORE-003,DATA-002 | Minimal registry/product page | Exact synthetic identifier lookup only; private image is never exposed | Codex | DONE | C1 |
 | REGISTRY-002 | REGISTRY-001 | Synthetic licence/recall cards | Exact seed match and synthetic/non-live warning are tested | Codex | DONE | C1 |
-| OFFICER-001 | REGISTRY-001 | Minimal officer page | Protected redacted aggregate dashboard exists; release-fixture filters/drill-down remain | Codex | IN_PROGRESS | C1 |
+| OFFICER-001 | REGISTRY-001 | Minimal officer page | Protected noindex dashboard shows redacted aggregates plus latest-50 anonymous per-image token/search/latency/cost rows; no product or identity data | Codex | DONE | C1 |
 | TRUST-001 | RULES-001,SERVICES-001 | Thresholds/services pages | Public sources, policy status, coverage limitations visible | Codex | TODO | C0 |
 | TRUST-002 | ELIG-004,OBS-001 | Honesty/built-with pages | Reuse/new ledger, data, cost, limitations, Codex role accurate | Codex | TODO | C0 |
 

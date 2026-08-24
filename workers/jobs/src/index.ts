@@ -12,6 +12,7 @@ import type { TerraProviderResult } from "./openai/types.ts";
 import { prepareWhatsAppAnalysis, parseWhatsAppAnalysisJob } from "./whatsapp/analysis.ts";
 import { cleanupExpiredWhatsAppJobs, consumeDelivery, sendWhatsAppAnalysisFailure } from "./whatsapp/delivery.ts";
 import { attachDecisions } from "../../../src/engine/index.ts";
+import { buildPersistedUsage, estimateOpenAiResponseCost } from "../../../src/cost/openai.ts";
 
 const PINNED_ANALYSIS_VERSIONS = {
   model_id: "gpt-5.6-terra",
@@ -244,6 +245,12 @@ export async function consumeWebAnalysis(
       requireWebSearch,
     }, fetcher);
     const providerDurationMs = Date.now() - providerStartedAtMs;
+    const costEstimate = provider.providerModelId === null ? null : estimateOpenAiResponseCost({
+      modelId: provider.providerModelId,
+      serviceTier: provider.serviceTier,
+      usage: provider.usage,
+      webSearchCalls: provider.webSearchCallCount,
+    });
     assertProviderSources(provider);
     const validation = validateAnalysisResult(provider.result, {
       allowedRuleIds: ENABLED_RULE_PACK_ID_SET,
@@ -257,9 +264,14 @@ export async function consumeWebAnalysis(
       providerSources: provider.searchSources,
       validationReport: validation,
       timings: { ...initialTimings, providerDurationMs },
-      tokenUsage: provider.usage,
+      tokenUsage: buildPersistedUsage(provider.usage, costEstimate, provider.webSearchCallCount),
       openAiResponseId: provider.responseId,
       webSearchUsed: provider.webSearchUsed,
+      providerModelId: provider.providerModelId,
+      serviceTier: provider.serviceTier,
+      webSearchCallCount: provider.webSearchCallCount,
+      costBasisVersion: costEstimate?.basisVersion ?? null,
+      estimatedCostUsdMicros: costEstimate?.totalCostUsdMicros ?? null,
       completedAt: new Date().toISOString(),
     });
     if (!completed) throw new Error("Claimed analysis could not be completed");

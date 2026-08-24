@@ -26,6 +26,11 @@ type AnalysisRow = {
   openai_response_id: string | null;
   result_json: string | null;
   web_search_used: number;
+  provider_model_id: string | null;
+  service_tier: string | null;
+  web_search_call_count: number | null;
+  cost_basis_version: string | null;
+  estimated_cost_usd_micros: number | null;
   expires_at: string | null;
   error_code: string | null;
   created_at: string;
@@ -59,6 +64,10 @@ export interface CompleteAnalysisInput {
   tokenUsage?: unknown;
   openAiResponseId: string;
   webSearchUsed: boolean;
+  providerModelId?: string | null;
+  serviceTier?: string | null;
+  webSearchCallCount?: number | null;
+  costBasisVersion?: string | null;
   estimatedCostUsdMicros?: number | null;
   completedAt: string;
   expiresAt?: string | null;
@@ -128,7 +137,8 @@ export class AnalysisRepository {
         status = 'complete', result_json = ?, provider_sources_json = ?,
         local_matches_json = ?, validation_report_json = ?, timings_json = ?,
         token_usage_json = ?, openai_response_id = ?, web_search_used = ?,
-        estimated_cost_usd_micros = ?, expires_at = ?, error_code = NULL,
+        provider_model_id = ?, service_tier = ?, web_search_call_count = ?,
+        cost_basis_version = ?, estimated_cost_usd_micros = ?, expires_at = ?, error_code = NULL,
         error_json = NULL, completed_at = ?
       WHERE id = ? AND attempt_number = ? AND status = 'processing'
         AND provider_started_at IS NOT NULL
@@ -136,6 +146,8 @@ export class AnalysisRepository {
       columns.resultJson, columns.providerSourcesJson, columns.localMatchesJson,
       columns.validationReportJson, columns.timingsJson, columns.tokenUsageJson,
       input.openAiResponseId, input.webSearchUsed ? 1 : 0,
+      input.providerModelId ?? null, input.serviceTier ?? null,
+      input.webSearchCallCount ?? null, input.costBasisVersion ?? null,
       input.estimatedCostUsdMicros ?? null, input.expiresAt ?? null,
       input.completedAt, id, attemptNumber,
     ).run();
@@ -175,6 +187,8 @@ export class AnalysisRepository {
         provider_sources_json = '[]', local_matches_json = '[]',
         validation_report_json = NULL, web_search_used = 0,
         timings_json = '{}', token_usage_json = '{}',
+        provider_model_id = NULL, service_tier = NULL,
+        web_search_call_count = NULL, cost_basis_version = NULL,
         estimated_cost_usd_micros = NULL, error_code = NULL,
         error_json = NULL, completed_at = NULL
       WHERE id = ? AND attempt_number = ? AND status = 'failed'
@@ -197,7 +211,9 @@ export class AnalysisRepository {
     const row = await this.db.prepare(`
       SELECT id, cache_key, image_hash, media_object_key, language, status,
         attempt_number, queue_enqueued_at, provider_started_at,
-        openai_response_id, result_json, web_search_used, expires_at,
+        openai_response_id, result_json, web_search_used, provider_model_id,
+        service_tier, web_search_call_count, cost_basis_version,
+        estimated_cost_usd_micros, expires_at,
         error_code, created_at, completed_at, engine_version
       FROM analyses WHERE ${field} = ? LIMIT 1
     `).bind(value).first<AnalysisRow>();
@@ -221,6 +237,11 @@ function mapAnalysisRow(row: AnalysisRow): AnalysisRecord {
       ? JSON.parse(row.result_json) as AnalysisResult
       : null,
     webSearchUsed: row.web_search_used === 1,
+    providerModelId: row.provider_model_id,
+    serviceTier: row.service_tier,
+    webSearchCallCount: row.web_search_call_count,
+    costBasisVersion: row.cost_basis_version,
+    estimatedCostUsdMicros: row.estimated_cost_usd_micros,
     expiresAt: row.expires_at,
     errorCode: row.error_code,
     createdAt: row.created_at,

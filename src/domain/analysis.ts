@@ -168,6 +168,11 @@ export interface AnalysisRecord {
   openAiResponseId: string | null;
   result: AnalysisResult | null;
   webSearchUsed: boolean;
+  providerModelId: string | null;
+  serviceTier: string | null;
+  webSearchCallCount: number | null;
+  costBasisVersion: string | null;
+  estimatedCostUsdMicros: number | null;
   expiresAt: string | null;
   errorCode: string | null;
   createdAt: string;

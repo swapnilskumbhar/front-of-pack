@@ -43,6 +43,12 @@ export function extractSearchSources(response: UnknownRecord): SearchSourceMetad
   return [...unique.values()];
 }
 
+export function countWebSearchCalls(response: UnknownRecord): number {
+  return Array.isArray(response.output)
+    ? response.output.filter((item) => record(item)?.type === "web_search_call").length
+    : 0;
+}
+
 function validateResult(value: unknown, language: LanguageCode): asserts value is AnalysisResult {
   const result = record(value);
   if (
@@ -86,11 +92,15 @@ export function parseTerraResponse(responseValue: unknown, language: LanguageCod
   }
   validateResult(parsed, language);
   const searchSources = extractSearchSources(response);
+  const webSearchCallCount = countWebSearchCalls(response);
   return {
     result: parsed,
     responseId: response.id,
     usage: response.usage ?? null,
+    providerModelId: typeof response.model === "string" ? response.model : null,
+    serviceTier: typeof response.service_tier === "string" ? response.service_tier : null,
     searchSources,
-    webSearchUsed: Array.isArray(response.output) && response.output.some((item) => record(item)?.type === "web_search_call"),
+    webSearchCallCount,
+    webSearchUsed: webSearchCallCount > 0,
   };
 }

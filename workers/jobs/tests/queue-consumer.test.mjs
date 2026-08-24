@@ -40,7 +40,11 @@ function createDb({
   status = "queued", attempt = 1, mediaKey = "media/a", versions = pinnedVersions,
   failCompletionPersistence = false,
 } = {}) {
-  const state = { status, attempt, providerStartedAt: null, errorCode: null, complete: false };
+  const state = {
+    status, attempt, providerStartedAt: null, errorCode: null, complete: false,
+    tokenUsage: null, providerModelId: null, serviceTier: null,
+    webSearchCallCount: null, costBasisVersion: null, estimatedCostUsdMicros: null,
+  };
   return {
     state,
     prepare(query) {
@@ -73,6 +77,12 @@ function createDb({
             if (failCompletionPersistence) throw new Error("D1 completion unavailable");
             state.status = "complete";
             state.complete = true;
+            state.tokenUsage = JSON.parse(bindings[5]);
+            state.providerModelId = bindings[8];
+            state.serviceTier = bindings[9];
+            state.webSearchCallCount = bindings[10];
+            state.costBasisVersion = bindings[11];
+            state.estimatedCostUsdMicros = bindings[12];
             return { success: true, meta: { changes: 1 } };
           }
           if (query.includes("status = 'failed'")) {
@@ -116,7 +126,20 @@ function createHarness(db = createDb()) {
     assert.match(JSON.stringify(request.input), /data:image\/png;base64,AQID/);
     assert.match(JSON.stringify(request.input), /in\.fssai\.labelling-display-2020\.v1/);
     assert.match(JSON.stringify(request.input), /in\.consumer-affairs\.nch\.v1/);
-    return Response.json({ id: "resp_1", output_text: JSON.stringify(validResult), output: [] });
+    return Response.json({
+      id: "resp_1",
+      model: "gpt-5.6-terra",
+      service_tier: "default",
+      output_text: JSON.stringify(validResult),
+      usage: {
+        input_tokens: 10_000,
+        input_tokens_details: { cached_tokens: 2_000, cache_write_tokens: 1_000 },
+        output_tokens: 500,
+        output_tokens_details: { reasoning_tokens: 300 },
+        total_tokens: 10_500,
+      },
+      output: [{ type: "web_search_call", action: { sources: [] } }, { type: "web_search_call", action: { sources: [] } }],
+    });
   };
   return { calls, db, env, message, okFetch };
 }
@@ -136,6 +159,13 @@ test("successful processing makes one provider call, persists, deletes media, an
   await consumeWebAnalysis(harness.message, harness.env, harness.okFetch);
   assert.equal(harness.calls.fetch, 1);
   assert.equal(harness.db.state.complete, true);
+  assert.equal(harness.db.state.providerModelId, "gpt-5.6-terra");
+  assert.equal(harness.db.state.serviceTier, "default");
+  assert.equal(harness.db.state.webSearchCallCount, 2);
+  assert.equal(harness.db.state.costBasisVersion, "openai-standard-2026-08-24");
+  assert.equal(harness.db.state.estimatedCostUsdMicros, 42_900);
+  assert.equal(harness.db.state.tokenUsage.web_search_calls, 2);
+  assert.equal(harness.db.state.tokenUsage.cost_estimate.totalCostUsdMicros, 42_900);
   assert.deepEqual(harness.calls.deleted, ["media/a"]);
   assert.equal(harness.calls.ack, 1);
 });

@@ -29,6 +29,7 @@ test("constructs one bounded strict Responses request with optional hosted searc
   assert.equal(request.store, false);
   assert.equal(request.reasoning.effort, "low");
   assert.equal(request.text.verbosity, "low");
+  assert.equal(request.service_tier, "default");
   assert.equal(request.text.format.type, "json_schema");
   assert.equal(request.text.format.strict, true);
   assert.deepEqual(request.tools, [{ type: "web_search" }]);
@@ -92,16 +93,24 @@ test("supports Luna through the same one-call request contract", () => {
 test("parses output_text and exposes usage and returned web-search sources", () => {
   const parsed = parseTerraResponse({
     id: "resp_123",
+    model: "gpt-5.6-terra",
+    service_tier: "default",
     output_text: JSON.stringify(emptyResult),
     usage: { input_tokens: 10, output_tokens: 20 },
-    output: [{
-      type: "web_search_call",
-      action: { sources: [{ id: "src_1", title: "Example", url: "https://example.test/a" }] },
-    }],
+    output: [
+      {
+        type: "web_search_call",
+        action: { sources: [{ id: "src_1", title: "Example", url: "https://example.test/a" }] },
+      },
+      { type: "web_search_call", action: { sources: [] } },
+    ],
   }, "hi");
 
   assert.equal(parsed.responseId, "resp_123");
   assert.equal(parsed.result.language, "hi");
+  assert.equal(parsed.providerModelId, "gpt-5.6-terra");
+  assert.equal(parsed.serviceTier, "default");
+  assert.equal(parsed.webSearchCallCount, 2);
   assert.equal(parsed.webSearchUsed, true);
   assert.deepEqual(parsed.searchSources, [{ id: "src_1", title: "Example", url: "https://example.test/a" }]);
 });

@@ -302,6 +302,10 @@ CREATE TABLE analyses (
   local_matches_json         TEXT NOT NULL DEFAULT '[]' CHECK (json_valid(local_matches_json)),
   validation_report_json     TEXT CHECK (validation_report_json IS NULL OR json_valid(validation_report_json)),
   web_search_used            INTEGER NOT NULL DEFAULT 0 CHECK (web_search_used IN (0,1)),
+  provider_model_id          TEXT,
+  service_tier               TEXT,
+  web_search_call_count      INTEGER CHECK (web_search_call_count IS NULL OR web_search_call_count >= 0),
+  cost_basis_version         TEXT,
   model_id                   TEXT NOT NULL,
   prompt_version             TEXT NOT NULL,
   schema_version             TEXT NOT NULL,
@@ -630,6 +634,7 @@ async function callTerraOnce(
       },
     ],
     reasoning: { effort: "low" },
+    service_tier: "default",
     tools: [{ type: "web_search" }],
     tool_choice: "required",
     max_tool_calls: 3,
@@ -642,6 +647,22 @@ async function callTerraOnce(
 ~~~
 
 The deployed Worker uses direct `fetch`; automatic provider retry is absent. The invariant is one Responses request with original-detail image input, one strict schema, verified rule context, and required hosted search.
+
+The default service tier is explicit so a standard-price estimate is reproducible. The parser retains the actual returned model, service tier, token usage and the exact count of `web_search_call` output items. Source count is not used as a billing proxy.
+
+### 8.1.1 Successful-response cost estimate
+
+`src/cost/openai.ts` validates non-negative integer usage, treats cached and cache-write tokens as subsets of input, and rejects malformed usage instead of emitting zero. For Terra short-context requests:
+
+~~~text
+U = input_tokens - cached_tokens - cache_write_tokens
+estimated_usd_micros = round(
+  U × 2.0 + cached_tokens × 0.2 + cache_write_tokens × 2.5
+  + output_tokens × 12.0 + web_search_calls × 10,000
+)
+~~~
+
+Above 272,000 input tokens, the full-request rates are 4.0, 0.4, 5.0 and 18.0 USD micros per token respectively. The cost basis is pinned as `openai-standard-2026-08-24`; search is $10/1,000 calls. Output already includes reasoning tokens. The complete normalized usage and breakdown are stored in `token_usage_json`; `estimated_cost_usd_micros` stores the total. Missing usage/model/tier produces `NULL`. Historical `NULL` values are never backfilled from a boolean search flag.
 
 ### 8.2 Unified prompt requirements
 
@@ -936,7 +957,13 @@ The user may edit, copy, print, or download it. Automatic submission, OTP handli
 
 The registry is intentionally minimal: it accepts an entered FSSAI licence or BIS CM/L identifier and exact-matches two clearly synthetic local records. It performs no fuzzy matching, consumes no user upload, and makes no live government query.
 
-The officer page is read-only, session-protected, noindex, and secondary to the citizen demo. It returns only redacted aggregate counts grouped by analysis status and language. It exposes no images, identifiers, profiles, evidence or model output. No location is collected or inferred.
+The officer page is read-only, signed-session-protected, noindex, and secondary to the citizen demo. It returns:
+
+- aggregate counts grouped by analysis status and language;
+- estimated OpenAI spend, average cost, telemetry coverage, measured token totals and exact search-call totals;
+- the latest 50 anonymous analysis rows with completion time, status, language, model/tier, token subsets, search calls, provider latency, cost and cost-basis version.
+
+The query and server mapper use an explicit allow-list. They never select or return images, cache/image hashes, database IDs, media keys, profile/scan/WhatsApp identifiers, product details, evidence, citations, source JSON, model output or OpenAI response IDs. `NULL` cost renders as `—`, not zero. A multi-product image remains one analysis row; a cache hit reuses the existing result and incurs no new model charge. The display labels these values as versioned successful-response estimates rather than invoice totals. No location is collected or inferred.
 
 ---
 

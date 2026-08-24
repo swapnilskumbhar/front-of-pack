@@ -34,7 +34,10 @@ export interface TerraProviderResult<T> {
   result: T;
   responseId: string;
   usage: unknown | null;
+  providerModelId: string | null;
+  serviceTier: string | null;
   searchSources: SearchSourceMetadata[];
+  webSearchCallCount: number;
   webSearchUsed: boolean;
 }
 
@@ -53,6 +56,7 @@ export interface ResponsesRequest {
     };
   };
   max_output_tokens: number;
+  service_tier: "default";
   tools?: Array<{ type: "web_search" }>;
   tool_choice?: "auto" | "required";
   max_tool_calls?: number;

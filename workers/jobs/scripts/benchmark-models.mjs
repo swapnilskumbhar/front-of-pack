@@ -5,6 +5,7 @@ import { ENABLED_RULE_PACK_ID_SET, ENABLED_SERVICE_ID_SET, RULE_PACKS, SERVICE_D
 import { detectImageMime, validateImageBytes } from "../../../src/intake/image.ts";
 import { validateAnalysisResult } from "../../../src/validation/analysis-result.ts";
 import { callTerraOnce } from "../src/openai/client.ts";
+import { estimateOpenAiResponseCost } from "../../../src/cost/openai.ts";
 
 const fullOutput = process.argv.includes("--full");
 const requireWebSearch = process.argv.includes("--search");
@@ -36,11 +37,6 @@ const serviceContext = SERVICE_DIRECTORY.map((service) => ({
   limitations: service.limitations.slice(0, 1),
 }));
 
-const pricing = {
-  "gpt-5.6-terra": { input: 2, cached: 0.2, output: 12 },
-  "gpt-5.6-luna": { input: 0.2, cached: 0.02, output: 1.2 },
-};
-
 for (const model of terraOnly ? ["gpt-5.6-terra"] : ["gpt-5.6-terra", "gpt-5.6-luna"]) {
   const started = performance.now();
   const provider = await callTerraOnce(
@@ -62,9 +58,12 @@ for (const model of terraOnly ? ["gpt-5.6-terra"] : ["gpt-5.6-terra", "gpt-5.6-l
   const inputTokens = Number(usage.input_tokens ?? 0);
   const cachedTokens = Number(usage.input_tokens_details?.cached_tokens ?? 0);
   const outputTokens = Number(usage.output_tokens ?? 0);
-  const modelPricing = pricing[model];
-  const estimatedTextCostUsd =
-    ((inputTokens - cachedTokens) * modelPricing.input + cachedTokens * modelPricing.cached + outputTokens * modelPricing.output) / 1_000_000;
+  const estimate = provider.providerModelId === null ? null : estimateOpenAiResponseCost({
+    modelId: provider.providerModelId,
+    serviceTier: provider.serviceTier,
+    usage: provider.usage,
+    webSearchCalls: provider.webSearchCallCount,
+  });
   console.log(JSON.stringify({
     model,
     durationMs: Math.round(performance.now() - started),
@@ -74,11 +73,12 @@ for (const model of terraOnly ? ["gpt-5.6-terra"] : ["gpt-5.6-terra", "gpt-5.6-l
     cachedTokens,
     outputTokens,
     reasoningTokens: Number(usage.output_tokens_details?.reasoning_tokens ?? 0),
-    estimatedTextCostUsd: Number(estimatedTextCostUsd.toFixed(6)),
+    estimatedApiCostUsd: estimate === null ? null : estimate.totalCostUsdMicros / 1_000_000,
     analyzedCount: provider.result.analyzedCount,
     findingCount: provider.result.items.reduce((total, item) => total + item.findings.length, 0),
     summary: provider.result.wholeImageSummary,
     webSearchUsed: provider.webSearchUsed,
+    webSearchCallCount: provider.webSearchCallCount,
     searchSources: provider.searchSources,
     ...(fullOutput ? { result: provider.result } : {}),
   }));

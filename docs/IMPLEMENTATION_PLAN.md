@@ -162,8 +162,8 @@ Tasks:
 - [x] Add allow-listed FoSCoS, BIS Care, and NCH service routes to the analyzer and validator.
 - [x] Add exact synthetic registry checks only; no fuzzy or live-government lookup claim.
 - [x] Add an editable local grievance draft with no automatic submission or fake docket.
-- [x] Add the protected minimum officer aggregate dashboard; richer release-fixture filters/drill-down remain.
-- [ ] Add audit events, redacted logs, metrics, cost counters, and hourly cleanup.
+- [x] Add the protected officer dashboard with redacted aggregates and anonymous per-image token/search/latency/cost telemetry.
+- [ ] Add audit events, redacted logs, remaining platform cost counters, and hourly cleanup.
 - [ ] Enforce honest category coverage and non-official experimental FOP wording.
 
 Exit proof: all three minimum surfaces work locally and never claim government endorsement, legal status, medical safety, or automatic submission.
