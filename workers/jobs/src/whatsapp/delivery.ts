@@ -25,19 +25,19 @@ const FAILURE_COPY: Record<string, string> = {
   ur: "اس لیبل کی قابلِ اعتماد جانچ نہیں ہو سکی۔ تصویر دوبارہ یا پچھلا پینل واضح طور پر بھیجیں۔",
 };
 
-const RESPONSE_COPY: Record<LanguageCode, { rating: string; profile: string; verdict: string; analysis: string; claims: string; evidence: string }> = {
-  en: { rating: "Rating", profile: "Profile", verdict: "Verdict", analysis: "Analysis", claims: "Claims", evidence: "Evidence confidence" },
-  hi: { rating: "रेटिंग", profile: "प्रोफ़ाइल", verdict: "निष्कर्ष", analysis: "विश्लेषण", claims: "दावे", evidence: "साक्ष्य भरोसा" },
-  mr: { rating: "रेटिंग", profile: "प्रोफाइल", verdict: "निष्कर्ष", analysis: "विश्लेषण", claims: "दावे", evidence: "पुरावा विश्वास" },
-  bn: { rating: "রেটিং", profile: "প্রোফাইল", verdict: "সিদ্ধান্ত", analysis: "বিশ্লেষণ", claims: "দাবি", evidence: "প্রমাণের আস্থা" },
-  ta: { rating: "மதிப்பீடு", profile: "சுயவிவரம்", verdict: "முடிவு", analysis: "பகுப்பாய்வு", claims: "கூற்றுகள்", evidence: "ஆதார நம்பிக்கை" },
-  te: { rating: "రేటింగ్", profile: "ప్రొఫైల్", verdict: "తీర్పు", analysis: "విశ్లేషణ", claims: "క్లెయిమ్‌లు", evidence: "ఆధార నమ్మకం" },
-  kn: { rating: "ರೇಟಿಂಗ್", profile: "ಪ್ರೊಫೈಲ್", verdict: "ತೀರ್ಮಾನ", analysis: "ವಿಶ್ಲೇಷಣೆ", claims: "ಹೇಳಿಕೆಗಳು", evidence: "ಸಾಕ್ಷ್ಯ ವಿಶ್ವಾಸ" },
-  gu: { rating: "રેટિંગ", profile: "પ્રોફાઇલ", verdict: "નિષ્કર્ષ", analysis: "વિશ્લેષણ", claims: "દાવા", evidence: "પુરાવાનો વિશ્વાસ" },
-  ml: { rating: "റേറ്റിംഗ്", profile: "പ്രൊഫൈൽ", verdict: "നിഗമനം", analysis: "വിശകലനം", claims: "അവകാശവാദങ്ങൾ", evidence: "തെളിവ് വിശ്വാസം" },
-  pa: { rating: "ਰੇਟਿੰਗ", profile: "ਪ੍ਰੋਫਾਈਲ", verdict: "ਨਤੀਜਾ", analysis: "ਵਿਸ਼ਲੇਸ਼ਣ", claims: "ਦਾਅਵੇ", evidence: "ਸਬੂਤ ਭਰੋਸਾ" },
-  or: { rating: "ରେଟିଂ", profile: "ପ୍ରୋଫାଇଲ୍", verdict: "ନିଷ୍କର୍ଷ", analysis: "ବିଶ୍ଳେଷଣ", claims: "ଦାବି", evidence: "ପ୍ରମାଣ ଭରସା" },
-  ur: { rating: "ریٹنگ", profile: "پروفائل", verdict: "نتیجہ", analysis: "تجزیہ", claims: "دعوے", evidence: "ثبوت کا اعتماد" },
+const RESPONSE_COPY: Record<LanguageCode, { rating: string; profile: string; verdict: string; analysis: string; claims: string; productMatch: string }> = {
+  en: { rating: "Rating", profile: "Profile", verdict: "Verdict", analysis: "Analysis", claims: "Claims", productMatch: "Product match" },
+  hi: { rating: "रेटिंग", profile: "प्रोफ़ाइल", verdict: "निष्कर्ष", analysis: "विश्लेषण", claims: "दावे", productMatch: "उत्पाद मिलान" },
+  mr: { rating: "रेटिंग", profile: "प्रोफाइल", verdict: "निष्कर्ष", analysis: "विश्लेषण", claims: "दावे", productMatch: "उत्पादन जुळणी" },
+  bn: { rating: "রেটিং", profile: "প্রোফাইল", verdict: "সিদ্ধান্ত", analysis: "বিশ্লেষণ", claims: "দাবি", productMatch: "পণ্য মিল" },
+  ta: { rating: "மதிப்பீடு", profile: "சுயவிவரம்", verdict: "முடிவு", analysis: "பகுப்பாய்வு", claims: "கூற்றுகள்", productMatch: "தயாரிப்பு பொருத்தம்" },
+  te: { rating: "రేటింగ్", profile: "ప్రొఫైల్", verdict: "తీర్పు", analysis: "విశ్లేషణ", claims: "క్లెయిమ్‌లు", productMatch: "ఉత్పత్తి సరిపోలిక" },
+  kn: { rating: "ರೇಟಿಂಗ್", profile: "ಪ್ರೊಫೈಲ್", verdict: "ತೀರ್ಮಾನ", analysis: "ವಿಶ್ಲೇಷಣೆ", claims: "ಹೇಳಿಕೆಗಳು", productMatch: "ಉತ್ಪನ್ನ ಹೊಂದಾಣಿಕೆ" },
+  gu: { rating: "રેટિંગ", profile: "પ્રોફાઇલ", verdict: "નિષ્કર્ષ", analysis: "વિશ્લેષણ", claims: "દાવા", productMatch: "ઉત્પાદન મેળ" },
+  ml: { rating: "റേറ്റിംഗ്", profile: "പ്രൊഫൈൽ", verdict: "നിഗമനം", analysis: "വിശകലനം", claims: "അവകാശവാദങ്ങൾ", productMatch: "ഉൽപ്പന്ന പൊരുത്തം" },
+  pa: { rating: "ਰੇਟਿੰਗ", profile: "ਪ੍ਰੋਫਾਈਲ", verdict: "ਨਤੀਜਾ", analysis: "ਵਿਸ਼ਲੇਸ਼ਣ", claims: "ਦਾਅਵੇ", productMatch: "ਉਤਪਾਦ ਮੇਲ" },
+  or: { rating: "ରେଟିଂ", profile: "ପ୍ରୋଫାଇଲ୍", verdict: "ନିଷ୍କର୍ଷ", analysis: "ବିଶ୍ଳେଷଣ", claims: "ଦାବି", productMatch: "ଉତ୍ପାଦ ମେଳ" },
+  ur: { rating: "ریٹنگ", profile: "پروفائل", verdict: "نتیجہ", analysis: "تجزیہ", claims: "دعوے", productMatch: "مصنوعات کی مطابقت" },
 };
 
 const CONFIDENCE_COPY: Record<LanguageCode, Record<"high" | "medium" | "low", string>> = {
@@ -101,11 +101,13 @@ export function renderWhatsAppChunks(result: unknown): string[] {
       const typedItem = item as unknown as ProductAnalysis;
       const indicators = buildShopperIndicators(typedItem, signals, language);
       const warnings = indicators.filter((indicator) => indicator.tone === "red" || indicator.tone === "amber");
-      const supporting = indicators.filter((indicator) => indicator.tone === "green" || indicator.tone === "grey");
-      const warningRows = warnings.map((indicator) => {
-        const icon = indicator.tone === "red" ? "🔴" : indicator.tone === "amber" ? "🟠" : indicator.tone === "green" ? "🟢" : "⚪";
-        return `${icon} *${indicator.title}*\n${indicator.detail}`;
-      });
+      const insufficient = warnings.length === 0
+        ? indicators.filter((indicator) => indicator.tone === "grey").slice(0, 1)
+        : [];
+      const promoted = multipleProducts ? warnings : [...warnings, ...insufficient];
+      const supporting = indicators.filter((indicator) =>
+        indicator.tone === "green" || indicator.tone === "grey" && !insufficient.includes(indicator));
+      const warningRows = promoted.map(renderIndicator);
       if (multipleProducts && warningRows.length) {
         warningBlocks.push({ icon: "⚠️", ordinal, total: validItems.length, name, rows: warningRows });
       } else {
@@ -123,14 +125,20 @@ export function renderWhatsAppChunks(result: unknown): string[] {
         : "";
       const profile = Array.isArray(item.profile) ? item.profile.flatMap((tag) => tag && typeof tag === "object" && typeof (tag as Record<string, unknown>).label === "string" ? [(tag as Record<string, unknown>).label as string] : []) : [];
       const summary = typeof item.summary === "string" ? item.summary.trim() : "";
+      const matchConfidence = productMatchConfidence(item);
       const meta = [
         !multipleProducts && name ? `📦 *${name}*` : null,
-        `*${copy.rating}:* ${score ?? "—"}/10${arithmetic}`,
+        score !== null ? `*${copy.rating}:* ${score}/10${arithmetic}` : null,
         profile.length ? `*${copy.profile}:* ${profile.join(" · ")}` : null,
-        summary ? `*${copy.verdict}:* ${summary}` : null,
-        `*${copy.evidence}:* ${CONFIDENCE_COPY[language][evidenceConfidence(item)]}`,
+        summary ? `${strongestToneIcon(indicators)} *${copy.verdict}:* ${summary}` : null,
+        typeof item.webMatchBasis === "string" && item.webMatchBasis.trim()
+          ? `*${copy.productMatch}:* ${matchConfidence ? `${CONFIDENCE_COPY[language][matchConfidence]} · ` : ""}${item.webMatchBasis.trim()}`
+          : null,
       ].filter((line): line is string => Boolean(line));
-      const productDetailRows = [meta.join("\n")];
+      const productDetailRows = [
+        ...(multipleProducts && insufficient.length ? insufficient.map(renderIndicator) : []),
+        meta.join("\n"),
+      ];
       if (supporting.length) {
         productDetailRows.push(`*${copy.analysis}:*\n${supporting.map((indicator) => `• *${indicator.title}:* ${indicator.detail}`).join("\n")}`);
       }
@@ -141,15 +149,19 @@ export function renderWhatsAppChunks(result: unknown): string[] {
         ? item.claimAudits.filter((audit): audit is Record<string, unknown> => Boolean(audit && typeof audit === "object"))
         : [];
       if (visibleClaims.length) {
-        const rows = visibleClaims.map((claim) => {
+        const rows = visibleClaims.flatMap((claim) => {
           const audit = claimAudits.find((candidate) => candidate.claimAsPrinted === claim);
+          if (!audit) return [];
           const status = typeof audit?.status === "string" ? audit.status : "not_assessable";
           const engineConfirmed = signals.some((signal) => signal.kind === "claim_contradiction" && signal.claimAsPrinted === claim);
           const icon = status === "supported" ? "✅" : status === "contradicted" && engineConfirmed ? "❌" : status === "contradicted" || status === "partially_supported" ? "⚠️" : "➖";
-          const assessment = typeof audit?.assessment === "string" ? ` — ${audit.assessment}` : "";
-          return `${icon} “${claim}”${assessment}`;
+          const assessment = typeof audit.assessment === "string" ? audit.assessment.trim() : "";
+          if ((status === "not_established" || status === "not_assessable") && !assessment) return [];
+          return status === "not_established" || status === "not_assessable"
+            ? [`${icon} ${assessment} — “${claim}”`]
+            : [`${icon} “${claim}”${assessment ? ` — ${assessment}` : ""}`];
         });
-        productDetailRows.push(`*${copy.claims}:*\n${rows.join("\n")}`);
+        if (rows.length) productDetailRows.push(`*${copy.claims}:*\n${rows.join("\n")}`);
       }
       const serviceRoute = item.serviceRoute && typeof item.serviceRoute === "object" ? item.serviceRoute as Record<string, unknown> : null;
       if (serviceRoute && typeof serviceRoute.reason === "string") productDetailRows.push(`🏛️ ${serviceRoute.reason}`);
@@ -232,13 +244,23 @@ function packWhatsAppSections(sections: readonly string[], maximumCodePoints: nu
   return chunks.length ? chunks : ["Your label analysis is ready."];
 }
 
-function evidenceConfidence(item: Record<string, unknown>): "high" | "medium" | "low" {
-  const identity = item.identity && typeof item.identity === "object" ? item.identity as Record<string, unknown> : {};
-  const identityConfidence = typeof identity.confidence === "string" ? identity.confidence : "unknown";
+function renderIndicator(indicator: ReturnType<typeof buildShopperIndicators>[number]): string {
+  const icon = indicator.tone === "red" ? "🔴" : indicator.tone === "amber" ? "🟠" : indicator.tone === "green" ? "🟢" : "⚪";
+  return `${icon} *${indicator.title}*\n${indicator.detail}`;
+}
+
+function strongestToneIcon(indicators: ReturnType<typeof buildShopperIndicators>): string {
+  if (indicators.some((indicator) => indicator.tone === "red")) return "🔴";
+  if (indicators.some((indicator) => indicator.tone === "amber")) return "🟠";
+  if (indicators.some((indicator) => indicator.tone === "grey")) return "⚪";
+  return "🟢";
+}
+
+function productMatchConfidence(item: Record<string, unknown>): "high" | "medium" | "low" | null {
   const webConfidence = typeof item.webMatchConfidence === "string" ? item.webMatchConfidence : null;
-  if (identityConfidence === "high" && (webConfidence === null || webConfidence === "high")) return "high";
-  if (["high", "medium"].includes(identityConfidence) && webConfidence !== "low") return "medium";
-  return "low";
+  return webConfidence === "high" || webConfidence === "medium" || webConfidence === "low"
+    ? webConfidence
+    : null;
 }
 
 export async function consumeDelivery(

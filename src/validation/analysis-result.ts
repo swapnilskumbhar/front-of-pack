@@ -5,9 +5,11 @@ import {
   MAX_SERIALIZED_ANALYSIS_BYTES,
   PRODUCT_CATEGORIES,
   FINDING_TOPICS,
+  WEB_RESEARCH_OUTCOMES,
   type AnalysisResult,
 } from "../domain/analysis.ts";
 import { SUPPORTED_LANGUAGES } from "../domain/language.ts";
+import { isMissingInformationFinding } from "../engine/presentation.ts";
 
 export type AnalysisValidationCode =
   | "invalid_shape"
@@ -134,6 +136,15 @@ export function validateAnalysisResult(
     if (!isString(rawItem.category) || !(PRODUCT_CATEGORIES as readonly string[]).includes(rawItem.category)) {
       add("invalid_enum", `${base}.category`, "Unknown product category.");
     }
+    if (!isString(rawItem.webResearchOutcome) || !(WEB_RESEARCH_OUTCOMES as readonly string[]).includes(rawItem.webResearchOutcome)) {
+      add("invalid_enum", `${base}.webResearchOutcome`, "Unknown web research outcome.");
+    }
+    if (rawItem.webMatchConfidence !== null && !["high", "medium", "low"].includes(String(rawItem.webMatchConfidence))) {
+      add("invalid_enum", `${base}.webMatchConfidence`, "Web match confidence must be high, medium, low, or null.");
+    }
+    if (rawItem.webMatchBasis !== null && (!isString(rawItem.webMatchBasis) || rawItem.webMatchBasis.trim().length === 0)) {
+      add("invalid_shape", `${base}.webMatchBasis`, "Web match basis must be a nonempty string or null.");
+    }
     const coverage = isRecord(rawItem.coverage) ? rawItem.coverage : {};
     if (!isRecord(rawItem.coverage)) add("invalid_shape", `${base}.coverage`, "Coverage must be an object.");
     if (!isString(coverage.tier) || !(COVERAGE_TIERS as readonly string[]).includes(coverage.tier)) {
@@ -176,6 +187,9 @@ export function validateAnalysisResult(
       if (rawEvidence.origin === "hosted_web_search" && (!isString(rawEvidence.citationId) || rawEvidence.citationId.length === 0)) {
         add("invalid_evidence_relationship", `${path}.citationId`, `${String(rawEvidence.origin)} evidence requires a citation.`);
       }
+      if (rawEvidence.origin === "hosted_web_search" && rawEvidence.visibleOnPackage !== false) {
+        add("invalid_evidence_relationship", `${path}.visibleOnPackage`, "Hosted-search evidence cannot be described as visible on the package.");
+      }
       if (rawEvidence.origin === "hosted_web_search" && isString(rawEvidence.citationId)) {
         const citation = citations.find((candidate) => isRecord(candidate) && candidate.id === rawEvidence.citationId);
         if (!isRecord(citation) || !isString(citation.providerSourceId) || citation.providerSourceId.length === 0) {
@@ -189,6 +203,11 @@ export function validateAnalysisResult(
       }
     });
 
+    const hostedEvidenceIds = new Set(evidence.flatMap((candidate) =>
+      isRecord(candidate) && isString(candidate.id) && candidate.origin === "hosted_web_search"
+        ? [candidate.id] : []));
+    const consumedEvidenceIds = new Set<string>();
+    const visibleDecisionEvidenceIds = new Set<string>();
     const validateEvidenceRefs = (owner: unknown, path: string) => {
       if (!isRecord(owner) || !Array.isArray(owner.evidenceIds)) {
         add("invalid_shape", `${path}.evidenceIds`, "evidenceIds must be an array.");
@@ -196,8 +215,17 @@ export function validateAnalysisResult(
       }
       owner.evidenceIds.forEach((id, index) => {
         if (!isString(id) || !evidenceIds.has(id)) add("unresolved_evidence", `${path}.evidenceIds[${index}]`, "Evidence must resolve within the same product.");
+        else consumedEvidenceIds.add(id);
       });
     };
+
+    validateEvidenceRefs({ evidenceIds: rawItem.webMatchEvidenceIds }, `${base}.webMatchEvidenceIds`);
+    const webMatchEvidenceIds = new Set(asArray(rawItem.webMatchEvidenceIds).filter(isString));
+    webMatchEvidenceIds.forEach((id) => {
+      if (!hostedEvidenceIds.has(id)) {
+        add("invalid_evidence_relationship", `${base}.webMatchEvidenceIds`, "Product-match evidence must be hosted-search evidence.");
+      }
+    });
 
     if (rawItem.nutrition !== null && rawItem.nutrition !== undefined) {
       const nutrition = rawItem.nutrition;
@@ -214,6 +242,12 @@ export function validateAnalysisResult(
         if (!hasMatchingEvidence) {
           add("invalid_evidence_relationship", `${base}.nutrition.evidenceIds`, "Nutrition must reference evidence with the declared provenance.");
         }
+        const values = isRecord(nutrition.values) ? nutrition.values : {};
+        const hasUsableValue = [values.addedSugarsG, values.saturatedFatG, values.sodiumMg, values.totalFatG]
+          .some((value) => typeof value === "number" && Number.isFinite(value));
+        if (nutrition.source === "hosted_web_search" && hasUsableValue) {
+          asArray(nutrition.evidenceIds).filter(isString).forEach((id) => visibleDecisionEvidenceIds.add(id));
+        }
       }
     }
 
@@ -228,6 +262,15 @@ export function validateAnalysisResult(
       if (!isString(finding.topic) || !(FINDING_TOPICS as readonly string[]).includes(finding.topic)) {
         add("invalid_enum", `${path}.topic`, "Finding topic is not supported.");
       }
+      const usesHostedEvidence = asArray(finding.evidenceIds).some((id) => evidence.some((candidate) =>
+        isRecord(candidate) && candidate.id === id && candidate.origin === "hosted_web_search"));
+      if (finding.kind === "label_fact" && usesHostedEvidence) {
+        add("invalid_evidence_relationship", `${path}.kind`, "Hosted decision facts require a specific finding kind, not label_fact.");
+      }
+      if (usesHostedEvidence && finding.level !== "unknown" && isString(finding.title) && isString(finding.explanation) &&
+          !isMissingInformationFinding(finding.title, finding.explanation)) {
+        asArray(finding.evidenceIds).filter(isString).forEach((id) => visibleDecisionEvidenceIds.add(id));
+      }
       const isExperimentalKind = finding.kind === "experimental_fop";
       if (finding.experimental !== isExperimentalKind) {
         add("invalid_experimental_semantics", `${path}.experimental`, "Only experimental_fop findings must be marked experimental.");
@@ -237,10 +280,28 @@ export function validateAnalysisResult(
       });
       consumerText.push([`${path}.title`, finding.title], [`${path}.explanation`, finding.explanation], [`${path}.uncertainty`, finding.uncertainty]);
     });
+    const visibleClaims = new Set(asArray(rawItem.claimsAsPrinted).filter(isString));
+    const auditedClaims = new Set<string>();
     asArray(rawItem.claimAudits).forEach((audit, index) => {
       const path = `${base}.claimAudits[${index}]`;
       validateEvidenceRefs(audit, path);
-      if (isRecord(audit)) consumerText.push([`${path}.assessment`, audit.assessment]);
+      if (isRecord(audit)) {
+        consumerText.push([`${path}.assessment`, audit.assessment]);
+        if (!isString(audit.assessment) || audit.assessment.trim().length === 0) {
+          add("invalid_shape", `${path}.assessment`, "Claim assessment must be nonempty.");
+        }
+        if (!isString(audit.claimAsPrinted) || !visibleClaims.has(audit.claimAsPrinted)) {
+          add("invalid_evidence_relationship", `${path}.claimAsPrinted`, "Claim audit must match a claim visible in the submitted image.");
+        } else if (auditedClaims.has(audit.claimAsPrinted)) {
+          add("invalid_evidence_relationship", `${path}.claimAsPrinted`, "Visible claims must have exactly one audit.");
+        } else auditedClaims.add(audit.claimAsPrinted);
+        if (["supported", "partially_supported", "contradicted"].includes(String(audit.status))) {
+          asArray(audit.evidenceIds).filter(isString).forEach((id) => visibleDecisionEvidenceIds.add(id));
+        }
+      }
+    });
+    visibleClaims.forEach((claim) => {
+      if (!auditedClaims.has(claim)) add("invalid_evidence_relationship", `${base}.claimAudits`, `Visible claim is missing an audit: ${claim}`);
     });
 
     if (!Array.isArray(rawItem.profile)) {
@@ -250,8 +311,46 @@ export function validateAnalysisResult(
       const path = `${base}.profile[${index}]`;
       validateEvidenceRefs(tag, path);
       if (!isRecord(tag) || !isString(tag.label)) add("invalid_shape", `${path}.label`, "Profile label is required.");
-      else consumerText.push([`${path}.label`, tag.label]);
+      else {
+        consumerText.push([`${path}.label`, tag.label]);
+        asArray(tag.evidenceIds).filter(isString).forEach((id) => visibleDecisionEvidenceIds.add(id));
+      }
     });
+
+    const consumedHostedEvidenceIds = new Set([...consumedEvidenceIds].filter((id) => hostedEvidenceIds.has(id)));
+    const visibleDecisionHostedEvidenceIds = new Set([...visibleDecisionEvidenceIds].filter((id) => hostedEvidenceIds.has(id)));
+    const usableWebMatch = rawItem.webMatchConfidence === "high" || rawItem.webMatchConfidence === "medium";
+    const webNutrition = isRecord(rawItem.nutrition) && rawItem.nutrition.source === "hosted_web_search";
+    if ((webNutrition || visibleDecisionHostedEvidenceIds.size > 0) && !usableWebMatch) {
+      add("invalid_evidence_relationship", `${base}.webMatchConfidence`, "Web-backed conclusions require a high or medium exact-product match.");
+    }
+    if (rawItem.webResearchOutcome === "decision_facts_found") {
+      if (!usableWebMatch || webMatchEvidenceIds.size === 0 || !isString(rawItem.webMatchBasis) || rawItem.webMatchBasis.trim().length === 0) {
+        add("invalid_evidence_relationship", `${base}.webResearchOutcome`, "Decision facts require a usable match and a specific match basis.");
+      }
+      if (hostedEvidenceIds.size === 0 || visibleDecisionHostedEvidenceIds.size === 0) {
+        add("invalid_evidence_relationship", `${base}.webResearchOutcome`, "Decision facts require cited hosted evidence consumed by a visible decision fact.");
+      }
+      hostedEvidenceIds.forEach((id) => {
+        if (!consumedHostedEvidenceIds.has(id)) add("invalid_evidence_relationship", `${base}.evidence`, `Hosted decision evidence is not consumed: ${id}`);
+      });
+    }
+    if (rawItem.webResearchOutcome === "not_needed" &&
+        (hostedEvidenceIds.size > 0 || webMatchEvidenceIds.size > 0 || rawItem.webMatchConfidence !== null || rawItem.webMatchBasis !== null)) {
+      add("invalid_evidence_relationship", `${base}.webResearchOutcome`, "not_needed cannot retain a web match or hosted-search evidence.");
+    }
+    if (rawItem.webResearchOutcome === "identity_only" &&
+        (!usableWebMatch || hostedEvidenceIds.size === 0 || webMatchEvidenceIds.size === 0 || !isString(rawItem.webMatchBasis) || rawItem.webMatchBasis.trim().length === 0)) {
+      add("invalid_evidence_relationship", `${base}.webResearchOutcome`, "identity_only requires a cited usable identity match and a specific basis.");
+    }
+    if (rawItem.webResearchOutcome === "no_sufficient_match" &&
+        (!isString(rawItem.webMatchBasis) || rawItem.webMatchBasis.trim().length === 0 || usableWebMatch)) {
+      add("invalid_evidence_relationship", `${base}.webResearchOutcome`, "no_sufficient_match requires a specific basis without a usable match.");
+    }
+    if ((rawItem.webResearchOutcome === "identity_only" || rawItem.webResearchOutcome === "no_sufficient_match") &&
+        (webNutrition || visibleDecisionHostedEvidenceIds.size > 0 || [...hostedEvidenceIds].some((id) => !webMatchEvidenceIds.has(id)))) {
+      add("invalid_evidence_relationship", `${base}.webResearchOutcome`, "Identity-only or unmatched research cannot support consumer conclusions.");
+    }
 
     if (rawItem.serviceRoute !== null) {
       const route = isRecord(rawItem.serviceRoute) ? rawItem.serviceRoute : {};

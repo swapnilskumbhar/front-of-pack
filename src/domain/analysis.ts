@@ -4,7 +4,7 @@ import type { DerivedDecisionResult, ExtractedNutrition } from "../engine/types"
 
 export const MAX_PRODUCTS_PER_ANALYSIS = 6 as const;
 export const MAX_SERIALIZED_ANALYSIS_BYTES = 512 * 1024;
-export const ANALYSIS_SCHEMA_VERSION = "analysis-result.v3" as const;
+export const ANALYSIS_SCHEMA_VERSION = "analysis-result.v4" as const;
 
 export const ANALYSIS_STATUSES = [
   "queued",
@@ -36,6 +36,13 @@ export const COVERAGE_TIERS = [
 export type CoverageTier = (typeof COVERAGE_TIERS)[number];
 
 export type EvidenceOrigin = "package" | "hosted_web_search" | "verified_rule";
+export const WEB_RESEARCH_OUTCOMES = [
+  "not_needed",
+  "decision_facts_found",
+  "identity_only",
+  "no_sufficient_match",
+] as const;
+export type WebResearchOutcome = (typeof WEB_RESEARCH_OUTCOMES)[number];
 export type FindingKind =
   | "label_fact"
   | "ingredient"
@@ -72,7 +79,7 @@ export interface Evidence {
 export interface Finding {
   id: string;
   kind: FindingKind;
-  /** Required in provider schema v3; optional here only for cached v2 compatibility. */
+  /** Required in provider schema v4; optional here only for cached-result compatibility. */
   topic?: FindingTopic;
   level: FindingLevel;
   title: string;
@@ -123,8 +130,10 @@ export interface ProductAnalysis {
   ingredientTokens?: string[];
   claimsAsPrinted?: string[];
   printedVegMark?: "veg" | "non_veg" | null;
-  webMatchConfidence?: "high" | "medium" | "low" | null;
-  webMatchBasis?: string | null;
+  webResearchOutcome: WebResearchOutcome;
+  webMatchEvidenceIds: string[];
+  webMatchConfidence: "high" | "medium" | "low" | null;
+  webMatchBasis: string | null;
   profile: ProductProfileTag[];
   coverage: Coverage;
   summary: string;

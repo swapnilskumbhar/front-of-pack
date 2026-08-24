@@ -56,6 +56,7 @@ Use this answer only after the final release checks confirm every listed impleme
 | WhatsApp | Webhook, encrypted routing, queues, renderer, language profiles, and mocked Graph tests are implemented. A real Meta test-number journey has completed end to end; a profile with no saved language defaults to English. | Rehearse the exact shot immediately before recording. If the channel is temporarily unavailable, use the fallback and disclose the interruption without describing the implementation as mock-only. |
 | Government systems | No live government API, registry, login, OTP, payment, complaint submission, or case tracking is connected. Public official pages are used only as cited sources and external handoffs. | State this plainly. |
 | Custom domain | None is claimed. A custom domain is optional; the `workers.dev` host is the fallback. | Submit whichever public link passes the final no-access check. |
+| Link preview | Canonical, Open Graph and Twitter large-card metadata use an original 1200×630 result-style image with no product photograph. | Re-send the public link in a fresh chat and verify the preview immediately before submission. |
 | Demo video | None exists yet. | Record, upload, and verify the final ≤2:00 public link before submitting. |
 
 ## Compliance checklist
@@ -84,6 +85,7 @@ The organizers require an independent build, synthetic data where production acc
 - [ ] Re-run the AloFrut regression: added sugar appears once at about 63%; sodium appears once at about 33.8%; only engine-derived marked warnings are red; model additive context remains visible but not red; deduction arithmetic is shown.
 - [ ] Complete three clean citizen journeys from a fresh incognito browser with cache disabled where relevant.
 - [ ] Open the candidate `workers.dev` link from a separate network/device and confirm no Cloudflare Access, login prompt, broken asset, mixed-content warning, or expired result link blocks reviewers.
+- [ ] Re-send the public link in a fresh WhatsApp/Slack chat and confirm the large preview card renders with the whole-pack hook.
 - [ ] Ensure the public repository is judge-accessible and its README contains setup, test, mock-data, and limitation instructions.
 - [ ] If a custom domain is desired, purchase and attach it only with explicit approval, then test TLS and redirects. No custom domain currently exists, and it is not required by the official rules.
 

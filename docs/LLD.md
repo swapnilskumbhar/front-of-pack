@@ -1,7 +1,7 @@
 # Front of Pack — Low Level Design
 
 > **Status:** v6.0 — competition release-candidate implementation contract
-> **Runtime pins:** `terra-analysis.v16` · `analysis-result.v3` · `decision-engine.v8`
+> **Runtime pins:** `terra-analysis.v17` · `analysis-result.v4` · `decision-engine.v8`
 > **Authority:** [FINAL_PLAN.md](./FINAL_PLAN.md) owns product scope, priority, schedule, demo, and cut decisions. This LLD explains how to implement that plan.
 > **Companions:** [HLD.md](./HLD.md); [EXECUTION_PIPELINE.md](./EXECUTION_PIPELINE.md) owns live task status and proof; [CLOUDFLARE_SETUP.md](./CLOUDFLARE_SETUP.md) owns platform onboarding commands
 > **Supersedes:** LLD v2 production-scale attempt/artifact/lease design.
@@ -73,7 +73,7 @@ front-of-pack/
 │   │   ├── registry/page.tsx
 │   │   ├── officer/page.tsx
 │   │   └── api/                         # analyses/profile/registry/officer/WhatsApp
-│   ├── domain/analysis.ts               # analysis-result.v3 domain contract
+│   ├── domain/analysis.ts               # analysis-result.v4 domain contract
 │   ├── validation/analysis-result.ts    # semantic/evidence validator
 │   ├── engine/                          # decision-engine.v8 signals, rating, presentation
 │   ├── intake/                          # original-byte validation/cache identity
@@ -83,8 +83,8 @@ front-of-pack/
 ├── workers/jobs/
 │   ├── src/index.ts                     # Queue consumers + pinned versions
 │   ├── src/openai/client.ts             # only Responses API call boundary
-│   ├── src/openai/prompt.ts             # terra-analysis.v16
-│   ├── src/openai/schema.ts             # strict analysis-result.v3 schema
+│   ├── src/openai/prompt.ts             # terra-analysis.v17
+│   ├── src/openai/schema.ts             # strict analysis-result.v4 schema
 │   ├── src/whatsapp/                    # Meta media/intake/delivery
 │   └── wrangler.jsonc
 ├── migrations/*.sql
@@ -108,8 +108,8 @@ There is one model call site: **`workers/jobs/src/openai/client.ts`**. Delivery 
 ~~~ts
 export const VERSION = {
   model: "gpt-5.6-terra",
-  prompt: "terra-analysis.v16",
-  schema: "analysis-result.v3",
+  prompt: "terra-analysis.v17",
+  schema: "analysis-result.v4",
   rules: "india-category-rules.v2",
   services: "india-consumer-services.v1",
   engine: "decision-engine.v8",
@@ -126,7 +126,7 @@ export const LIMITS = {
   maxCitationsPerItem: 8,
   maxClaimAuditsPerItem: 8,
   maxToolCalls: 3,
-  maxOutputTokens: 6_000,
+  maxOutputTokens: 8_000,
   maxWhatsAppCodePoints: 3_500,
   maxRetries: 0,
   mediaLifecycleEligibilityHours: 24,
@@ -473,7 +473,7 @@ The deployed contract is camelCase and matches `src/domain/analysis.ts` plus the
 
 ~~~ts
 type AnalysisResult = {
-  schemaVersion: "analysis-result.v3";
+  schemaVersion: "analysis-result.v4";
   language: Language;
   analyzedCount: number;
   unknownCount: number;
@@ -497,6 +497,9 @@ type ProductAnalysis = {
   ingredientTokens: string[];
   claimsAsPrinted: string[]; // only claims visible in the submitted image
   printedVegMark: "veg" | "non_veg" | null;
+  webResearchOutcome: "not_needed" | "decision_facts_found" |
+    "identity_only" | "no_sufficient_match";
+  webMatchEvidenceIds: string[]; // cited identity/variant/pack-match evidence only
   webMatchConfidence: "high" | "medium" | "low" | null;
   webMatchBasis: string | null;
   // No rating field: the model is not allowed to author the score.
@@ -547,7 +550,7 @@ type ClaimAudit = {
 };
 ~~~
 
-The model owns this schema's identity, profile, summary/verdict, findings and their prose, claims, and evidence. Raw brand, product, claim, and label text remains verbatim; consumer explanation, uncertainty, and next actions are in the selected language. The application validates these fields but does not paraphrase them.
+The model owns this schema's identity, profile, summary/verdict, findings and their prose, claims, and evidence. `webMatchEvidenceIds` grounds identity/variant/pack scope separately; `decision_facts_found` requires at least one hosted evidence ID to reach a consumer-visible finding, usable nutrition value, profile tag, or assessable claim audit. Identity-only/unmatched evidence cannot silently carry a material fact into a hidden evidence bucket. Raw brand, product, decision-relevant claim, and label text remains verbatim; consumer explanation, uncertainty, and next actions are in the selected language. The application validates these fields but does not paraphrase them.
 
 Printed per-serving %RDA takes priority. When unavailable, decision-engine v8 calculates and labels %RDA using the FSSAI adult references for added sugar (50 g), saturated fat (22 g) and sodium (2,000 mg). The response pairs absolute and percentage values at the honest scope: per 100 g/ml, exact serving, or verified whole pack. Web nutrition remains labelled as an online match.
 
@@ -595,7 +598,7 @@ The engine starts a reproducible rating at 10 and applies fixed deductions, dedu
 | Explicit animal/insect-derived diet-profile match | −1 |
 | Informational diet/source-unclear signal | 0 |
 
-The score floors at 0 and is `null` with an empty deduction list—there is no unexplained 10/10 when no reproducible deduction exists. Presentation checks whether nutrition, ingredient, claim or derived checks actually ran and the image was not marked for retake. A null score then reads `No deductions from checks that ran`; otherwise it reads `Not enough rule-based evidence`. The rating is explicitly experimental, and neither it nor a warning can by itself make a grievance ready for review.
+The score floors at 0 and is `null` with an empty deduction list—there is no unexplained 10/10 when no reproducible deduction exists. Presentation checks whether nutrition, ingredient, claim or derived checks actually ran and the image was not marked for retake. A null score renders no numeric fraction: the web card says `No deductions from checks that ran` or `Not enough information to rate`, and WhatsApp omits the rating row. `—/10` is forbidden. The rating is explicitly experimental, and neither it nor a warning can by itself make a grievance ready for review.
 
 Presentation combines model findings and engine signals as `ShopperIndicator` values. Only `origin: "engine"` may be red and link a non-null `ruleId`; model attention or uncertainty is amber, and a moderate engine signal is amber. The required model `Finding.topic` keeps total sugar distinct from added sugar and ingredient names such as sodium benzoate distinct from sodium nutrition. Nutrient/allergen signals merge only an exact structured topic and replace the visible title/detail with engine-formatted content; arbitrary title text never controls severity. Ordering uses structured topic/tone/origin fields, not translated title text, so all twelve languages follow the same priority.
 
@@ -635,18 +638,18 @@ async function callTerraOnce(
     ],
     reasoning: { effort: "low" },
     service_tier: "default",
-    tools: [{ type: "web_search" }],
+    tools: [{ type: "web_search", user_location: { type: "approximate", country: "IN" } }],
     tool_choice: "required",
-    max_tool_calls: 3,
+    max_tool_calls: 6,
     include: ["web_search_call.action.sources"],
     text: { verbosity: "low", format: strictStructuredOutput(AnalysisResultSchema) },
-    max_output_tokens: 6_000,
+    max_output_tokens: 8_000,
     }),
   });
 }
 ~~~
 
-The deployed Worker uses direct `fetch`; automatic provider retry is absent. The invariant is one Responses request with original-detail image input, one strict schema, verified rule context, and required hosted search.
+The deployed Worker uses direct `fetch`; automatic provider retry is absent. The invariant is one Responses request with original-detail image input, one strict schema, verified rule context, and required hosted search. `tool_choice: required` guarantees search runs but not that it finds a useful source, so schema v4 records `webResearchOutcome` per product and validates that any useful searched facts are actually consumed. Identity-only and unmatched outcomes remain valid, honest retake results rather than forced findings.
 
 The default service tier is explicit so a standard-price estimate is reproducible. The parser retains the actual returned model, service tier, token usage and the exact count of `web_search_call` output items. Source count is not used as a billing proxy.
 
@@ -749,7 +752,7 @@ On failure, save MODEL_OUTPUT_INVALID and show Retry. Do not coerce, repair, tra
 
 After validation, decision-engine v8 attaches calculation/dictionary signals and the deterministic rating without rewriting model-owned identity, profile, summary, findings, claims, or evidence. Presentation then builds origin/topic/rule-linked indicators; engine warnings may be red, model context may be amber, and structured ordering is independent of translated text. The public registry route is a separate exact identifier lookup against clearly synthetic demonstration data; it does not alter scan findings and never claims a live government check. Grievance drafting similarly uses stored validated facts plus fixed templates and never submits externally.
 
-The current multi-product demonstration uses the user-provided five-item cart screenshot and a validated `analysis-result.v3` cached reconstruction from that exact image. The image contains no visible PII, all five products render through the production path, and selecting it makes no model call during recording. UI and submission copy must disclose the screenshot as third-party imagery; inclusion in the final recording remains conditional on confirmed ownership/permitted use and any required attribution.
+The current multi-product demonstration uses the user-provided five-item cart screenshot and a validated `analysis-result.v4` cached reconstruction from that exact image. The image contains no visible PII, all five products render through the production path, and selecting it makes no model call during recording. UI and submission copy must disclose the screenshot as third-party imagery; inclusion in the final recording remains conditional on confirmed ownership/permitted use and any required attribution.
 
 ---
 
@@ -921,7 +924,7 @@ No bearer credential may ever be attached to a URL selected directly from incomi
 | Completed result | Send numbered product blocks; every chunk quotes the originating image via `context.message_id` |
 | Change language | Update the profile; applies to future image jobs |
 
-The renderer performs two global passes. For more than one product it emits closed warning blocks headed `⚠️ n/total · product` for every warning-bearing product, then closed detail blocks headed `📦 n/total · product` for every product. It omits false empty-warning blocks, repeats the same ordinal/name on continuations, and keeps every closed block within 3,500 Unicode code points. Thus a later product warning cannot be hidden behind an earlier product's verbose claims, and a chunk can never lose product identity. Single-product output stays compact and unnumbered. Red is engine-only; model context is at most amber.
+The renderer performs two global passes. For more than one product it emits closed warning blocks headed `⚠️ n/total · product` for every warning-bearing product, then closed detail blocks headed `📦 n/total · product` for every product. It omits false empty-warning blocks, repeats the same ordinal/name on continuations, and keeps every closed block within 3,500 Unicode code points. Thus a later product warning cannot be hidden behind an earlier product's verbose claims, and a chunk can never lose product identity. Single-product output stays compact and unnumbered. Red is engine-only; model context is at most amber. When no material fact is established, grey insufficiency leads; null ratings are omitted; product-match confidence is shown only with its explicit basis; not-established/not-assessable claims put the limitation before the quoted marketing wording; unaudited claims are omitted.
 
 The delivery query reads the already stored `whatsapp_jobs.inbound_message_id`. Every Graph text request—each success chunk and the analysis-failure notice—adds the documented root payload `context: { message_id: inbound_message_id }`. The opaque WAMID remains out of Queue payloads and logs. Two images from the same user can finish in either order: each response quotes its own original image rather than relying on arrival order. The delivery consumer sends stored chunks sequentially and never invokes the model. A retry is allowed only before any chunk has been sent; a later-chunk failure is terminal (`delivery_partial`) so earlier chunks are not duplicated. Failed/expired delivery deletes encrypted routing data after recording a non-sensitive code.
 
@@ -1039,7 +1042,7 @@ Instrument callTerraOnce:
 
 - strict schema accepts single- and multi-product fixtures;
 - item limit and top-level counts are enforced;
-- prompt v16, schema v3 and engine v8 pins must match the queued analysis row;
+- prompt v17, schema v4 and engine v8 pins must match the queued analysis row;
 - Responses requests require hosted search, permit three tool calls and include provider source metadata;
 - orphan source and rule IDs fail;
 - invented hosted-search URLs fail;

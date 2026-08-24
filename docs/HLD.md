@@ -1,7 +1,7 @@
 # Front of Pack — High Level Design
 
 > **Status:** v6.0 — competition release-candidate shopper-brief architecture
-> **Runtime pins:** `terra-analysis.v16` · `analysis-result.v3` · `decision-engine.v8`
+> **Runtime pins:** `terra-analysis.v17` · `analysis-result.v4` · `decision-engine.v8`
 > **Audience:** the implementing agent (Codex) and the solo maintainer
 > **Companion docs:** [`LLD.md`](./LLD.md) — implementation contract; [`FINAL_PLAN.md`](./FINAL_PLAN.md) — authoritative scope and deadline; [`EXECUTION_PIPELINE.md`](./EXECUTION_PIPELINE.md) — live tasks and proof; [`CLOUDFLARE_SETUP.md`](./CLOUDFLARE_SETUP.md) — repository, billing, account, resource, deployment, and domain onboarding
 > **Supersedes:** the retired *Front of Pack Playbook*. The Playbook is background material, not an implementation source of truth.
@@ -229,7 +229,9 @@ Terra returns one atomic model `AnalysisResult`; after validation, the applicati
 - web sources actually used, and
 - a whole-image summary.
 
-Per product, schema v3 allows up to twelve findings, twenty evidence observations, eight citations, eight visible-claim audits and six factual profile tags. Each finding has a required semantic `topic` so total sugar, added sugar, sodium nutrition and sodium-named ingredients cannot collide through title text. The schema has no model-authored `rating` field. Decision-engine v8 attaches signals plus the deterministic rating, and the presentation layer maps model and engine material into `ShopperIndicator` records carrying `origin`, `topic`, and `ruleId`. The render order is fixed from those structured fields: red/amber indicators; product identity; experimental rating; profile; verdict; supporting analysis; conditional Claims section; evidence confidence and match basis; expandable package/online evidence; verified next step.
+Per product, schema v4 allows up to twelve findings, twenty evidence observations, eight citations, eight visible-claim audits and six factual profile tags. `webResearchOutcome` distinguishes useful decision facts from identity-only or unmatched search, while `webMatchEvidenceIds` separately grounds product/variant/pack matching. Useful hosted evidence must have a high/medium product match, remain visibly separate from package evidence, and be consumed by usable nutrition, a visible topic-specific finding, profile tag, or assessable claim audit; low-match nutrition, hidden missing-panel findings and orphaned web facts fail validation. Each finding has a required semantic `topic` so total sugar, added sugar, sodium nutrition and sodium-named ingredients cannot collide through title text.
+
+The schema has no model-authored `rating` field. Decision-engine v8 attaches signals plus the deterministic rating, and the presentation layer maps model and engine material into `ShopperIndicator` records carrying `origin`, `topic`, and `ruleId`. Render order is: named red/amber warnings; a grey insufficient-information indicator when no material warning can be established; product identity; numeric experimental rating only when reproducible; profile; icon-scoped verdict; useful supporting analysis; conditional Claims section; explicitly scoped product-match basis; expandable evidence; verified next step. A null score is never rendered as `—/10`. Unverifiable claims lead with their limitation, and visible claims without a matching audit are omitted fail-closed.
 
 The detailed contract is defined in `LLD.md` §7.
 
@@ -241,7 +243,7 @@ Terra must:
 2. Preserve visual or cart order in `items[]`.
 3. Prefer image evidence over web evidence.
 4. Transcribe visible label text exactly and never invent missing values.
-5. Search the exact Indian product and pack for nutrition, ingredients/additives, allergens, sugar, sodium, saturated fat, caffeine, palm oil/palmolein, claims and useful positives; prefer manufacturer sources, then credible exact-product retailers, and never stop after the first warning.
+5. Search the exact Indian product and pack in ordered passes—identity, ingredients/allergens, then nutrition—prefer manufacturer sources, then credible exact-product retailers, and continue past identity-only results while the bounded tool budget remains.
 6. Keep image and web provenance separate at field level.
 7. Use only the supplied verified regulatory rules and service route IDs.
 8. Return `unknown` when evidence is insufficient or contradictory.
@@ -259,7 +261,7 @@ Application code must:
 4. Apply decision-engine v8 to add deterministic whole-pack, printed-first/calculated-RDA, literal-claim, diet and allergen signals plus fixed rating deductions with provenance.
 5. Keep exact synthetic identifier lookup as a separate clearly labelled demonstration surface; never imply a live registry query.
 6. Persist the model result, derived signals, evidence, versions, usage, and validation report.
-7. Build structured `ShopperIndicator` records, reserve red for engine-origin warnings, use amber for model context or moderate engine signals, merge duplicate nutrient topics, and apply the same topic order in every language before rendering rating, profile, verdict, analysis and visible claims.
+7. Build structured `ShopperIndicator` records, reserve red for engine-origin warnings, use amber for model context or moderate engine signals, promote honest grey insufficiency, merge duplicate nutrient topics, omit null numeric ratings, scope confidence to product matching, and apply the same topic order in every language.
 8. Resolve an allowed service route ID to its verified public link and add fixed UI notices and statutory disclaimers.
 
 ### 5.3 Removed architecture
@@ -345,6 +347,8 @@ Next.js App Router, server-rendered and mobile-first. No login is required.
 There is no separate basket route or basket analysis engine. A scan naturally contains one or many items.
 
 The homepage includes instant cached demonstrations through the exact production renderer: AloFrut for printed and whole-bottle RDA plus additives/claims; English Oven for whole-pack sodium, allergens and claims; Haldiram for front-only online evidence; and a user-provided five-item cart screenshot with no visible PII whose validated current-schema cached reconstruction identifies five products. Cached demos disclose that no model call runs on click or during recording. The cart image is disclosed as a third-party asset, and its ownership/permitted-use and attribution gate remains open until confirmed before the final recording.
+
+The homepage publishes canonical, Open Graph and Twitter large-card metadata. Its committed 1200×630 PNG is an original result-style graphic with no product photograph, avoiding an unresolved third-party image-rights dependency in link previews.
 
 ### 8.2 WhatsApp — must-have access channel
 

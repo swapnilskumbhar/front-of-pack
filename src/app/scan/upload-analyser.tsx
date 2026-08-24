@@ -170,8 +170,17 @@ function AnalysisResultView({ result, demo }: { result: AnalysisResult; demo: De
           label: indicatorForDeduction(deduction.ruleId, indicators)?.title ?? "PUBLISHED RULE",
         })) ?? [];
         const warnings = indicators.filter((indicator) => indicator.tone === "red" || indicator.tone === "amber");
-        const supporting = indicators.filter((indicator) => indicator.tone === "green" || indicator.tone === "grey");
+        const insufficient = warnings.length === 0
+          ? indicators.filter((indicator) => indicator.tone === "grey").slice(0, 1)
+          : [];
+        const priorityIndicators = [...warnings, ...insufficient];
+        const supporting = indicators.filter((indicator) =>
+          indicator.tone === "green" || indicator.tone === "grey" && !insufficient.includes(indicator));
         const visibleClaims = item.claimsAsPrinted ?? [];
+        const auditedVisibleClaims = visibleClaims.flatMap((claim) => {
+          const audit = item.claimAudits.find((candidate) => candidate.claimAsPrinted === claim);
+          return audit ? [{ claim, audit }] : [];
+        });
         const packageEvidence = item.evidence.filter((evidence) => evidence.origin === "package");
         const onlineEvidence = item.evidence.filter((evidence) => evidence.origin === "hosted_web_search");
         return <article key={item.position}>
@@ -180,24 +189,24 @@ function AnalysisResultView({ result, demo }: { result: AnalysisResult; demo: De
             <b>{categoryLabel(item.category)}</b>
           </div>
           <h3>{productName(item)}</h3>
-          {warnings.length > 0 && <div className="shopper-indicators">{warnings.map((indicator, index) => <div className={`shopper-indicator signal-${indicator.tone}`} data-origin={indicator.origin} key={`${indicator.title}-${index}`}>
+          {priorityIndicators.length > 0 && <div className="shopper-indicators">{priorityIndicators.map((indicator, index) => <div className={`shopper-indicator signal-${indicator.tone}`} data-origin={indicator.origin} key={`${indicator.title}-${index}`}>
             <strong>{indicator.tone === "red" ? "●" : indicator.tone === "amber" ? "●" : indicator.tone === "green" ? "✓" : "—"} {indicator.title}</strong>
             <span>{indicator.detail}</span>
             {indicator.origin === "engine" && indicator.ruleId && <a className="indicator-rule-link" href={`/how-we-decide#${indicator.ruleId}`}>How this was decided →</a>}
-          </div>)}<p className="indicator-legend">Red is reserved for a high engine rule. Amber may be a moderate calculation or evidence-backed label/search context.</p></div>}
+          </div>)}<p className="indicator-legend">Red is reserved for a high engine rule. Amber is evidence-backed context. Grey means there is not enough information to rate.</p></div>}
           <div className="analysis-overview">
-            <div className="rating-card"><small>Experimental rule-based rating</small><strong>{rating?.score ?? "—"}/10 · {ratingBand(rating?.score ?? null, checksRan)}</strong>{ratingRows.length ? <details><summary>{ratingArithmetic(rating?.score ?? null, ratingRows.map((deduction) => deduction.points))}</summary><ul>{ratingRows.map((deduction, index) => <li key={`${deduction.ruleId}-${index}`}>−{deduction.points}: {deduction.label}</li>)}</ul></details> : <span>{checksRan ? "Checks completed; no fixed deduction applied." : "No score without a reproducible deduction."}</span>}</div>
+            <div className="rating-card"><small>Experimental rule-based rating</small><strong>{rating?.score === null || rating?.score === undefined ? ratingBand(null, checksRan) : `${rating.score}/10 · ${ratingBand(rating.score, checksRan)}`}</strong>{ratingRows.length ? <details><summary>{ratingArithmetic(rating?.score ?? null, ratingRows.map((deduction) => deduction.points))}</summary><ul>{ratingRows.map((deduction, index) => <li key={`${deduction.ruleId}-${index}`}>−{deduction.points}: {deduction.label}</li>)}</ul></details> : <span>{checksRan ? "Checks completed; no fixed deduction applied." : "Rating unavailable until a reproducible rule check can run."}</span>}</div>
             <div><small>Profile</small><strong>{item.profile?.length ? item.profile.map((tag) => tag.label).join(" · ") : "No reliable tags"}</strong></div>
-            <div><small>Evidence confidence</small><strong>{webEvidenceConfidence(item)}</strong>{item.webMatchBasis && <span>{item.webMatchBasis}</span>}</div>
+            <div><small>{item.webResearchOutcome === "not_needed" ? "Image identification" : "Product match"}</small><strong>{productMatchConfidence(item)}</strong>{item.webMatchBasis && <span>{item.webMatchBasis}</span>}</div>
           </div>
-          {item.summary && <p className="analysis-verdict"><strong>Verdict</strong>{item.summary}</p>}
+          {item.summary && <p className="analysis-verdict"><strong>{strongestToneIcon(indicators)} Verdict</strong>{item.summary}</p>}
           {supporting.length > 0 && <div className="analysis-key-findings"><h4>Analysis</h4><ul>{supporting.map((indicator, index) => <li key={`${indicator.title}-${index}`}><strong>{indicator.title}</strong><span>{indicator.detail}</span>{indicator.origin === "engine" && indicator.ruleId && <a href={`/how-we-decide#${indicator.ruleId}`}>How decided →</a>}</li>)}</ul></div>}
-          {visibleClaims.length > 0 && <div className="analysis-claims-section"><h4>Claims</h4>{visibleClaims.map((claim) => {
-            const audit = item.claimAudits.find((candidate) => candidate.claimAsPrinted === claim);
-            const status = audit?.status ?? "not_assessable";
+          {auditedVisibleClaims.length > 0 && <div className="analysis-claims-section"><h4>Claims</h4>{auditedVisibleClaims.map(({ claim, audit }) => {
+            const status = audit.status;
             const engineConfirmed = derivedSignals.some((signal) => signal.kind === "claim_contradiction" && signal.claimAsPrinted === claim);
             const engineClass = status === "contradicted" && engineConfirmed ? " claim-engine-contradicted" : "";
-            return <div className={`claim-status-${status}${engineClass}`} key={claim}><span>{claimStatusIcon(status, engineConfirmed)}</span><p><strong>“{claim}”</strong><small>{claimStatusLabel(status, engineConfirmed)}</small>{audit?.assessment && <em>{audit.assessment}</em>}</p></div>;
+            const limitationFirst = status === "not_established" || status === "not_assessable";
+            return <div className={`claim-status-${status}${engineClass}`} key={claim}><span>{claimStatusIcon(status, engineConfirmed)}</span><p>{limitationFirst ? <><strong>{audit.assessment}</strong><small>{claimStatusLabel(status, engineConfirmed)}</small><em>Printed claim: “{claim}”</em></> : <><strong>“{claim}”</strong><small>{claimStatusLabel(status, engineConfirmed)}</small>{audit.assessment && <em>{audit.assessment}</em>}</>}</p></div>;
           })}</div>}
           {item.serviceRoute && <div className="analysis-next-step-card"><small>Verified next step</small><p>{item.serviceRoute.reason}</p><a className="analysis-next-step" href="/grievance">Prepare an editable draft →</a></div>}
           <details className="analysis-evidence">
@@ -220,10 +229,21 @@ function productName(item: AnalysisResult["items"][number]): string {
   return formatProductIdentity(item.identity);
 }
 
-function webEvidenceConfidence(item: AnalysisResult["items"][number]): string {
-  if (item.identity.confidence === "high" && (!item.webMatchConfidence || item.webMatchConfidence === "high")) return "High";
-  if (["high", "medium"].includes(item.identity.confidence) && item.webMatchConfidence !== "low") return "Medium";
-  return "Low";
+function productMatchConfidence(item: AnalysisResult["items"][number]): string {
+  if (item.webMatchConfidence === "high") return "High";
+  if (item.webMatchConfidence === "medium") return "Medium";
+  if (item.webMatchConfidence === "low") return "Low";
+  if (item.webResearchOutcome === "not_needed") {
+    return item.identity.confidence.charAt(0).toUpperCase() + item.identity.confidence.slice(1);
+  }
+  return "Not established";
+}
+
+function strongestToneIcon(indicators: readonly ShopperIndicator[]): string {
+  if (indicators.some((indicator) => indicator.tone === "red")) return "🔴";
+  if (indicators.some((indicator) => indicator.tone === "amber")) return "🟠";
+  if (indicators.some((indicator) => indicator.tone === "grey")) return "⚪";
+  return "🟢";
 }
 
 function claimStatusIcon(status: AnalysisResult["items"][number]["claimAudits"][number]["status"], engineConfirmed: boolean): string {

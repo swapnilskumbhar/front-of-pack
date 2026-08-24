@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SITE_DESCRIPTION, SITE_ORIGIN, SITE_TITLE } from "@/site-metadata";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Front of Pack — Understand a product label from one photo",
-  description:
-    "See whole-pack nutrition, warnings, ingredients, claims and the evidence behind them on web or WhatsApp.",
+  metadataBase: new URL(SITE_ORIGIN),
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

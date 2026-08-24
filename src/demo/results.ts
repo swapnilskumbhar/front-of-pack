@@ -5,6 +5,8 @@ const baseItem = (position: number, name: string, category: ProductAnalysis["cat
   position,
   identity: { nameAsPrinted: name, brandAsPrinted: "Demo Pack", variantAsPrinted: null, gtin: null, confidence: "high" },
   category, nutrition: null, ingredientTokens: [], claimsAsPrinted: [],
+  webResearchOutcome: "not_needed", webMatchEvidenceIds: [],
+  webMatchConfidence: null, webMatchBasis: null,
   profile: [],
   coverage: { tier: category === "food" || category === "beverage" ? "category_rules" : "general_pack_rules", rulePackIds: [], limitations: [] },
   summary: name, findings: [], claimAudits: [], evidence: [], citations: [], serviceRoute: null,
@@ -12,7 +14,7 @@ const baseItem = (position: number, name: string, category: ProductAnalysis["cat
 });
 
 function result(items: ProductAnalysis[], summary: string, real = true): AnalysisResult {
-  return attachDecisions({ schemaVersion: "analysis-result.v3", language: "en", analyzedCount: items.length,
+  return attachDecisions({ schemaVersion: "analysis-result.v4", language: "en", analyzedCount: items.length,
     unknownCount: items.filter((item) => item.identity.confidence === "unknown").length,
     flaggedCount: items.filter((item) => item.findings.some((finding) => finding.level === "attention")).length,
     truncated: false, wholeImageSummary: summary,
@@ -54,6 +56,8 @@ const haldirams = baseItem(1, "RATLAMI SEV", "food");
 haldirams.identity = { nameAsPrinted: "RATLAMI SEV", brandAsPrinted: "Haldiram’s", variantAsPrinted: null, gtin: null, confidence: "high" };
 haldirams.printedVegMark = "veg";
 haldirams.claimsAsPrinted = ["Extruded Snack of Bengal Gram Flour with Pinch of Clove.", "PRODUCT OF INDIA"];
+haldirams.webResearchOutcome = "decision_facts_found";
+haldirams.webMatchEvidenceIds = ["he2"];
 haldirams.webMatchConfidence = "medium";
 haldirams.webMatchBasis = "Exact brand, product and 200 g pack; online recipe details remain provisional.";
 haldirams.profile = [{ label: "VEG MARK", evidenceIds: ["he1"] }, { label: "PALM OIL", evidenceIds: ["he2"] }, { label: "WHEAT ALLERGEN", evidenceIds: ["he2"] }];
@@ -103,6 +107,8 @@ cartBread.nutrition = { source: "hosted_web_search", evidenceIds: ["e2"], basis:
   values: { addedSugarsG: 1.94, saturatedFatG: null, sodiumMg: null, totalFatG: null },
   printedPerServeRdaPct: { addedSugars: null, saturatedFat: null, sodium: null, totalFat: null } };
 cartBread.claimsAsPrinted = ["Zero Maida", "Whole Wheat"];
+cartBread.webResearchOutcome = "decision_facts_found";
+cartBread.webMatchEvidenceIds = ["e1"];
 cartBread.webMatchConfidence = "high";
 cartBread.webMatchBasis = "Exact brand, variant and 250 g Indian listing; official product page.";
 cartBread.profile = [{ label: "WHOLE WHEAT", evidenceIds: ["e1"] }, { label: "ALLERGENS", evidenceIds: ["e3"] }, { label: "SOURCE OF FIBRE", evidenceIds: ["e2"] }];
@@ -127,6 +133,8 @@ const cartCocoa = baseItem(2, "The Whole Truth Hazelnut 47% Cocoa Bar", "food");
 cartCocoa.identity = { nameAsPrinted: "The Whole Truth Hazelnut 47% Cocoa Bar", brandAsPrinted: "The Whole Truth", variantAsPrinted: "Hazelnut 47% Cocoa Bar", gtin: null, confidence: "high" };
 cartCocoa.claimsAsPrinted = ["47% Cocoa"];
 cartCocoa.printedVegMark = "veg";
+cartCocoa.webResearchOutcome = "decision_facts_found";
+cartCocoa.webMatchEvidenceIds = ["e5"];
 cartCocoa.webMatchConfidence = "high";
 cartCocoa.webMatchBasis = "Exact brand, Hazelnut 47% Cocoa variant and 80 g Indian listing.";
 cartCocoa.profile = [{ label: "HAZELNUTS", evidenceIds: ["e5"] }, { label: "DATE-SWEETENED", evidenceIds: ["e5"] }, { label: "THREE INGREDIENTS", evidenceIds: ["e5"] }];
@@ -150,6 +158,8 @@ cartBiscuit.nutrition = { source: "hosted_web_search", evidenceIds: ["e7"], basi
   printedPerServeRdaPct: { addedSugars: null, saturatedFat: null, sodium: null, totalFat: null } };
 cartBiscuit.claimsAsPrinted = ["Whole Wheat"];
 cartBiscuit.printedVegMark = "veg";
+cartBiscuit.webResearchOutcome = "decision_facts_found";
+cartBiscuit.webMatchEvidenceIds = ["e6"];
 cartBiscuit.webMatchConfidence = "high";
 cartBiscuit.webMatchBasis = "Exact Patanjali page includes the 204 g option; official nutrition page matches the named product.";
 cartBiscuit.profile = [{ label: "PALM OIL", evidenceIds: ["e6"] }, { label: "ALLERGENS", evidenceIds: ["e6"] }, { label: "WHOLE WHEAT", evidenceIds: ["e7"] }];
@@ -173,6 +183,8 @@ cartBiscuit.citations = [
 
 const cartKurkure = baseItem(4, "Kurkure Masala Munch Crisps", "food");
 cartKurkure.identity = { nameAsPrinted: "Kurkure Masala Munch Crisps", brandAsPrinted: "Kurkure", variantAsPrinted: "Masala Munch Crisps", gtin: null, confidence: "high" };
+cartKurkure.webResearchOutcome = "decision_facts_found";
+cartKurkure.webMatchEvidenceIds = ["e9"];
 cartKurkure.webMatchConfidence = "medium";
 cartKurkure.webMatchBasis = "Exact brand, product and 75 g pack; current retailer listing lacks oil type and nutrition values.";
 cartKurkure.profile = [{ label: "ADDED COLOUR", evidenceIds: ["e9"] }, { label: "FLAVOURINGS", evidenceIds: ["e9"] }, { label: "SOURCE UNCLEAR", evidenceIds: ["e10"] }];
@@ -198,6 +210,8 @@ cartBalaji.nutrition = { source: "hosted_web_search", evidenceIds: ["e12"], basi
   values: { addedSugarsG: 3.1, saturatedFatG: 15.6, sodiumMg: 524, totalFatG: 32.8 },
   printedPerServeRdaPct: { addedSugars: 2, saturatedFat: 21, sodium: 8, totalFat: 15 } };
 cartBalaji.printedVegMark = "veg";
+cartBalaji.webResearchOutcome = "decision_facts_found";
+cartBalaji.webMatchEvidenceIds = ["e11"];
 cartBalaji.webMatchConfidence = "high";
 cartBalaji.webMatchBasis = "Official Balaji page exactly matches Cream & Onion Wafers, 140 g.";
 cartBalaji.profile = [{ label: "PALM OIL", evidenceIds: ["e11"] }, { label: "ALLERGENS", evidenceIds: ["e11"] }, { label: "HIGH SATURATED FAT", evidenceIds: ["e12"] }, { label: "HIGH FAT", evidenceIds: ["e12"] }];

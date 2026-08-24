@@ -2,6 +2,7 @@ import { ANALYSIS_SCHEMA_VERSION } from "./types.ts";
 
 const stringArray = { type: "array", maxItems: 20, items: { type: "string", maxLength: 160 } } as const;
 const nullableString = { type: ["string", "null"], maxLength: 200 } as const;
+const nullableProviderSourceId = { type: ["string", "null"], maxLength: 2048 } as const;
 const nullableNumber = { type: ["number", "null"], minimum: 0, maximum: 1_000_000 } as const;
 const ingredientTokens = { type: "array", maxItems: 60, items: { type: "string", maxLength: 80 } } as const;
 const printedClaims = { type: "array", maxItems: 8, items: { type: "string", maxLength: 120 } } as const;
@@ -68,7 +69,7 @@ const citation = {
     id: { type: "string", maxLength: 80 },
     title: { type: "string", maxLength: 200 },
     url: { type: "string", maxLength: 2048 },
-    providerSourceId: nullableString,
+    providerSourceId: nullableProviderSourceId,
   },
 };
 
@@ -118,7 +119,7 @@ export const ANALYSIS_RESULT_SCHEMA: Record<string, unknown> = {
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["position", "identity", "category", "nutrition", "ingredientTokens", "claimsAsPrinted", "printedVegMark", "webMatchConfidence", "webMatchBasis", "profile", "coverage", "summary", "findings", "claimAudits", "evidence", "citations", "serviceRoute", "needsClearerImage", "retakeGuidance"],
+        required: ["position", "identity", "category", "nutrition", "ingredientTokens", "claimsAsPrinted", "printedVegMark", "webResearchOutcome", "webMatchEvidenceIds", "webMatchConfidence", "webMatchBasis", "profile", "coverage", "summary", "findings", "claimAudits", "evidence", "citations", "serviceRoute", "needsClearerImage", "retakeGuidance"],
         properties: {
           position: { type: "integer", minimum: 1, maximum: 6 },
           identity,
@@ -127,6 +128,8 @@ export const ANALYSIS_RESULT_SCHEMA: Record<string, unknown> = {
           ingredientTokens,
           claimsAsPrinted: printedClaims,
           printedVegMark: { type: ["string", "null"], enum: ["veg", "non_veg", null] },
+          webResearchOutcome: { type: "string", enum: ["not_needed", "decision_facts_found", "identity_only", "no_sufficient_match"] },
+          webMatchEvidenceIds: stringArray,
           webMatchConfidence: { type: ["string", "null"], enum: ["high", "medium", "low", null] },
           webMatchBasis: { type: ["string", "null"], maxLength: 180 },
           profile: { type: "array", maxItems: 6, items: profileTag },
@@ -151,7 +154,7 @@ export const ANALYSIS_RESULT_SCHEMA: Record<string, unknown> = {
               required: ["claimAsPrinted", "assessment", "evidenceIds", "status"],
               properties: {
                 claimAsPrinted: { type: "string", maxLength: 200 },
-                assessment: { type: "string", maxLength: 300 },
+                assessment: { type: "string", minLength: 1, maxLength: 300 },
                 evidenceIds: stringArray,
                 status: { type: "string", enum: ["supported", "partially_supported", "contradicted", "not_established", "not_assessable"] },
               },

@@ -1,5 +1,5 @@
 export const TERRA_MODEL = "gpt-5.6-terra" as const;
-export const TERRA_PROMPT_VERSION = "terra-analysis.v16" as const;
+export const TERRA_PROMPT_VERSION = "terra-analysis.v17" as const;
 export { ANALYSIS_SCHEMA_VERSION } from "../../../../src/domain/analysis.ts";
 
 export type LanguageCode =
@@ -57,7 +57,10 @@ export interface ResponsesRequest {
   };
   max_output_tokens: number;
   service_tier: "default";
-  tools?: Array<{ type: "web_search" }>;
+  tools?: Array<{
+    type: "web_search";
+    user_location: { type: "approximate"; country: "IN" };
+  }>;
   tool_choice?: "auto" | "required";
   max_tool_calls?: number;
   include?: ["web_search_call.action.sources"];

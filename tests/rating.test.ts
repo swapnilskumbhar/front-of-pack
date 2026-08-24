@@ -123,7 +123,7 @@ const sourceUnclear: SourceUnclearSignal = {
 
 test("describes a null score without contradicting completed rule checks", () => {
   assert.equal(didAnyRuleBasedCheckRun({}, []), false);
-  assert.equal(ratingBand(null, false), "Not enough rule-based evidence");
+  assert.equal(ratingBand(null, false), "Not enough information to rate");
 
   const rating = computeRating([sourceUnclear]);
   assert.equal(rating.score, null);
@@ -134,7 +134,8 @@ test("describes a null score without contradicting completed rule checks", () =>
 test("recognizes readable product inputs when a completed check emits no signal", () => {
   assert.equal(didAnyRuleBasedCheckRun({ ingredientTokens: ["water"] }, []), true);
   assert.equal(didAnyRuleBasedCheckRun({ ingredientTokens: ["water"], needsClearerImage: true }, []), false);
-  assert.equal(didAnyRuleBasedCheckRun({ claimsAsPrinted: ["No added sugar"] }, []), true);
+  assert.equal(didAnyRuleBasedCheckRun({ claimAudits: [{ claimAsPrinted: "Health claim", assessment: "Not assessable.", evidenceIds: [], status: "not_assessable" }] }, []), false);
+  assert.equal(didAnyRuleBasedCheckRun({ claimAudits: [{ claimAsPrinted: "Contains oats", assessment: "Oats are listed.", evidenceIds: [], status: "supported" }] }, []), true);
   assert.equal(didAnyRuleBasedCheckRun({
     nutrition: {
       source: "package",
@@ -221,7 +222,7 @@ test("floors the score at zero without discarding fixed deductions", () => {
 
 test("evaluateAnalysis attaches the same derived rating without using the model score", () => {
   const analysis: AnalysisResult = {
-    schemaVersion: "analysis-result.v3",
+    schemaVersion: "analysis-result.v4",
     language: "en",
     analyzedCount: 1,
     unknownCount: 0,

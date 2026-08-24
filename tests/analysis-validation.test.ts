@@ -10,7 +10,7 @@ const options = {
 
 function validResult() {
   return {
-    schemaVersion: "analysis-result.v3",
+    schemaVersion: "analysis-result.v4",
     language: "en",
     analyzedCount: 1,
     unknownCount: 0,
@@ -23,6 +23,14 @@ function validResult() {
       position: 1,
       identity: { nameAsPrinted: "Food", brandAsPrinted: null, variantAsPrinted: null, gtin: null, confidence: "high" },
       category: "food",
+      nutrition: null,
+      ingredientTokens: [],
+      claimsAsPrinted: ["Natural"],
+      printedVegMark: null,
+      webResearchOutcome: "not_needed",
+      webMatchEvidenceIds: [],
+      webMatchConfidence: null,
+      webMatchBasis: null,
       profile: [{ label: "VEG", evidenceIds: ["evidence-1"] }],
       coverage: { tier: "category_rules", rulePackIds: ["rule.food"], limitations: [] },
       summary: "The package declares its ingredients.",
@@ -136,4 +144,75 @@ test("nutrition provenance must resolve to evidence of the declared origin", () 
     printedPerServeRdaPct: { addedSugars: null, saturatedFat: null, sodium: null, totalFat: null },
   };
   assert.ok(validateAnalysisResult(result, options).errors.some(({ code }) => code === "invalid_evidence_relationship"));
+});
+
+function webDecisionResult() {
+  const result = validResult();
+  const item = result.items[0];
+  item.webResearchOutcome = "decision_facts_found";
+  item.webMatchEvidenceIds = ["evidence-1"];
+  item.webMatchConfidence = "high";
+  item.webMatchBasis = "Exact brand, product and Indian pack size.";
+  item.evidence[0] = { id: "evidence-1", origin: "hosted_web_search", excerptOrObservation: "Exact ingredients list supports the finding.", citationId: "citation-1", visibleOnPackage: false };
+  item.citations[0].providerSourceId = "source-1";
+  return result;
+}
+
+test("searched decision facts require usable, consumed and correctly scoped hosted evidence", () => {
+  assert.equal(validateAnalysisResult(webDecisionResult(), options).valid, true);
+
+  const lowMatch = webDecisionResult();
+  lowMatch.items[0].webMatchConfidence = "low";
+  assert.ok(validateAnalysisResult(lowMatch, options).errors.some(({ path }) => path.endsWith(".webMatchConfidence")));
+
+  const orphaned = webDecisionResult();
+  orphaned.items[0].evidence.push({ id: "orphan", origin: "hosted_web_search", excerptOrObservation: "Unused fact", citationId: "citation-2", visibleOnPackage: false });
+  orphaned.items[0].citations.push({ id: "citation-2", title: "Second source", url: "https://example.test/two", providerSourceId: "source-2" });
+  assert.ok(validateAnalysisResult(orphaned, options).errors.some(({ message }) => message.includes("not consumed")));
+
+  const mislabelled = webDecisionResult();
+  mislabelled.items[0].evidence[0].visibleOnPackage = true;
+  assert.ok(validateAnalysisResult(mislabelled, options).errors.some(({ path }) => path.endsWith(".visibleOnPackage")));
+
+  const hiddenOnly = webDecisionResult();
+  hiddenOnly.items[0].profile = [];
+  hiddenOnly.items[0].claimsAsPrinted = [];
+  hiddenOnly.items[0].claimAudits = [];
+  hiddenOnly.items[0].findings = [{ id: "missing", kind: "ingredient", topic: "ingredient", level: "unknown", title: "Back panel needed", explanation: "Ingredients are not visible.", evidenceIds: ["evidence-1"], ruleIds: [], experimental: false }];
+  assert.ok(validateAnalysisResult(hiddenOnly, options).errors.some(({ message }) => message.includes("visible decision fact")));
+
+  const invalidConfidence = webDecisionResult();
+  invalidConfidence.items[0].webMatchConfidence = "certain";
+  assert.ok(validateAnalysisResult(invalidConfidence, options).errors.some(({ path }) => path.endsWith(".webMatchConfidence")));
+
+  const emptyAssessment = webDecisionResult();
+  emptyAssessment.items[0].claimAudits[0].assessment = "";
+  assert.ok(validateAnalysisResult(emptyAssessment, options).errors.some(({ path }) => path.endsWith(".assessment")));
+});
+
+test("identity-only research may honestly request the missing panel without inventing a conclusion", () => {
+  const result = validResult();
+  const item = result.items[0];
+  item.webResearchOutcome = "identity_only";
+  item.webMatchEvidenceIds = ["identity"];
+  item.webMatchConfidence = "medium";
+  item.webMatchBasis = "Exact title and size; recipe unavailable.";
+  item.profile = [];
+  item.claimsAsPrinted = [];
+  item.claimAudits = [];
+  item.findings = [];
+  item.evidence = [{ id: "identity", origin: "hosted_web_search", excerptOrObservation: "Exact title and 500 g size.", citationId: "identity-citation", visibleOnPackage: false }];
+  item.citations = [{ id: "identity-citation", title: "Retail title", url: "https://example.test/item", providerSourceId: "source-identity" }];
+  item.needsClearerImage = true;
+  item.retakeGuidance = "Photograph ingredients and nutrition.";
+  assert.equal(validateAnalysisResult(result, options).valid, true);
+
+  const unmatched = structuredClone(result);
+  unmatched.items[0].webResearchOutcome = "no_sufficient_match";
+  unmatched.items[0].webMatchEvidenceIds = [];
+  unmatched.items[0].webMatchConfidence = null;
+  unmatched.items[0].webMatchBasis = "No sufficiently matched Indian recipe source was found.";
+  unmatched.items[0].evidence = [];
+  unmatched.items[0].citations = [];
+  assert.equal(validateAnalysisResult(unmatched, options).valid, true);
 });

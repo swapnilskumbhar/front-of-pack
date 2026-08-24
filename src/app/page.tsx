@@ -1,4 +1,8 @@
+import type { Metadata } from "next";
 import UploadAnalyser from "./scan/upload-analyser";
+import { HOME_METADATA } from "@/site-metadata";
+
+export const metadata: Metadata = HOME_METADATA;
 
 const categories = [
   ["Nutrition reality", "Absolute values plus printed or clearly calculated %RDA, scoped to 100 g/ml, an exact serving, or the verified whole pack."],

@@ -9,6 +9,7 @@ import type { AllergenSignal, WholePackSignal } from "../src/engine/types.ts";
 const item = (overrides: Partial<ProductAnalysis> = {}): ProductAnalysis => ({
   position: 1, identity: { nameAsPrinted: "Product", brandAsPrinted: null, variantAsPrinted: null, gtin: null, confidence: "high" },
   category: "food", nutrition: null, ingredientTokens: [], claimsAsPrinted: [], printedVegMark: null,
+  webResearchOutcome: "not_needed", webMatchEvidenceIds: [], webMatchConfidence: null, webMatchBasis: null,
   profile: [],
   coverage: { tier: "category_rules", rulePackIds: [], limitations: [] }, summary: "Product checked.",
   findings: [], claimAudits: [], evidence: [], citations: [], serviceRoute: null,
@@ -97,6 +98,15 @@ test("web evidence alone never masquerades as an analysed shopper finding", () =
   }), [], "en");
   assert.equal(indicators[0].title, "NOT ENOUGH INFORMATION");
   assert.equal(indicators[0].origin, "model");
+});
+
+test("an unassessable marketing claim alone never creates a green assurance", () => {
+  const indicators = buildShopperIndicators(item({
+    claimsAsPrinted: ["Laboratory tested"],
+    claimAudits: [{ claimAsPrinted: "Laboratory tested", assessment: "No report is available.", evidenceIds: [], status: "not_assessable" }],
+  }), [], "en");
+  assert.equal(indicators[0].tone, "grey");
+  assert.equal(indicators[0].title, "NOT ENOUGH INFORMATION");
 });
 
 test("a printed vegetarian indicator remains useful without a back panel", () => {

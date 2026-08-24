@@ -16,8 +16,8 @@ import { buildPersistedUsage, estimateOpenAiResponseCost } from "../../../src/co
 
 const PINNED_ANALYSIS_VERSIONS = {
   model_id: "gpt-5.6-terra",
-  prompt_version: "terra-analysis.v16",
-  schema_version: "analysis-result.v3",
+  prompt_version: "terra-analysis.v17",
+  schema_version: "analysis-result.v4",
   rules_version: "india-category-rules.v2",
   services_version: "india-consumer-services.v1",
   engine_version: "decision-engine.v8",

@@ -24,7 +24,7 @@ const RATING_POINTS = Object.fromEntries(
 export function ratingBand(score: number | null, checksRan = false): string {
   if (score === null) return checksRan
     ? "No deductions from checks that ran"
-    : "Not enough rule-based evidence";
+    : "Not enough information to rate";
   if (score >= 9) return "Few rule-based deductions";
   if (score >= 7) return "Limited deductions";
   if (score >= 5) return "Mixed label signals";
@@ -33,14 +33,15 @@ export function ratingBand(score: number | null, checksRan = false): string {
 }
 
 export function didAnyRuleBasedCheckRun(
-  item: Pick<ProductAnalysis, "claimsAsPrinted" | "ingredientTokens" | "nutrition"> &
-    Partial<Pick<ProductAnalysis, "needsClearerImage">>,
+  item: Partial<Pick<ProductAnalysis, "claimAudits" | "ingredientTokens" | "nutrition" | "needsClearerImage">>,
   signals: readonly DerivedSignal[],
 ): boolean {
+  const assessableClaim = item.claimAudits?.some((audit) =>
+    audit.status === "supported" || audit.status === "partially_supported" || audit.status === "contradicted");
   return !item.needsClearerImage && (signals.length > 0 || Boolean(
     item.ingredientTokens?.length ||
     item.nutrition?.basis ||
-    item.claimsAsPrinted?.length,
+    assessableClaim,
   ));
 }
 

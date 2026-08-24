@@ -170,6 +170,68 @@ test("WhatsApp hides identity-only search evidence and does not invent caution",
   assert.doesNotMatch(message, /example\.test/);
 });
 
+test("Vedaka-style incomplete analysis is honest, scoped, and never renders a fake score", () => {
+  const claim = "VEDAKA PRODUCTS ARE HYGIENICALLY PACKED AND UNDERGO RIGOROUS AND STRINGENT LABORATORY TESTS TO MEET FOOD SAFETY NORMS";
+  const message = renderWhatsAppChunks({ language: "hi", derived: { items: [{
+    position: 1, signals: [], rating: { score: null, deductions: [] },
+  }] }, items: [{
+    position: 1,
+    identity: { nameAsPrinted: "Red Masoor Dal (Split)", brandAsPrinted: "Vedaka", confidence: "high" },
+    summary: "उत्पाद पहचाना गया; सामग्री और पोषण अभी सत्यापित नहीं हैं।",
+    profile: [{ label: "शाकाहारी चिह्न", evidenceIds: ["p1"] }, { label: "500 g पैक", evidenceIds: ["p1"] }],
+    webResearchOutcome: "identity_only",
+    webMatchConfidence: "high",
+    webMatchBasis: "नाम और 500 g पैक मिले; सामग्री सूची उपलब्ध नहीं।",
+    claimsAsPrinted: [claim],
+    claimAudits: [{ claimAsPrinted: claim, status: "not_established", assessment: "परीक्षण रिपोर्ट या स्वतंत्र प्रमाण उपलब्ध नहीं है।", evidenceIds: ["p1"] }],
+    findings: [{ id: "missing", kind: "label_fact", topic: "label", title: "पैनल जानकारी नहीं", explanation: "सामग्री और पोषण पैनल पढ़ने योग्य नहीं हैं।", level: "unknown", evidenceIds: ["p1"] }],
+    evidence: [{ id: "p1", origin: "package", excerptOrObservation: "नाम, 500 g और शाकाहारी चिह्न दिखते हैं।" }],
+    needsClearerImage: true,
+    retakeGuidance: "सामग्री और पोषण पैनल भेजें।",
+  }] }).join("\n");
+
+  assert.match(message, /^⚪ \*/u);
+  assert.match(message, /सामग्री और पोषण पैनल भेजें/u);
+  assert.match(message, /📦 \*Vedaka — Red Masoor Dal \(Split\)\*/u);
+  assert.doesNotMatch(message, /—\/10|\*रेटिंग:\*/u);
+  assert.match(message, /⚪ \*निष्कर्ष:\*/u);
+  assert.match(message, /\*उत्पाद मिलान:\* उच्च · नाम और 500 g पैक मिले/u);
+  assert.doesNotMatch(message, /साक्ष्य भरोसा/u);
+  assert.ok(message.indexOf("परीक्षण रिपोर्ट या स्वतंत्र प्रमाण") < message.indexOf(`“${claim}”`));
+  assert.equal((message.match(new RegExp(claim, "gu")) ?? []).length, 1);
+});
+
+test("visible marketing text without an audit is omitted fail-closed", () => {
+  const message = renderWhatsAppChunks({ language: "en", items: [{
+    position: 1, identity: { nameAsPrinted: "Product", confidence: "high" },
+    summary: "More evidence is needed.", profile: [], claimsAsPrinted: ["MAGIC HEALTH"],
+    claimAudits: [], findings: [], evidence: [], needsClearerImage: true, retakeGuidance: "Show the back panel.",
+  }] }).join("\n");
+  assert.doesNotMatch(message, /MAGIC HEALTH|\*Claims:\*/u);
+});
+
+test("unmatched search never borrows high confidence from image identity", () => {
+  const message = renderWhatsAppChunks({ language: "en", items: [{
+    position: 1, identity: { nameAsPrinted: "Product", confidence: "high" },
+    webResearchOutcome: "no_sufficient_match", webMatchConfidence: null,
+    webMatchBasis: "No sufficiently matched Indian recipe source was found.",
+    summary: "Recipe and nutrition remain unverified.", profile: [], findings: [], evidence: [],
+    claimsAsPrinted: [], claimAudits: [], needsClearerImage: true, retakeGuidance: "Show ingredients and nutrition.",
+  }] }).join("\n");
+  assert.match(message, /\*Product match:\* No sufficiently matched Indian recipe source was found\./u);
+  assert.doesNotMatch(message, /\*Product match:\* high/u);
+});
+
+test("empty unverifiable-claim assessment is omitted without leaking English fallback", () => {
+  const message = renderWhatsAppChunks({ language: "hi", items: [{
+    position: 1, identity: { nameAsPrinted: "उत्पाद", confidence: "high" },
+    summary: "अधिक जानकारी चाहिए।", profile: [], claimsAsPrinted: ["स्वास्थ्य का वादा"],
+    claimAudits: [{ claimAsPrinted: "स्वास्थ्य का वादा", assessment: "", status: "not_established", evidenceIds: [] }],
+    findings: [], evidence: [], needsClearerImage: true, retakeGuidance: "पीछे का पैनल भेजें।",
+  }] }).join("\n");
+  assert.doesNotMatch(message, /स्वास्थ्य का वादा|Not independently established|\*दावे:\*/u);
+});
+
 test("Red Bull response names caffeine and sugar instead of an umbrella caution", () => {
   const message = renderWhatsAppChunks({ language: "en", derived: { items: [{
     position: 1,
@@ -251,7 +313,7 @@ test("McVitie's response combines warnings with rating profile verdict and posit
   assert.match(message, /\*Verdict:\*/);
   assert.match(message, /\*Analysis:\*[\s\S]*WHOLEWHEAT CONTENT/);
   assert.match(message, /\*Claims:\*/);
-  assert.match(message, /“High in Fibre” — Nutrition panel is not visible/);
+  assert.match(message, /Nutrition panel is not visible\. — “High in Fibre”/);
   assert.match(message, /“Made with whole wheat” — Online ingredients list refined and whole wheat flour/);
 });
 
@@ -290,12 +352,12 @@ test("WhatsApp defaults renderer headings to English when result language is abs
     findings: [{ id: "f", kind: "ingredient", title: "Oats listed", explanation: "Oats appear in ingredients.", level: "information", evidenceIds: [] }],
     evidence: [],
   }] })[0];
-  assert.match(message, /\*Rating:\*/);
+  assert.doesNotMatch(message, /\*Rating:\*|—\/10/u);
   assert.match(message, /\*Profile:\*/);
   assert.match(message, /\*Verdict:\*/);
   assert.match(message, /\*Analysis:\*/);
   assert.match(message, /\*Claims:\*/);
-  assert.match(message, /\*Evidence confidence:\*/);
+  assert.doesNotMatch(message, /\*Evidence confidence:\*/);
 });
 
 test("multi-product warnings are packed before earlier product detail and none are truncated", () => {
@@ -326,6 +388,7 @@ test("multi-product warnings are packed before earlier product detail and none a
   assert.match(complete, /╭─ 📦 \*2\/2 · Later Product\*/u);
   assert.ok(complete.indexOf("╭─ ⚠️") < complete.indexOf("╭─ 📦"));
   assert.ok(complete.indexOf("HIGH ADDED SUGAR") < complete.indexOf("*Claims:*"));
+  assert.doesNotMatch(complete, /—\/10/u);
   assert.equal((complete.match(/More evidence is required\./gu) ?? []).length, 8);
   for (const chunk of chunks) {
     assert.equal((chunk.match(/╭─/gu) ?? []).length, (chunk.match(/╰────────────────────/gu) ?? []).length);
