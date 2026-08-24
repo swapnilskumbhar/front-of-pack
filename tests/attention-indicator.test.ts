@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import type { ProductAnalysis } from "../src/domain/analysis.ts";
-import { buildAttentionIndicator } from "../src/engine/presentation.ts";
+import { buildAttentionIndicator, buildProductProfile } from "../src/engine/presentation.ts";
 import type { WholePackSignal } from "../src/engine/types.ts";
 
 const item = (overrides: Partial<ProductAnalysis> = {}): ProductAnalysis => ({
@@ -30,11 +30,33 @@ test("missing panel alone produces not-enough-information, not a warning", () =>
   assert.equal(result.level, "not_enough_information");
 });
 
-test("provisional online evidence produces some-caution indicator", () => {
+test("online identity evidence alone does not create caution", () => {
   const result = buildAttentionIndicator(item({ evidence: [
     { id: "e", origin: "hosted_web_search", excerptOrObservation: "Matching page lists wheat.", citationId: null, visibleOnPackage: false },
   ] }), [], "en");
+  assert.equal(result.level, "not_enough_information");
+});
+
+test("sufficiently matched web evidence needs a material finding to create caution", () => {
+  const result = buildAttentionIndicator(item({
+    webMatchConfidence: "high",
+    evidence: [{ id: "e", origin: "hosted_web_search", excerptOrObservation: "Official ingredients list wheat.", citationId: null, visibleOnPackage: false }],
+    findings: [{ id: "f", kind: "ingredient", level: "attention", title: "Contains wheat", explanation: "Avoid if you have a wheat allergy.", evidenceIds: ["e"], ruleIds: [], experimental: false }],
+  }), [], "en");
   assert.equal(result.level, "some_caution");
+});
+
+test("low-confidence web evidence cannot create caution", () => {
+  const result = buildAttentionIndicator(item({
+    webMatchConfidence: "low",
+    evidence: [{ id: "e", origin: "hosted_web_search", excerptOrObservation: "Possibly lists wheat.", citationId: null, visibleOnPackage: false }],
+    findings: [{ id: "f", kind: "ingredient", level: "attention", title: "Contains wheat", explanation: "Avoid if you have a wheat allergy.", evidenceIds: ["e"], ruleIds: [], experimental: false }],
+  }), [], "en");
+  assert.equal(result.level, "not_enough_information");
+});
+
+test("generic category alone is not a product profile", () => {
+  assert.equal(buildProductProfile(item(), []), null);
 });
 
 test("completed readable checks with no signal do not claim safety", () => {

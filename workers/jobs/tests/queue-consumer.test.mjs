@@ -29,11 +29,11 @@ const validResult = {
 
 const pinnedVersions = {
   model_id: "gpt-5.6-terra",
-  prompt_version: "terra-analysis.v9",
+  prompt_version: "terra-analysis.v10",
   schema_version: "analysis-result.v1",
   rules_version: "india-category-rules.v2",
   services_version: "india-consumer-services.v1",
-  engine_version: "decision-engine.v3",
+  engine_version: "decision-engine.v4",
 };
 
 function createDb({

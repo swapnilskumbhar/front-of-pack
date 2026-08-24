@@ -38,8 +38,9 @@ test("constructs one bounded strict Responses request with optional hosted searc
   assert.equal(request.input.length, 2);
   assert.match(JSON.stringify(request.input), /data:image\/jpeg;base64,AA==/);
   assert.match(JSON.stringify(request.input), /"detail":"original"/);
-  assert.match(JSON.stringify(request.input), /at most 18 words/);
-  assert.match(JSON.stringify(request.input), /at most three findings/);
+  assert.match(JSON.stringify(request.input), /at most 12 words/);
+  assert.match(JSON.stringify(request.input), /explanations at most 14 words/);
+  assert.match(JSON.stringify(request.input), /at most two findings/);
 });
 
 test("can deterministically require the single hosted search tool", () => {

@@ -1,6 +1,6 @@
 import { decryptIdentifier } from "./crypto.ts";
 import { GraphSendError, sendWhatsAppText, type GraphConfig } from "./graph.ts";
-import { buildAttentionIndicator, buildProductProfile, buildVerdict, type DerivedSignal } from "../../../../src/engine/index.ts";
+import { buildAttentionIndicator, buildProductProfile, getDecisionFindings, getDecisionUsefulWebEvidenceIds, type DerivedSignal } from "../../../../src/engine/index.ts";
 import type { LanguageCode } from "../../../../src/domain/language.ts";
 import type { ProductAnalysis } from "../../../../src/domain/analysis.ts";
 
@@ -47,46 +47,42 @@ export function renderWhatsAppChunks(result: unknown): string[] {
         ? item.identity as Record<string, unknown> : {};
       const name = [identity.brandAsPrinted, identity.nameAsPrinted, identity.variantAsPrinted]
         .filter((part): part is string => typeof part === "string" && part.length > 0).join(" — ");
-      const rawFindings = Array.isArray(item.findings)
-        ? item.findings.filter((finding) => finding && typeof finding === "object") as Record<string, unknown>[] : [];
       const derivedItem = derivedItems.find((candidate) => candidate && typeof candidate === "object" &&
         (candidate as Record<string, unknown>).position === item.position) as Record<string, unknown> | undefined;
       const signals = Array.isArray(derivedItem?.signals) ? derivedItem.signals as DerivedSignal[] : [];
-      const findings = signals.some((signal) => signal.kind === "whole_pack_rda")
-        ? rawFindings.filter((finding) => finding.kind !== "nutrition") : rawFindings;
-      const orderedFindings = [...findings].sort((left, right) =>
-        Number(right.level === "attention") - Number(left.level === "attention"));
-      const verdict = buildVerdict(signals, language);
       const typedItem = item as unknown as ProductAnalysis;
+      const findings = getDecisionFindings(typedItem)
+        .filter((finding) => !(signals.some((signal) => signal.kind === "whole_pack_rda") && finding.kind === "nutrition"))
+        .filter((finding) => finding.explanation.trim() !== buildAttentionIndicator(typedItem, signals, language).summary.trim())
+        .sort((left, right) => Number(right.level === "attention") - Number(left.level === "attention"));
       const indicator = buildAttentionIndicator(typedItem, signals, language);
       const indicatorIcon = indicator.level === "needs_attention" ? "🔴" : indicator.level === "some_caution" ? "🟠" : indicator.level === "no_major_concern" ? "🟢" : "⚪";
       sections.push(`${indicatorIcon} *${indicator.title}*\n${indicator.summary}`);
       const confidence = typeof identity.confidence === "string" ? identity.confidence : "unknown";
       const profile = buildProductProfile(typedItem, signals);
-      if (name) sections.push(`📦 *${name}*\nProfile: ${profile} · Confidence: ${confidence}`);
-      if (verdict && verdict !== indicator.summary) sections.push(`*Verdict:* ${verdict}`);
-      if (Array.isArray(item.findings)) {
-        for (const findingValue of orderedFindings.slice(signals.length ? 0 : 1, signals.length ? 1 : 3)) {
-          if (!findingValue || typeof findingValue !== "object") continue;
-          const finding = findingValue as Record<string, unknown>;
-          const title = typeof finding.title === "string" ? finding.title : "";
-          const explanation = typeof finding.explanation === "string" ? finding.explanation : "";
-          if (title || explanation) sections.push(`• ${title}${title && explanation ? ": " : ""}${explanation}`);
-        }
+      if (name) sections.push(`📦 *${name}*\nProduct match: ${confidence}${profile ? ` · ${profile}` : ""}`);
+      for (const finding of findings.slice(0, 1)) {
+        sections.push(`• *${finding.title}:* ${finding.explanation}`);
       }
       const onlineEvidence = Array.isArray(item.evidence)
         ? item.evidence.find((candidate) => candidate && typeof candidate === "object" &&
           (candidate as Record<string, unknown>).origin === "hosted_web_search") as Record<string, unknown> | undefined
         : undefined;
-      const onlineCitation = Array.isArray(item.citations)
-        ? item.citations.find((candidate) => candidate && typeof candidate === "object" &&
-          typeof (candidate as Record<string, unknown>).url === "string") as Record<string, unknown> | undefined
-        : undefined;
-      if (onlineEvidence) {
-        const observation = typeof onlineEvidence.excerptOrObservation === "string" ? onlineEvidence.excerptOrObservation : "";
+      const usefulWebEvidenceIds = getDecisionUsefulWebEvidenceIds(typedItem);
+      if (onlineEvidence && usefulWebEvidenceIds.size > 0) {
+        const usefulEvidence = Array.isArray(item.evidence)
+          ? item.evidence.find((candidate) => candidate && typeof candidate === "object" &&
+            usefulWebEvidenceIds.has(String((candidate as Record<string, unknown>).id))) as Record<string, unknown> | undefined
+          : undefined;
+        const usefulCitationId = typeof usefulEvidence?.citationId === "string" ? usefulEvidence.citationId : null;
+        const onlineCitation = Array.isArray(item.citations)
+          ? item.citations.find((candidate) => candidate && typeof candidate === "object" &&
+            (candidate as Record<string, unknown>).id === usefulCitationId &&
+            typeof (candidate as Record<string, unknown>).url === "string") as Record<string, unknown> | undefined
+          : undefined;
         const sourceUrl = typeof onlineCitation?.url === "string" ? onlineCitation.url : "";
         const matchConfidence = typeof item.webMatchConfidence === "string" ? item.webMatchConfidence : "unrated";
-        sections.push(`🌐 *ONLINE ANALYSIS · MATCH ${matchConfidence.toUpperCase()}*${observation ? `\n${observation}` : ""}${sourceUrl ? `\n${sourceUrl}` : ""}`);
+        if (sourceUrl) sections.push(`🌐 Source · product match ${matchConfidence}\n${sourceUrl}`);
       }
     }
   }

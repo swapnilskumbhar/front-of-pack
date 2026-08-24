@@ -94,7 +94,7 @@ test("delivery contract is ID-only and renderer emits one Unicode-safe bounded m
   assert.match(localized.join("\n"), /पॅकवरील माहिती/);
 });
 
-test("WhatsApp rendering puts attention first and removes secondary prose", () => {
+test("WhatsApp rendering puts attention first and keeps only one secondary insight", () => {
   const message = renderWhatsAppChunks({
     wholeImageSummary: "Quick summary",
     items: [{
@@ -111,7 +111,7 @@ test("WhatsApp rendering puts attention first and removes secondary prose", () =
   })[0];
   assert.ok(message.indexOf("WARNING") < message.indexOf("Product"));
   assert.match(message, /Info first in model/);
-  assert.match(message, /Second fact/);
+  assert.doesNotMatch(message, /Second fact/);
   assert.doesNotMatch(message, /Hidden fact/);
   assert.doesNotMatch(message, /Marketing claim/);
   assert.doesNotMatch(message, /example\.test/);
@@ -119,13 +119,34 @@ test("WhatsApp rendering puts attention first and removes secondary prose", () =
 
 test("WhatsApp marks searched evidence as online and includes one source", () => {
   const message = renderWhatsAppChunks({ language: "en", items: [{
-    position: 1, identity: { nameAsPrinted: "Ratlami Sev" },
-    findings: [{ title: "Back panel needed", explanation: "Confirm the recipe.", level: "attention" }],
-    evidence: [{ origin: "hosted_web_search", excerptOrObservation: "Official 200 g page lists chickpea flour and clove powder." }],
-    citations: [{ title: "Official product page", url: "https://example.test/ratlami-sev" }],
+    position: 1, identity: { nameAsPrinted: "Ratlami Sev", confidence: "high" }, webMatchConfidence: "high",
+    findings: [{ id: "f", kind: "ingredient", title: "Peanut allergen", explanation: "Contains peanut; avoid for peanut allergy.", level: "attention", evidenceIds: ["e"] }],
+    evidence: [{ id: "e", origin: "hosted_web_search", excerptOrObservation: "Official ingredients list peanut.", citationId: "c" }],
+    citations: [{ id: "c", title: "Official product page", url: "https://example.test/ratlami-sev" }],
   }] })[0];
-  assert.match(message, /ONLINE ANALYSIS/);
+  assert.match(message, /Source · product match high/);
   assert.match(message, /example\.test\/ratlami-sev/);
+  assert.equal((message.match(/Official ingredients list peanut/g) ?? []).length, 0);
+  assert.match(message, /Product match: high/);
+  assert.doesNotMatch(message, /Profile: food/);
+});
+
+test("WhatsApp hides identity-only search evidence and does not invent caution", () => {
+  const message = renderWhatsAppChunks({ language: "en", items: [{
+    position: 1,
+    identity: { nameAsPrinted: "Digestive", brandAsPrinted: "McVitie's", confidence: "high" },
+    webMatchConfidence: "medium",
+    summary: "Pack recipe cannot be confirmed.",
+    findings: [{ id: "f", kind: "label_fact", title: "Back panel needed", explanation: "Ingredients are not visible.", level: "attention", evidenceIds: [] }],
+    evidence: [{ id: "e", origin: "hosted_web_search", excerptOrObservation: "Retail page identifies a 100 g pack." }],
+    citations: [{ title: "Retail page", url: "https://example.test/digestive" }],
+    needsClearerImage: true,
+    retakeGuidance: "Photograph the back panel.",
+  }] })[0];
+  assert.match(message, /NOT ENOUGH INFORMATION/);
+  assert.doesNotMatch(message, /SOME CAUTION/);
+  assert.doesNotMatch(message, /Retail page identifies/);
+  assert.doesNotMatch(message, /example\.test/);
 });
 
 test("successful delivery reads stored output and clears all routing ciphertext", async () => {

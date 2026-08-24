@@ -1,6 +1,6 @@
 import type { LanguageCode } from "../domain/language.ts";
 import type { ClaimContradictionSignal, DerivedNutrient, DerivedSignal, DietarySignal, WholePackSignal } from "./types.ts";
-import type { ProductAnalysis } from "../domain/analysis.ts";
+import type { Finding, ProductAnalysis } from "../domain/analysis.ts";
 
 const COPY: Record<LanguageCode, { whole: string; daily: string; label: string; pack: string; nutrients: Record<DerivedNutrient, string> }> = {
   en: { whole: "WHOLE PACK", daily: "of the pack's daily reference", label: "Label shows", pack: "whole pack is", nutrients: { added_sugars: "added sugar", saturated_fat: "saturated fat", sodium: "sodium", total_fat: "total fat" } },
@@ -101,17 +101,15 @@ export type AttentionLevel = "needs_attention" | "some_caution" | "no_major_conc
 export function buildAttentionIndicator(item: ProductAnalysis, signals: readonly DerivedSignal[], language: LanguageCode): { level: AttentionLevel; title: string; summary: string } {
   const highSignal = signals.find((signal) => signal.severity === "high");
   const uncertainSignal = signals.find((signal) => signal.kind === "source_unclear");
-  const materialFinding = (item.findings ?? []).find((finding) => finding.level === "attention" && !isMissingInformationFinding(finding.title, finding.explanation));
-  const onlineEvidence = (item.evidence ?? []).find((evidence) => evidence.origin === "hosted_web_search");
+  const materialFinding = getDecisionFindings(item).find((finding) => finding.level === "attention");
   if (highSignal) {
     return { level: "needs_attention", title: indicatorTitle("needs_attention", language), summary: formatDerivedSignal(highSignal, language).headline };
   }
   if (materialFinding) {
     return { level: "some_caution", title: indicatorTitle("some_caution", language), summary: materialFinding.explanation };
   }
-  if (uncertainSignal || onlineEvidence) {
-    const summary = uncertainSignal ? formatDerivedSignal(uncertainSignal, language).headline : onlineEvidence?.excerptOrObservation ?? "";
-    return { level: "some_caution", title: indicatorTitle("some_caution", language), summary };
+  if (uncertainSignal) {
+    return { level: "some_caution", title: indicatorTitle("some_caution", language), summary: formatDerivedSignal(uncertainSignal, language).headline };
   }
   const ranAnyCheck = Boolean(item.ingredientTokens?.length || item.nutrition?.basis || item.claimsAsPrinted?.length);
   if (ranAnyCheck && !item.needsClearerImage) {
@@ -120,18 +118,38 @@ export function buildAttentionIndicator(item: ProductAnalysis, signals: readonly
   return { level: "not_enough_information", title: indicatorTitle("not_enough_information", language), summary: item.retakeGuidance ?? item.summary ?? "More of the package is needed for a useful decision." };
 }
 
-export function buildProductProfile(item: ProductAnalysis, signals: readonly DerivedSignal[]): string {
-  const parts = [(item.category ?? "product").replaceAll("_", " ")];
+export function buildProductProfile(item: ProductAnalysis, signals: readonly DerivedSignal[]): string | null {
+  const parts: string[] = [];
   if (item.printedVegMark === "veg") parts.push("VEG mark");
   if (item.printedVegMark === "non_veg") parts.push("NON-VEG mark");
   if (item.claimsAsPrinted?.some((claim) => /caffeine/iu.test(claim))) parts.push("caffeine declared");
   if (signals.some((signal) => signal.kind === "veg_mark_conflict" || signal.kind === "diet_profile" && signal.severity === "high")) parts.push("animal/insect-derived ingredient");
   if (signals.some((signal) => signal.kind === "source_unclear")) parts.push("ingredient source unclear");
   if (signals.some((signal) => signal.kind === "allergen_profile")) parts.push("allergens identified");
-  return parts.slice(0, 3).join(" · ");
+  return parts.length ? parts.slice(0, 3).join(" · ") : null;
 }
 
-function isMissingInformationFinding(title: string, explanation: string): boolean {
+export function getDecisionFindings(item: ProductAnalysis): Finding[] {
+  const onlineEvidenceIds = new Set(
+    (item.evidence ?? []).filter((evidence) => evidence.origin === "hosted_web_search").map((evidence) => evidence.id),
+  );
+  return (item.findings ?? []).filter((finding) => {
+    if (finding.level === "unknown" || isMissingInformationFinding(finding.title, finding.explanation)) return false;
+    const reliesOnWeb = (finding.evidenceIds ?? []).some((id) => onlineEvidenceIds.has(id));
+    if (reliesOnWeb && item.webMatchConfidence !== "high" && item.webMatchConfidence !== "medium") return false;
+    return finding.level === "attention" || finding.kind !== "label_fact";
+  });
+}
+
+export function getDecisionUsefulWebEvidenceIds(item: ProductAnalysis): Set<string> {
+  if (item.webMatchConfidence !== "high" && item.webMatchConfidence !== "medium") return new Set();
+  const webEvidenceIds = new Set(
+    (item.evidence ?? []).filter((evidence) => evidence.origin === "hosted_web_search").map((evidence) => evidence.id),
+  );
+  return new Set(getDecisionFindings(item).flatMap((finding) => finding.evidenceIds ?? []).filter((id) => webEvidenceIds.has(id)));
+}
+
+export function isMissingInformationFinding(title: string, explanation: string): boolean {
   return /(?:not visible|unreadable|missing|needed|need(?:s|ed)?|not shown|cannot be assessed)/iu.test(`${title} ${explanation}`);
 }
 
