@@ -85,7 +85,7 @@ test("delivery contract is ID-only and renderer emits one Unicode-safe bounded m
   assert.equal(parseDeliveryJob({ version: 1, whatsapp_job_id: "job", recipient: "9199" }), null);
   const chunks = renderWhatsAppChunks({ summary: "x".repeat(20_000) });
   assert.equal(chunks.length, 1);
-  assert.equal(Array.from(chunks[0]).length, 700);
+  assert.equal(Array.from(chunks[0]).length, 450);
   const localized = renderWhatsAppChunks({
     wholeImageSummary: "लेबल विश्लेषण पूर्ण झाले.",
     items: [{ identity: { brandAsPrinted: "ब्रँड" }, summary: "पॅकवरील माहिती." }],
@@ -94,7 +94,7 @@ test("delivery contract is ID-only and renderer emits one Unicode-safe bounded m
   assert.match(localized.join("\n"), /पॅकवरील माहिती/);
 });
 
-test("WhatsApp rendering puts attention first and keeps only one secondary insight", () => {
+test("WhatsApp rendering leads with named indicators and removes generic metadata", () => {
   const message = renderWhatsAppChunks({
     wholeImageSummary: "Quick summary",
     items: [{
@@ -110,25 +110,26 @@ test("WhatsApp rendering puts attention first and keeps only one secondary insig
     }],
   })[0];
   assert.ok(message.indexOf("WARNING") < message.indexOf("Product"));
-  assert.match(message, /Info first in model/);
-  assert.doesNotMatch(message, /Second fact/);
-  assert.doesNotMatch(message, /Hidden fact/);
+  assert.match(message, /INFO FIRST IN MODEL/);
+  assert.match(message, /SECOND FACT/);
+  assert.doesNotMatch(message, /HIDDEN FACT/);
   assert.doesNotMatch(message, /Marketing claim/);
   assert.doesNotMatch(message, /example\.test/);
+  assert.doesNotMatch(message, /SOME CAUTION|Product match|Profile:/);
 });
 
-test("WhatsApp marks searched evidence as online and includes one source", () => {
+test("WhatsApp uses searched evidence as an indicator without exposing source plumbing", () => {
   const message = renderWhatsAppChunks({ language: "en", items: [{
     position: 1, identity: { nameAsPrinted: "Ratlami Sev", confidence: "high" }, webMatchConfidence: "high",
     findings: [{ id: "f", kind: "ingredient", title: "Peanut allergen", explanation: "Contains peanut; avoid for peanut allergy.", level: "attention", evidenceIds: ["e"] }],
     evidence: [{ id: "e", origin: "hosted_web_search", excerptOrObservation: "Official ingredients list peanut.", citationId: "c" }],
     citations: [{ id: "c", title: "Official product page", url: "https://example.test/ratlami-sev" }],
   }] })[0];
-  assert.match(message, /Source · product match high/);
-  assert.match(message, /example\.test\/ratlami-sev/);
+  assert.match(message, /PEANUT ALLERGEN/);
+  assert.match(message, /Contains peanut; avoid for peanut allergy/);
+  assert.doesNotMatch(message, /example\.test\/ratlami-sev/);
   assert.equal((message.match(/Official ingredients list peanut/g) ?? []).length, 0);
-  assert.match(message, /Product match: high/);
-  assert.doesNotMatch(message, /Profile: food/);
+  assert.doesNotMatch(message, /Product match|Profile:/);
 });
 
 test("WhatsApp hides identity-only search evidence and does not invent caution", () => {
@@ -147,6 +148,27 @@ test("WhatsApp hides identity-only search evidence and does not invent caution",
   assert.doesNotMatch(message, /SOME CAUTION/);
   assert.doesNotMatch(message, /Retail page identifies/);
   assert.doesNotMatch(message, /example\.test/);
+});
+
+test("Red Bull response names caffeine and sugar instead of an umbrella caution", () => {
+  const message = renderWhatsAppChunks({ language: "en", items: [{
+    position: 1,
+    identity: { nameAsPrinted: "Red Bull Energy Drink", brandAsPrinted: "Red Bull", confidence: "high" },
+    summary: "Limit this high-sugar caffeinated drink.",
+    findings: [
+      { id: "c", kind: "label_fact", title: "Caffeine warning", explanation: "75 mg · Avoid for children, pregnancy and caffeine sensitivity.", level: "attention", evidenceIds: ["ce"] },
+      { id: "s", kind: "nutrition", title: "High sugar", explanation: "27 g per 250 ml can.", level: "attention", evidenceIds: ["se"] },
+    ],
+    evidence: [
+      { id: "ce", origin: "package", excerptOrObservation: "Caffeine warning printed." },
+      { id: "se", origin: "hosted_web_search", excerptOrObservation: "27 g sugar per can." },
+    ],
+    webMatchConfidence: "high",
+  }] })[0];
+  assert.match(message, /^🔴 \*CAFFEINE WARNING\*/u);
+  assert.match(message, /🔴 \*HIGH SUGAR\*\n27 g per 250 ml can/u);
+  assert.match(message, /→ Limit this high-sugar caffeinated drink/);
+  assert.doesNotMatch(message, /SOME CAUTION|Product match|https?:\/\//);
 });
 
 test("successful delivery reads stored output and clears all routing ciphertext", async () => {

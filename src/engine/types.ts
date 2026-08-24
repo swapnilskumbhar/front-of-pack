@@ -1,4 +1,4 @@
-export const ENGINE_VERSION = "decision-engine.v4" as const;
+export const ENGINE_VERSION = "decision-engine.v5" as const;
 
 export type NutritionBasis = "per_100g" | "per_100ml";
 export type DerivedNutrient = "added_sugars" | "saturated_fat" | "sodium" | "total_fat";

@@ -22,14 +22,20 @@ const haldirams = baseItem(1, "RATLAMI SEV", "food");
 haldirams.identity = { nameAsPrinted: "RATLAMI SEV", brandAsPrinted: "Haldiram’s", variantAsPrinted: null, gtin: null, confidence: "high" };
 haldirams.printedVegMark = "veg";
 haldirams.claimsAsPrinted = ["Extruded Snack of Bengal Gram Flour with Pinch of Clove.", "PRODUCT OF INDIA"];
-haldirams.findings = [{ id: "h1", kind: "label_fact", level: "attention", title: "Back panel needed", explanation: "Allergen advice and nutrition are not visible; verify them on the rear panel.", evidenceIds: ["he1"], ruleIds: ["in.fssai.labelling-display-2020.v1"], experimental: false }];
-haldirams.evidence = [
-  { id: "he1", origin: "package", excerptOrObservation: "Only the front panel is shown; no ingredient list, allergen statement or nutrition panel is readable.", citationId: null, visibleOnPackage: true },
-  { id: "he2", origin: "hosted_web_search", excerptOrObservation: "The official matching 200 g page lists chickpea flour, oil and spices; confirm this pack’s rear label because recipes can change.", citationId: "hc1", visibleOnPackage: false },
+haldirams.webMatchConfidence = "medium";
+haldirams.webMatchBasis = "Exact brand, product and 200 g pack; online recipe details remain provisional.";
+haldirams.summary = "Check wheat allergen and palm oil.";
+haldirams.findings = [
+  { id: "h1", kind: "ingredient", level: "attention", title: "ALLERGEN: WHEAT", explanation: "Online 200 g listing says hing contains wheat.", evidenceIds: ["he2"], ruleIds: [], experimental: false },
+  { id: "h2", kind: "ingredient", level: "attention", title: "CONTAINS PALM OIL", explanation: "Online 200 g listing names palm olein.", evidenceIds: ["he2"], ruleIds: [], experimental: false },
 ];
-haldirams.citations = [{ id: "hc1", title: "Ratlami Sev (200 gms) — Haldiram Foods", url: "https://haldiramfoods.com/product/ratlami-sev-200-gms/", providerSourceId: "https://haldiramfoods.com/product/ratlami-sev-200-gms/" }];
-haldirams.needsClearerImage = true;
-haldirams.retakeGuidance = "Photograph the full back panel to confirm ingredients, allergens and nutrition.";
+haldirams.evidence = [
+  { id: "he1", origin: "package", excerptOrObservation: "Front shows 200 g net quantity and a green vegetarian mark.", citationId: null, visibleOnPackage: true },
+  { id: "he2", origin: "hosted_web_search", excerptOrObservation: "Exact 200 g listing names palm olein and hing powder containing wheat.", citationId: "hc1", visibleOnPackage: false },
+];
+haldirams.citations = [{ id: "hc1", title: "Haldiram Ratlami Sev 200 g listing", url: "https://shop.ambikajapan.com/products/haldiram-ratlami-sev-200g", providerSourceId: "https://shop.ambikajapan.com/products/haldiram-ratlami-sev-200g" }];
+haldirams.needsClearerImage = false;
+haldirams.retakeGuidance = null;
 
 const bread = baseItem(1, "Fibre Up", "food");
 bread.identity = { nameAsPrinted: "Fibre Up", brandAsPrinted: "English Oven", variantAsPrinted: "For a Happy Gut", gtin: "8906001387114", confidence: "high" };
@@ -53,7 +59,7 @@ export const DEMO_RESULTS: Record<string, AnalysisResult> = {
 };
 
 export const DEMO_LABELS = [
-  { id: "haldirams", label: "Front-only search", detail: "Real pack · official match", imageSrc: "/demo/haldirams-ratlami-sev.jpeg" },
+  { id: "haldirams", label: "Front-only search", detail: "Real pack · online indicators", imageSrc: "/demo/haldirams-ratlami-sev.jpeg" },
   { id: "bread", label: "Whole-pack reality", detail: "Real pack · allergens", imageSrc: "/demo/english-oven-fibre-up.jpeg" },
   { id: "cart", label: "Six products", detail: "Synthetic until photo supplied", imageSrc: null },
 ] as const;

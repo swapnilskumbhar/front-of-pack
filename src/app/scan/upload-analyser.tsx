@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { AnalysisResult } from "@/domain/analysis";
-import { buildAttentionIndicator, buildCheckStrip, buildProductProfile, buildVerdict, formatDerivedSignal, getDecisionFindings, getDecisionUsefulWebEvidenceIds } from "@/engine/presentation";
+import { buildShopperIndicators } from "@/engine/presentation";
 import { DEFAULT_LANGUAGE, type LanguageCode } from "@/domain/language";
 import { MAX_IMAGE_BYTES, type CreatedAnalysisResponse, type SafeAnalysisResponse } from "@/intake";
 import { DEMO_LABELS, DEMO_RESULTS } from "@/demo/results";
@@ -143,60 +143,30 @@ export default function UploadAnalyser() {
 }
 
 function AnalysisResultView({ result }: { result: AnalysisResult }) {
-  const hasDerivedDecision = result.derived?.items.some((item) => item.signals.length > 0) ?? false;
   return (
     <section className="analysis-result" aria-live="polite" aria-labelledby="analysis-result-title">
       <p className="eyebrow">Quick label check</p>
-      {!hasDerivedDecision && result.strongestMaterialFinding && <p className="analysis-callout">{result.strongestMaterialFinding}</p>}
-      {!hasDerivedDecision && <h2 id="analysis-result-title">{result.wholeImageSummary}</h2>}
-      {hasDerivedDecision && <h2 id="analysis-result-title">What changes the decision</h2>}
+      <h2 id="analysis-result-title">What matters</h2>
       <div className="analysis-items">{result.items.map((item) => {
         const derivedSignals = result.derived?.items.find((entry) => entry.position === item.position)?.signals ?? [];
-        const derivedCopies = derivedSignals.slice(0, 2).map((signal) => formatDerivedSignal(signal, result.language));
-        const hasWholePackSignal = derivedSignals.some((signal) => signal.kind === "whole_pack_rda");
-        const indicator = buildAttentionIndicator(item, derivedSignals, result.language);
-        const visibleFindings = getDecisionFindings(item)
-          .filter((finding) => !(hasWholePackSignal && finding.kind === "nutrition"))
-          .filter((finding) => finding.explanation.trim() !== indicator.summary.trim())
-          .sort((left, right) => Number(right.level === "attention") - Number(left.level === "attention"))
-          .slice(0, 2);
-        const visibleFindingIds = new Set(visibleFindings.map((finding) => finding.id));
-        const additionalFindings = item.findings.filter((finding) => !visibleFindingIds.has(finding.id));
-        const verdict = buildVerdict(derivedSignals, result.language);
-        const profile = buildProductProfile(item, derivedSignals);
-        const checks = buildCheckStrip(item, derivedSignals);
-        const claimCheck = item.claimAudits.find((claim) => claim.status !== "supported") ?? item.claimAudits[0];
-        const onlineEvidence = item.evidence.filter((evidence) => evidence.origin === "hosted_web_search");
-        const usefulWebEvidenceIds = getDecisionUsefulWebEvidenceIds(item);
-        const showOnlineSource = onlineEvidence.some((evidence) => usefulWebEvidenceIds.has(evidence.id));
-        const usefulCitationIds = new Set(onlineEvidence
-          .filter((evidence) => usefulWebEvidenceIds.has(evidence.id) && evidence.citationId)
-          .map((evidence) => evidence.citationId));
+        const indicators = buildShopperIndicators(item, derivedSignals, result.language);
+        const showBottomLine = item.summary && indicators[0]?.tone !== "grey" &&
+          indicators.every((indicator) => indicator.detail !== item.summary);
         return <article key={item.position}>
           <div className="analysis-item-heading">
             <span>Product {item.position}</span>
-            <div className="analysis-badges"><b>{categoryLabel(item.category)}</b><b>{item.coverage.tier.replaceAll("_", " ")}</b><b>Product match: {item.identity.confidence}</b></div>
+            <b>{categoryLabel(item.category)}</b>
           </div>
-          <div className={`analysis-indicator indicator-${indicator.level}`}><strong>{indicator.title}</strong><span>{indicator.summary}</span></div>
           <h3>{item.identity.nameAsPrinted || item.identity.brandAsPrinted || "Product identified from the image"}</h3>
-          {profile && <p className="analysis-profile"><strong>Profile:</strong> {profile}</p>}
-          {verdict && <p className="analysis-verdict"><strong>Verdict</strong>{verdict}</p>}
-          {derivedCopies.map((copy, index) => <div className="analysis-callout" key={`${copy.title}-${index}`}><strong>{copy.title}</strong><br />{copy.headline}<br /><small>{copy.detail}</small></div>)}
-          <div className="analysis-check-strip">{checks.map((check) => <span key={check.label} className={`check-${check.state}`} title={check.text}><b>{check.label}</b>{check.state === "alert" ? "⚠" : check.state === "pass" ? "✓" : "—"}</span>)}</div>
-          {visibleFindings.length > 0 && <div className="analysis-key-findings">
-            <h4>What matters</h4>
-            <ul>{visibleFindings.map((finding) => <li key={finding.id}><strong>{finding.title}</strong><span>{finding.explanation}</span></li>)}</ul>
-          </div>}
-          {claimCheck && <div className="analysis-claim"><small>Claim check</small><strong>{claimCheck.claimAsPrinted}</strong><p>{claimCheck.assessment}</p></div>}
-          {showOnlineSource && <div className="analysis-online">
-            <small>Online source · product match {item.webMatchConfidence}</small>
-            {item.citations.filter((citation) => usefulCitationIds.has(citation.id)).slice(0, 1).map((citation) => <a key={citation.id} href={citation.url} target="_blank" rel="noreferrer nofollow">{citation.title} ↗</a>)}
-          </div>}
-          {item.needsClearerImage && item.retakeGuidance && <p className="analysis-retake">📷 {item.retakeGuidance}</p>}
+          <div className="shopper-indicators">{indicators.map((indicator, index) => <div className={`shopper-indicator signal-${indicator.tone}`} key={`${indicator.title}-${index}`}>
+            <strong>{indicator.tone === "red" ? "●" : indicator.tone === "amber" ? "●" : indicator.tone === "green" ? "✓" : "—"} {indicator.title}</strong>
+            <span>{indicator.detail}</span>
+          </div>)}</div>
+          {showBottomLine && <p className="analysis-bottom-line">→ {item.summary}</p>}
           {item.serviceRoute && <a className="analysis-next-step" href="/grievance">See your next-step options →</a>}
           <details className="analysis-evidence">
             <summary>View full evidence</summary>
-            {additionalFindings.length > 0 && <div><h4>Additional findings</h4>{additionalFindings.map((finding) => <p key={finding.id}><strong>{finding.title}:</strong> {finding.explanation}</p>)}</div>}
+            {item.findings.length > 0 && <div><h4>Findings</h4>{item.findings.map((finding) => <p key={finding.id}><strong>{finding.title}:</strong> {finding.explanation}</p>)}</div>}
             {item.evidence.length > 0 && <div><h4>Evidence read</h4><ul>{item.evidence.map((evidence) => <li key={evidence.id}>{evidence.excerptOrObservation}</li>)}</ul></div>}
             {item.citations.length > 0 && <div><h4>Sources</h4><ul>{item.citations.map((citation) => <li key={citation.id}><a href={citation.url} target="_blank" rel="noreferrer nofollow">{citation.title}</a></li>)}</ul></div>}
             {item.coverage.limitations.length > 0 && <div><h4>Limitations</h4><ul>{item.coverage.limitations.map((limitation) => <li key={limitation}>{limitation}</li>)}</ul></div>}

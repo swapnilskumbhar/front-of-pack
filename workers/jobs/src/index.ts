@@ -15,11 +15,11 @@ import { attachDecisions } from "../../../src/engine/index.ts";
 
 const PINNED_ANALYSIS_VERSIONS = {
   model_id: "gpt-5.6-terra",
-  prompt_version: "terra-analysis.v10",
+  prompt_version: "terra-analysis.v11",
   schema_version: "analysis-result.v1",
   rules_version: "india-category-rules.v2",
   services_version: "india-consumer-services.v1",
-  engine_version: "decision-engine.v4",
+  engine_version: "decision-engine.v5",
 } as const;
 
 const MODEL_RULE_CONTEXT = RULE_PACKS.map((pack) => ({
@@ -316,7 +316,7 @@ export default {
       });
       if (!prepared.cacheHit) {
         await consumeWebAnalysis({ body: { version: 1, trigger: "web", analysis_id: prepared.analysisId,
-          attempt_number: prepared.attemptNumber }, ack() {} }, env, fetch, prepared.preparationTimings, true);
+          attempt_number: prepared.attemptNumber }, ack() {} }, env, fetch, prepared.preparationTimings);
       }
       const result = await env.DB.prepare(`SELECT status FROM analyses WHERE id = ? LIMIT 1`)
         .bind(prepared.analysisId).first<{ status: string }>();

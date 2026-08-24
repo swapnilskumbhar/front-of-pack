@@ -1,6 +1,6 @@
 import { decryptIdentifier } from "./crypto.ts";
 import { GraphSendError, sendWhatsAppText, type GraphConfig } from "./graph.ts";
-import { buildAttentionIndicator, buildProductProfile, getDecisionFindings, getDecisionUsefulWebEvidenceIds, type DerivedSignal } from "../../../../src/engine/index.ts";
+import { buildShopperIndicators, type DerivedSignal } from "../../../../src/engine/index.ts";
 import type { LanguageCode } from "../../../../src/domain/language.ts";
 import type { ProductAnalysis } from "../../../../src/domain/analysis.ts";
 
@@ -51,46 +51,23 @@ export function renderWhatsAppChunks(result: unknown): string[] {
         (candidate as Record<string, unknown>).position === item.position) as Record<string, unknown> | undefined;
       const signals = Array.isArray(derivedItem?.signals) ? derivedItem.signals as DerivedSignal[] : [];
       const typedItem = item as unknown as ProductAnalysis;
-      const findings = getDecisionFindings(typedItem)
-        .filter((finding) => !(signals.some((signal) => signal.kind === "whole_pack_rda") && finding.kind === "nutrition"))
-        .filter((finding) => finding.explanation.trim() !== buildAttentionIndicator(typedItem, signals, language).summary.trim())
-        .sort((left, right) => Number(right.level === "attention") - Number(left.level === "attention"));
-      const indicator = buildAttentionIndicator(typedItem, signals, language);
-      const indicatorIcon = indicator.level === "needs_attention" ? "🔴" : indicator.level === "some_caution" ? "🟠" : indicator.level === "no_major_concern" ? "🟢" : "⚪";
-      sections.push(`${indicatorIcon} *${indicator.title}*\n${indicator.summary}`);
-      const confidence = typeof identity.confidence === "string" ? identity.confidence : "unknown";
-      const profile = buildProductProfile(typedItem, signals);
-      if (name) sections.push(`📦 *${name}*\nProduct match: ${confidence}${profile ? ` · ${profile}` : ""}`);
-      for (const finding of findings.slice(0, 1)) {
-        sections.push(`• *${finding.title}:* ${finding.explanation}`);
+      const indicators = buildShopperIndicators(typedItem, signals, language);
+      for (const indicator of indicators) {
+        const icon = indicator.tone === "red" ? "🔴" : indicator.tone === "amber" ? "🟠" : indicator.tone === "green" ? "🟢" : "⚪";
+        sections.push(`${icon} *${indicator.title}*\n${indicator.detail}`);
       }
-      const onlineEvidence = Array.isArray(item.evidence)
-        ? item.evidence.find((candidate) => candidate && typeof candidate === "object" &&
-          (candidate as Record<string, unknown>).origin === "hosted_web_search") as Record<string, unknown> | undefined
-        : undefined;
-      const usefulWebEvidenceIds = getDecisionUsefulWebEvidenceIds(typedItem);
-      if (onlineEvidence && usefulWebEvidenceIds.size > 0) {
-        const usefulEvidence = Array.isArray(item.evidence)
-          ? item.evidence.find((candidate) => candidate && typeof candidate === "object" &&
-            usefulWebEvidenceIds.has(String((candidate as Record<string, unknown>).id))) as Record<string, unknown> | undefined
-          : undefined;
-        const usefulCitationId = typeof usefulEvidence?.citationId === "string" ? usefulEvidence.citationId : null;
-        const onlineCitation = Array.isArray(item.citations)
-          ? item.citations.find((candidate) => candidate && typeof candidate === "object" &&
-            (candidate as Record<string, unknown>).id === usefulCitationId &&
-            typeof (candidate as Record<string, unknown>).url === "string") as Record<string, unknown> | undefined
-          : undefined;
-        const sourceUrl = typeof onlineCitation?.url === "string" ? onlineCitation.url : "";
-        const matchConfidence = typeof item.webMatchConfidence === "string" ? item.webMatchConfidence : "unrated";
-        if (sourceUrl) sections.push(`🌐 Source · product match ${matchConfidence}\n${sourceUrl}`);
+      const bottomLine = typeof item.summary === "string" ? item.summary.trim() : "";
+      if (bottomLine && indicators.every((indicator) => indicator.detail !== bottomLine) && indicators[0]?.tone !== "grey") {
+        sections.push(`→ ${bottomLine}`);
       }
+      if (name) sections.push(`📦 *${name}*`);
     }
   }
   if (sections.length === 0 && typeof source.wholeImageSummary === "string") sections.push(source.wholeImageSummary);
   if (sections.length === 0 && typeof source.summary === "string") sections.push(source.summary);
   const summary = sections.length > 0 ? sections.join("\n\n") : "Your label analysis is ready.";
   const codePoints = Array.from(summary);
-  return [codePoints.slice(0, 700).join("") || "Your label analysis is ready."];
+  return [codePoints.slice(0, 450).join("") || "Your label analysis is ready."];
 }
 
 export async function consumeDelivery(

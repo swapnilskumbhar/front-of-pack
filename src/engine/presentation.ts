@@ -149,6 +149,81 @@ export function getDecisionUsefulWebEvidenceIds(item: ProductAnalysis): Set<stri
   return new Set(getDecisionFindings(item).flatMap((finding) => finding.evidenceIds ?? []).filter((id) => webEvidenceIds.has(id)));
 }
 
+export type ShopperIndicatorTone = "red" | "amber" | "green" | "grey";
+
+export interface ShopperIndicator {
+  tone: ShopperIndicatorTone;
+  title: string;
+  detail: string;
+  evidenceIds: string[];
+}
+
+/** The only primary-response contract: named facts, never an unexplained umbrella rating. */
+export function buildShopperIndicators(
+  item: ProductAnalysis,
+  signals: readonly DerivedSignal[],
+  language: LanguageCode,
+): ShopperIndicator[] {
+  const indicators: ShopperIndicator[] = getDecisionFindings(item).map((finding) => {
+    const text = `${finding.title} ${finding.explanation}`;
+    return {
+      tone: finding.level === "attention" ? "red" : /(?:vegetarian|\bveg\b|no palm oil|claim supported)/iu.test(text) ? "green" : "amber",
+      title: finding.title.trim().toUpperCase(),
+      detail: finding.explanation.trim(),
+      evidenceIds: finding.evidenceIds ?? [],
+    };
+  });
+
+  for (const signal of signals) {
+    const copy = formatDerivedSignal(signal, language);
+    const tone: ShopperIndicatorTone = signal.severity === "high"
+      ? "red"
+      : signal.kind === "source_unclear" || signal.kind === "whole_pack_rda" && signal.severity === "moderate"
+        ? "amber"
+        : "green";
+    const title = signal.kind === "whole_pack_rda" && signal.severity === "high"
+      ? `${highWord(language)} ${COPY[language]?.nutrients[signal.nutrient] ?? COPY.en.nutrients[signal.nutrient]}`.toUpperCase()
+      : copy.title.toUpperCase();
+    if (!indicators.some((indicator) => sameIndicator(indicator, title, copy.headline))) {
+      indicators.push({ tone, title, detail: copy.headline, evidenceIds: [] });
+    }
+  }
+
+  if (indicators.length > 0) return indicators.sort(compareIndicators).slice(0, 3);
+
+  const ranAnyCheck = Boolean(item.ingredientTokens?.length || item.nutrition?.basis || item.claimsAsPrinted?.length);
+  if (ranAnyCheck && !item.needsClearerImage) {
+    return [{ tone: "green", title: indicatorTitle("no_major_concern", language), detail: item.summary, evidenceIds: [] }];
+  }
+  return [{
+    tone: "grey",
+    title: indicatorTitle("not_enough_information", language),
+    detail: item.retakeGuidance ?? item.summary ?? "Send one clear back-panel photo.",
+    evidenceIds: [],
+  }];
+}
+
+function compareIndicators(left: ShopperIndicator, right: ShopperIndicator): number {
+  const warning = (indicator: ShopperIndicator) => /(?:warning|children|pregnan|lactat|avoid)/iu.test(`${indicator.title} ${indicator.detail}`) ? 0 : 1;
+  const tone = (indicator: ShopperIndicator) => ({ red: 0, amber: 1, green: 2, grey: 3 })[indicator.tone];
+  return warning(left) - warning(right) || tone(left) - tone(right);
+}
+
+function sameIndicator(indicator: ShopperIndicator, title: string, detail: string): boolean {
+  const normalize = (value: string) => value.toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+  const existing = normalize(`${indicator.title} ${indicator.detail}`);
+  const incoming = normalize(`${title} ${detail}`);
+  return existing === incoming || existing.includes(incoming) || incoming.includes(existing);
+}
+
+function highWord(language: LanguageCode): string {
+  const words: Record<LanguageCode, string> = {
+    en: "HIGH", hi: "अधिक", mr: "जास्त", bn: "বেশি", ta: "அதிக", te: "అధిక", kn: "ಹೆಚ್ಚು",
+    gu: "વધુ", ml: "ഉയർന്ന", pa: "ਵੱਧ", or: "ଅଧିକ", ur: "زیادہ",
+  };
+  return words[language] ?? words.en;
+}
+
 export function isMissingInformationFinding(title: string, explanation: string): boolean {
   return /(?:not visible|unreadable|missing|needed|need(?:s|ed)?|not shown|cannot be assessed)/iu.test(`${title} ${explanation}`);
 }

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import type { ProductAnalysis } from "../src/domain/analysis.ts";
-import { buildAttentionIndicator, buildProductProfile } from "../src/engine/presentation.ts";
+import { buildAttentionIndicator, buildProductProfile, buildShopperIndicators } from "../src/engine/presentation.ts";
 import type { WholePackSignal } from "../src/engine/types.ts";
 
 const item = (overrides: Partial<ProductAnalysis> = {}): ProductAnalysis => ({
@@ -57,6 +57,20 @@ test("low-confidence web evidence cannot create caution", () => {
 
 test("generic category alone is not a product profile", () => {
   assert.equal(buildProductProfile(item(), []), null);
+});
+
+test("shopper indicators preserve named issues instead of umbrella caution", () => {
+  const indicators = buildShopperIndicators(item({ findings: [{
+    id: "f", kind: "nutrition", level: "attention", title: "High sugar",
+    explanation: "27 g per can.", evidenceIds: [], ruleIds: [], experimental: false,
+  }] }), [], "en");
+  assert.deepEqual(indicators[0], { tone: "red", title: "HIGH SUGAR", detail: "27 g per can.", evidenceIds: [] });
+});
+
+test("whole-pack signal becomes a named high nutrient indicator", () => {
+  const indicators = buildShopperIndicators(item(), [sugarSignal], "en");
+  assert.equal(indicators[0].title, "HIGH ADDED SUGAR");
+  assert.equal(indicators[0].tone, "red");
 });
 
 test("completed readable checks with no signal do not claim safety", () => {
