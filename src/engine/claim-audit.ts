@@ -23,7 +23,7 @@ export function evaluateClaimConsistency(
       basis: "literal_package_consistency",
     });
   }
-  return signals.slice(0, 2);
+  return signals;
 }
 
 function normalize(value: string): string {

@@ -15,11 +15,11 @@ import { attachDecisions } from "../../../src/engine/index.ts";
 
 const PINNED_ANALYSIS_VERSIONS = {
   model_id: "gpt-5.6-terra",
-  prompt_version: "terra-analysis.v12",
-  schema_version: "analysis-result.v1",
+  prompt_version: "terra-analysis.v13",
+  schema_version: "analysis-result.v2",
   rules_version: "india-category-rules.v2",
   services_version: "india-consumer-services.v1",
-  engine_version: "decision-engine.v5",
+  engine_version: "decision-engine.v6",
 } as const;
 
 const MODEL_RULE_CONTEXT = RULE_PACKS.map((pack) => ({
@@ -204,7 +204,7 @@ export async function consumeWebAnalysis(
   env: Env,
   fetcher: typeof fetch = fetch,
   initialTimings: Record<string, number> = {},
-  requireWebSearch = false,
+  requireWebSearch = true,
 ): Promise<void> {
   const job = parseWebAnalysisMessage(message.body);
   if (job === null) throw new Error("Invalid web analysis queue message");

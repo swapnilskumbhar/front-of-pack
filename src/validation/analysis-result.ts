@@ -221,6 +221,33 @@ export function validateAnalysisResult(
       if (isRecord(audit)) consumerText.push([`${path}.assessment`, audit.assessment]);
     });
 
+    const rating = rawItem.rating;
+    if (!isRecord(rating)) {
+      add("invalid_shape", `${base}.rating`, "Rating must be an object.");
+    } else {
+      validateEvidenceRefs(rating, `${base}.rating`);
+      if (rating.score !== null && (!isInteger(rating.score) || Number(rating.score) < 0 || Number(rating.score) > 10)) {
+        add("invalid_shape", `${base}.rating.score`, "Rating score must be null or an integer from zero to ten.");
+      }
+      if (!isString(rating.dimension) || !["nutrition", "ingredients", "claims", "label_evidence"].includes(rating.dimension)) {
+        add("invalid_enum", `${base}.rating.dimension`, "Rating dimension is not supported.");
+      }
+      if (rating.experimental !== true) {
+        add("invalid_experimental_semantics", `${base}.rating.experimental`, "Product rating must be explicitly experimental.");
+      }
+      consumerText.push([`${base}.rating.label`, rating.label], [`${base}.rating.basis`, rating.basis]);
+    }
+
+    if (!Array.isArray(rawItem.profile)) {
+      add("invalid_shape", `${base}.profile`, "Profile must be an array.");
+    }
+    asArray(rawItem.profile).forEach((tag, index) => {
+      const path = `${base}.profile[${index}]`;
+      validateEvidenceRefs(tag, path);
+      if (!isRecord(tag) || !isString(tag.label)) add("invalid_shape", `${path}.label`, "Profile label is required.");
+      else consumerText.push([`${path}.label`, tag.label]);
+    });
+
     if (rawItem.serviceRoute !== null) {
       const route = isRecord(rawItem.serviceRoute) ? rawItem.serviceRoute : {};
       if (!isRecord(rawItem.serviceRoute)) add("invalid_shape", `${base}.serviceRoute`, "Service route must be an object or null.");

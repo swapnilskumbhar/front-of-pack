@@ -84,11 +84,11 @@ a chemical-classification or formulation judgement.*
 Implementing it would be the first unfalsifiable claim in the engine. Leaving it out is the correct
 call and should be stated on `/how-we-decide` as a deliberate exclusion.
 
-## A3 Only the first signal renders
+## A3 All material signals render — resolved
 
-`src/app/scan/upload-analyser.tsx:154` reads `.signals[0]`. A product with both a claim contradiction
-*and* a whole-pack warning shows one of them. Render up to **two** signals per item, claim
-contradiction first (it is always `severity: "high"`).
+The response contract now preserves every material model finding and deterministic signal. Web and
+WhatsApp render warnings first, deduplicate the same topic, then retain supporting facts. Transport
+capacity is bounded, but there is no one-, two-, or three-warning product limit.
 
 ## A4 Rounding is inconsistent within one card
 

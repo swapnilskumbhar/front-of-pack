@@ -5,13 +5,15 @@ const baseItem = (position: number, name: string, category: ProductAnalysis["cat
   position,
   identity: { nameAsPrinted: name, brandAsPrinted: "Demo Pack", variantAsPrinted: null, gtin: null, confidence: "high" },
   category, nutrition: null, ingredientTokens: [], claimsAsPrinted: [],
+  rating: { score: null, dimension: "label_evidence", label: "Not rated", basis: "Insufficient evidence.", evidenceIds: [], experimental: true },
+  profile: [],
   coverage: { tier: category === "food" || category === "beverage" ? "category_rules" : "general_pack_rules", rulePackIds: [], limitations: [] },
   summary: name, findings: [], claimAudits: [], evidence: [], citations: [], serviceRoute: null,
   needsClearerImage: false, retakeGuidance: null,
 });
 
 function result(items: ProductAnalysis[], summary: string, real = true): AnalysisResult {
-  return attachDecisions({ schemaVersion: "analysis-result.v1", language: "en", analyzedCount: items.length,
+  return attachDecisions({ schemaVersion: "analysis-result.v2", language: "en", analyzedCount: items.length,
     unknownCount: 0, flaggedCount: 0, truncated: false, wholeImageSummary: summary,
     strongestMaterialFinding: null, items, disclaimer: real
       ? "Cached result from a real Front of Pack analysis run on 23 August 2026."
@@ -24,6 +26,8 @@ haldirams.printedVegMark = "veg";
 haldirams.claimsAsPrinted = ["Extruded Snack of Bengal Gram Flour with Pinch of Clove.", "PRODUCT OF INDIA"];
 haldirams.webMatchConfidence = "medium";
 haldirams.webMatchBasis = "Exact brand, product and 200 g pack; online recipe details remain provisional.";
+haldirams.rating = { score: 4, dimension: "ingredients", label: "Ingredients", basis: "Palm oil and a wheat allergen need attention.", evidenceIds: ["he2"], experimental: true };
+haldirams.profile = [{ label: "VEG MARK", evidenceIds: ["he1"] }, { label: "PALM OIL", evidenceIds: ["he2"] }, { label: "WHEAT ALLERGEN", evidenceIds: ["he2"] }];
 haldirams.summary = "Check wheat allergen and palm oil.";
 haldirams.findings = [
   { id: "h1", kind: "ingredient", level: "attention", title: "ALLERGEN: WHEAT", explanation: "Online 200 g listing says hing contains wheat.", evidenceIds: ["he2"], ruleIds: [], experimental: false },
@@ -40,13 +44,19 @@ haldirams.retakeGuidance = null;
 const bread = baseItem(1, "Fibre Up", "food");
 bread.identity = { nameAsPrinted: "Fibre Up", brandAsPrinted: "English Oven", variantAsPrinted: "For a Happy Gut", gtin: "8906001387114", confidence: "high" };
 bread.printedVegMark = "veg";
+bread.rating = { score: 6, dimension: "nutrition", label: "Nutrition", basis: "High fibre, with notable sodium and multiple allergens.", evidenceIds: ["be1", "be2"], experimental: true };
+bread.profile = [{ label: "VEG MARK", evidenceIds: ["be3"] }, { label: "HIGH FIBRE", evidenceIds: ["be2"] }, { label: "MULTIPLE ALLERGENS", evidenceIds: ["be1"] }];
 bread.ingredientTokens = ["whole wheat flour", "oats", "soy flour", "sesame seeds", "wheat gluten", "sugar"];
 bread.nutrition = { basis: "per_100g", servingSize: 55, netQuantity: 400,
   values: { addedSugarsG: 1.93, saturatedFatG: 1.1, sodiumMg: 435, totalFatG: 3.09 },
   printedPerServeRdaPct: { addedSugars: 2, saturatedFat: 2.8, sodium: 12, totalFat: 3 } };
 bread.coverage = { tier: "category_rules", rulePackIds: ["in.fssai.labelling-display-2020.v1"], limitations: [] };
 bread.findings = [{ id: "b1", kind: "ingredient", level: "attention", title: "Allergens printed", explanation: "The pack declares wheat, oats, soy and sesame.", evidenceIds: ["be1"], ruleIds: ["in.fssai.labelling-display-2020.v1"], experimental: false }];
-bread.evidence = [{ id: "be1", origin: "package", excerptOrObservation: "Allergen declaration states wheat, oats, soy and sesame seeds.", citationId: null, visibleOnPackage: true }];
+bread.evidence = [
+  { id: "be1", origin: "package", excerptOrObservation: "Allergen declaration states wheat, oats, soy and sesame seeds.", citationId: null, visibleOnPackage: true },
+  { id: "be2", origin: "package", excerptOrObservation: "Nutrition panel lists 10.27 g dietary fibre per 100 g and 435 mg sodium.", citationId: null, visibleOnPackage: true },
+  { id: "be3", origin: "package", excerptOrObservation: "Green vegetarian mark is printed on the pack.", citationId: null, visibleOnPackage: true },
+];
 
 const cartNames = ["Fruit Drink", "Breakfast Cereal", "Face Wash", "Dishwash Gel", "Baby Lotion", "Pet Treats"];
 const cartCategories: ProductAnalysis["category"][] = ["beverage", "food", "personal_care", "household", "baby_care", "pet_care"];

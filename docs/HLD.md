@@ -212,7 +212,7 @@ Each cache miss sends Terra:
 - the current prompt and schema versions,
 - compact enabled and verified category rules plus an allow-listed citizen-service directory,
 - the allowed evidence and copy policies, and
-- the hosted `web_search` tool in automatic mode.
+- the hosted `web_search` tool in required mode, with follow-up searches available for exact-product nutrition, ingredients and allergens.
 
 Terra returns one atomic `AnalysisResult` containing:
 
@@ -222,7 +222,7 @@ Terra returns one atomic `AnalysisResult` containing:
 - visible and web-derived facts with field-level provenance,
 - nutrition and ingredient observations,
 - claims and their evidence-backed status,
-- verdict, warnings and rule citations,
+- every material warning, followed by an evidence-linked experimental rating, factual profile, verdict and supporting analysis,
 - localized consumer explanation,
 - category coverage and an allowed next-service route ID when appropriate,
 - web sources actually used, and
@@ -238,7 +238,7 @@ Terra must:
 2. Preserve visual or cart order in `items[]`.
 3. Prefer image evidence over web evidence.
 4. Transcribe visible label text exactly and never invent missing values.
-5. Search only when the image lacks enough facts for an item.
+5. Search comprehensively for identifiable products; do not stop after the first warning or an identity-only match.
 6. Keep image and web provenance separate at field level.
 7. Use only the supplied verified regulatory rules and service route IDs.
 8. Return `unknown` when evidence is insufficient or contradictory.
@@ -256,7 +256,7 @@ Application code must:
 4. Match returned identity fields to the Product Registry.
 5. Perform exact synthetic licence and recall lookups.
 6. Persist the model result, evidence, versions, usage, and validation report.
-7. Render Terra's localized explanation without paraphrasing it.
+7. Render every material warning first, then rating, profile, verdict and all non-duplicate useful analysis facts.
 8. Resolve an allowed service route ID to its verified public link and add fixed localized UI notices and statutory disclaimers.
 
 ### 5.3 Removed architecture

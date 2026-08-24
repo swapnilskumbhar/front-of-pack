@@ -36,7 +36,7 @@ export function evaluateWholePack(nutrition: ExtractedNutrition | null): WholePa
       basis: "pack_printed_rda",
     });
   }
-  return signals.sort((left, right) => right.wholePackRdaPercent - left.wholePackRdaPercent).slice(0, 2);
+  return signals.sort((left, right) => right.wholePackRdaPercent - left.wholePackRdaPercent);
 }
 
 function positive(value: number | null): value is number {

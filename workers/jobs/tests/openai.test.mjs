@@ -5,7 +5,7 @@ import { TerraError } from "../src/openai/errors.ts";
 import { parseTerraResponse } from "../src/openai/parser.ts";
 
 const emptyResult = {
-  schemaVersion: "analysis-result.v1",
+  schemaVersion: "analysis-result.v2",
   language: "hi",
   analyzedCount: 0,
   unknownCount: 0,
@@ -33,14 +33,14 @@ test("constructs one bounded strict Responses request with optional hosted searc
   assert.equal(request.text.format.strict, true);
   assert.deepEqual(request.tools, [{ type: "web_search" }]);
   assert.deepEqual(request.include, ["web_search_call.action.sources"]);
-  assert.equal(request.max_tool_calls, 2);
-  assert.equal(request.max_output_tokens, 4_000);
+  assert.equal(request.max_tool_calls, 3);
+  assert.equal(request.max_output_tokens, 6_000);
   assert.equal(request.input.length, 2);
   assert.match(JSON.stringify(request.input), /data:image\/jpeg;base64,AA==/);
   assert.match(JSON.stringify(request.input), /"detail":"original"/);
-  assert.match(JSON.stringify(request.input), /at most 10 words/);
-  assert.match(JSON.stringify(request.input), /explanations at most 12 words/);
-  assert.match(JSON.stringify(request.input), /at most three findings/);
+  assert.match(JSON.stringify(request.input), /every independently useful, substantiated warning/);
+  assert.match(JSON.stringify(request.input), /normally return 4-8 findings/);
+  assert.match(JSON.stringify(request.input), /experimental 0-10 label-based shopper rating/);
   assert.match(JSON.stringify(request.input), /CAFFEINE WARNING/);
 });
 
@@ -50,7 +50,7 @@ test("can require hosted search while allowing one targeted follow-up", () => {
     verifiedRuleContext: [], verifiedServiceDirectory: [], requireWebSearch: true,
   });
   assert.equal(request.tool_choice, "required");
-  assert.equal(request.max_tool_calls, 2);
+  assert.equal(request.max_tool_calls, 3);
 });
 
 test("can disable search without adding a second request path", () => {

@@ -146,23 +146,29 @@ function AnalysisResultView({ result }: { result: AnalysisResult }) {
   return (
     <section className="analysis-result" aria-live="polite" aria-labelledby="analysis-result-title">
       <p className="eyebrow">Quick label check</p>
-      <h2 id="analysis-result-title">What matters</h2>
+      <h2 id="analysis-result-title">Your shopper brief</h2>
       <div className="analysis-items">{result.items.map((item) => {
         const derivedSignals = result.derived?.items.find((entry) => entry.position === item.position)?.signals ?? [];
         const indicators = buildShopperIndicators(item, derivedSignals, result.language);
-        const showBottomLine = item.summary && indicators[0]?.tone !== "grey" &&
-          indicators.every((indicator) => indicator.detail !== item.summary);
+        const warnings = indicators.filter((indicator) => indicator.tone === "red" || indicator.tone === "amber");
+        const supporting = indicators.filter((indicator) => indicator.tone === "green" || indicator.tone === "grey");
         return <article key={item.position}>
           <div className="analysis-item-heading">
             <span>Product {item.position}</span>
             <b>{categoryLabel(item.category)}</b>
           </div>
-          <h3>{item.identity.nameAsPrinted || item.identity.brandAsPrinted || "Product identified from the image"}</h3>
-          <div className="shopper-indicators">{indicators.map((indicator, index) => <div className={`shopper-indicator signal-${indicator.tone}`} key={`${indicator.title}-${index}`}>
+          <h3>{productName(item)}</h3>
+          {warnings.length > 0 && <div className="shopper-indicators">{warnings.map((indicator, index) => <div className={`shopper-indicator signal-${indicator.tone}`} key={`${indicator.title}-${index}`}>
             <strong>{indicator.tone === "red" ? "●" : indicator.tone === "amber" ? "●" : indicator.tone === "green" ? "✓" : "—"} {indicator.title}</strong>
             <span>{indicator.detail}</span>
-          </div>)}</div>
-          {showBottomLine && <p className="analysis-bottom-line">→ {item.summary}</p>}
+          </div>)}</div>}
+          <div className="analysis-overview">
+            <div><small>Experimental rating</small><strong>{item.rating?.score ?? "—"}/10 · {item.rating?.label ?? "Not enough evidence"}</strong>{item.rating?.basis && <span>{item.rating.basis}</span>}</div>
+            <div><small>Profile</small><strong>{item.profile?.length ? item.profile.map((tag) => tag.label).join(" · ") : "No reliable tags"}</strong></div>
+            <div><small>Evidence confidence</small><strong>{webEvidenceConfidence(item)}</strong></div>
+          </div>
+          {item.summary && <p className="analysis-verdict"><strong>Verdict</strong>{item.summary}</p>}
+          {supporting.length > 0 && <div className="analysis-key-findings"><h4>Analysis</h4><ul>{supporting.map((indicator, index) => <li key={`${indicator.title}-${index}`}><strong>{indicator.title}</strong><span>{indicator.detail}</span></li>)}</ul></div>}
           {item.serviceRoute && <a className="analysis-next-step" href="/grievance">See your next-step options →</a>}
           <details className="analysis-evidence">
             <summary>View full evidence</summary>
@@ -176,6 +182,18 @@ function AnalysisResultView({ result }: { result: AnalysisResult }) {
       <small className="analysis-disclaimer">{result.disclaimer}</small>
     </section>
   );
+}
+
+function productName(item: AnalysisResult["items"][number]): string {
+  const parts = [item.identity.brandAsPrinted, item.identity.nameAsPrinted, item.identity.variantAsPrinted]
+    .filter((part): part is string => Boolean(part));
+  return [...new Set(parts)].join(" — ") || "Product identified from the image";
+}
+
+function webEvidenceConfidence(item: AnalysisResult["items"][number]): string {
+  if (item.identity.confidence === "high" && (!item.webMatchConfidence || item.webMatchConfidence === "high")) return "High";
+  if (["high", "medium"].includes(item.identity.confidence) && item.webMatchConfidence !== "low") return "Medium";
+  return "Low";
 }
 
 function categoryLabel(category: string): string {

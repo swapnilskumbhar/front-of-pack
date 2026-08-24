@@ -25,6 +25,21 @@ const FAILURE_COPY: Record<string, string> = {
   ur: "اس لیبل کی قابلِ اعتماد جانچ نہیں ہو سکی۔ تصویر دوبارہ یا پچھلا پینل واضح طور پر بھیجیں۔",
 };
 
+const RESPONSE_COPY: Record<LanguageCode, { rating: string; profile: string; verdict: string; analysis: string; evidence: string; experimental: string }> = {
+  en: { rating: "Rating", profile: "Profile", verdict: "Verdict", analysis: "Analysis", evidence: "Evidence confidence", experimental: "experimental" },
+  hi: { rating: "रेटिंग", profile: "प्रोफ़ाइल", verdict: "निष्कर्ष", analysis: "विश्लेषण", evidence: "साक्ष्य भरोसा", experimental: "प्रायोगिक" },
+  mr: { rating: "रेटिंग", profile: "प्रोफाइल", verdict: "निष्कर्ष", analysis: "विश्लेषण", evidence: "पुरावा विश्वास", experimental: "प्रायोगिक" },
+  bn: { rating: "রেটিং", profile: "প্রোফাইল", verdict: "সিদ্ধান্ত", analysis: "বিশ্লেষণ", evidence: "প্রমাণের আস্থা", experimental: "পরীক্ষামূলক" },
+  ta: { rating: "மதிப்பீடு", profile: "சுயவிவரம்", verdict: "முடிவு", analysis: "பகுப்பாய்வு", evidence: "ஆதார நம்பிக்கை", experimental: "சோதனை" },
+  te: { rating: "రేటింగ్", profile: "ప్రొఫైల్", verdict: "తీర్పు", analysis: "విశ్లేషణ", evidence: "ఆధార నమ్మకం", experimental: "ప్రయోగాత్మక" },
+  kn: { rating: "ರೇಟಿಂಗ್", profile: "ಪ್ರೊಫೈಲ್", verdict: "ತೀರ್ಮಾನ", analysis: "ವಿಶ್ಲೇಷಣೆ", evidence: "ಸಾಕ್ಷ್ಯ ವಿಶ್ವಾಸ", experimental: "ಪ್ರಾಯೋಗಿಕ" },
+  gu: { rating: "રેટિંગ", profile: "પ્રોફાઇલ", verdict: "નિષ્કર્ષ", analysis: "વિશ્લેષણ", evidence: "પુરાવાનો વિશ્વાસ", experimental: "પ્રાયોગિક" },
+  ml: { rating: "റേറ്റിംഗ്", profile: "പ്രൊഫൈൽ", verdict: "നിഗമനം", analysis: "വിശകലനം", evidence: "തെളിവ് വിശ്വാസം", experimental: "പരീക്ഷണാത്മകം" },
+  pa: { rating: "ਰੇਟਿੰਗ", profile: "ਪ੍ਰੋਫਾਈਲ", verdict: "ਨਤੀਜਾ", analysis: "ਵਿਸ਼ਲੇਸ਼ਣ", evidence: "ਸਬੂਤ ਭਰੋਸਾ", experimental: "ਪ੍ਰਯੋਗਾਤਮਕ" },
+  or: { rating: "ରେଟିଂ", profile: "ପ୍ରୋଫାଇଲ୍", verdict: "ନିଷ୍କର୍ଷ", analysis: "ବିଶ୍ଳେଷଣ", evidence: "ପ୍ରମାଣ ଭରସା", experimental: "ପରୀକ୍ଷାମୂଳକ" },
+  ur: { rating: "ریٹنگ", profile: "پروفائل", verdict: "نتیجہ", analysis: "تجزیہ", evidence: "ثبوت کا اعتماد", experimental: "تجرباتی" },
+};
+
 export function parseDeliveryJob(value: unknown): DeliveryJob | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const row = value as Record<string, unknown>;
@@ -52,18 +67,48 @@ export function renderWhatsAppChunks(result: unknown): string[] {
       const signals = Array.isArray(derivedItem?.signals) ? derivedItem.signals as DerivedSignal[] : [];
       const typedItem = item as unknown as ProductAnalysis;
       const indicators = buildShopperIndicators(typedItem, signals, language);
-      for (const indicator of indicators) {
+      const warnings = indicators.filter((indicator) => indicator.tone === "red" || indicator.tone === "amber");
+      const supporting = indicators.filter((indicator) => indicator.tone === "green" || indicator.tone === "grey");
+      for (const indicator of warnings) {
         const icon = indicator.tone === "red" ? "🔴" : indicator.tone === "amber" ? "🟠" : indicator.tone === "green" ? "🟢" : "⚪";
         sections.push(`${icon} *${indicator.title}*\n${indicator.detail}`);
       }
-      if (name) sections.push(`📦 *${name}*`);
+      const copy = RESPONSE_COPY[language] ?? RESPONSE_COPY.en;
+      const rating = item.rating && typeof item.rating === "object" ? item.rating as Record<string, unknown> : {};
+      const score = typeof rating.score === "number" ? `${rating.score}/10` : "—/10";
+      const ratingLabel = typeof rating.label === "string" ? rating.label : "Not enough evidence";
+      const ratingDisclosure = ratingLabel.toLocaleLowerCase().includes(copy.experimental.toLocaleLowerCase()) ? "" : ` · ${copy.experimental}`;
+      const profile = Array.isArray(item.profile) ? item.profile.flatMap((tag) => tag && typeof tag === "object" && typeof (tag as Record<string, unknown>).label === "string" ? [(tag as Record<string, unknown>).label as string] : []) : [];
+      const summary = typeof item.summary === "string" ? item.summary.trim() : "";
+      const meta = [
+        name ? `📦 *${name}*` : null,
+        `*${copy.rating}:* ${score} (${ratingLabel}${ratingDisclosure})`,
+        profile.length ? `*${copy.profile}:* ${profile.join(" · ")}` : null,
+        summary ? `*${copy.verdict}:* ${summary}` : null,
+        `*${copy.evidence}:* ${evidenceConfidence(item)}`,
+      ].filter((line): line is string => Boolean(line));
+      sections.push(meta.join("\n"));
+      if (supporting.length) {
+        sections.push(`*${copy.analysis}:*\n${supporting.map((indicator) => `• *${indicator.title}:* ${indicator.detail}`).join("\n")}`);
+      }
+      const serviceRoute = item.serviceRoute && typeof item.serviceRoute === "object" ? item.serviceRoute as Record<string, unknown> : null;
+      if (serviceRoute && typeof serviceRoute.reason === "string") sections.push(`🏛️ ${serviceRoute.reason}`);
     }
   }
   if (sections.length === 0 && typeof source.wholeImageSummary === "string") sections.push(source.wholeImageSummary);
   if (sections.length === 0 && typeof source.summary === "string") sections.push(source.summary);
   const summary = sections.length > 0 ? sections.join("\n\n") : "Your label analysis is ready.";
   const codePoints = Array.from(summary);
-  return [codePoints.slice(0, 450).join("") || "Your label analysis is ready."];
+  return [codePoints.slice(0, 3_500).join("") || "Your label analysis is ready."];
+}
+
+function evidenceConfidence(item: Record<string, unknown>): string {
+  const identity = item.identity && typeof item.identity === "object" ? item.identity as Record<string, unknown> : {};
+  const identityConfidence = typeof identity.confidence === "string" ? identity.confidence : "unknown";
+  const webConfidence = typeof item.webMatchConfidence === "string" ? item.webMatchConfidence : null;
+  if (identityConfidence === "high" && (webConfidence === null || webConfidence === "high")) return "high";
+  if (["high", "medium"].includes(identityConfidence) && webConfidence !== "low") return "medium";
+  return "low";
 }
 
 export async function consumeDelivery(

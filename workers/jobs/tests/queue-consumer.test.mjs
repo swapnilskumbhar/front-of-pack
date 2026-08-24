@@ -15,7 +15,7 @@ const worker = await import(`data:text/javascript;base64,${Buffer.from(bundled.o
 const { consumeWebAnalysis, parseWebAnalysisMessage } = worker;
 
 const validResult = {
-  schemaVersion: "analysis-result.v1",
+  schemaVersion: "analysis-result.v2",
   language: "en",
   analyzedCount: 0,
   unknownCount: 0,
@@ -29,11 +29,11 @@ const validResult = {
 
 const pinnedVersions = {
   model_id: "gpt-5.6-terra",
-  prompt_version: "terra-analysis.v12",
-  schema_version: "analysis-result.v1",
+  prompt_version: "terra-analysis.v13",
+  schema_version: "analysis-result.v2",
   rules_version: "india-category-rules.v2",
   services_version: "india-consumer-services.v1",
-  engine_version: "decision-engine.v5",
+  engine_version: "decision-engine.v6",
 };
 
 function createDb({
@@ -146,7 +146,7 @@ test("WhatsApp-style processing requires hosted search", async () => {
     harness.calls.fetch += 1;
     const request = JSON.parse(init.body);
     assert.equal(request.tool_choice, "required");
-    assert.equal(request.max_tool_calls, 2);
+    assert.equal(request.max_tool_calls, 3);
     return Response.json({ id: "resp_1", output_text: JSON.stringify(validResult), output: [] });
   };
   await consumeWebAnalysis(harness.message, harness.env, requiredSearchFetch, {}, true);
@@ -220,6 +220,8 @@ test("hosted citation accepts a returned canonical URL when provider source id i
   const result = { ...validResult, analyzedCount: 1, items: [{
     position: 1, identity: { nameAsPrinted: "Product", brandAsPrinted: "Brand", variantAsPrinted: null, gtin: null, confidence: "high" },
     category: "food", coverage: { tier: "category_rules", rulePackIds: [], limitations: [] }, summary: "Product",
+    rating: { score: null, dimension: "label_evidence", label: "Not rated", basis: "Insufficient evidence.", evidenceIds: [], experimental: true },
+    profile: [],
     findings: [], claimAudits: [], serviceRoute: null, needsClearerImage: false, retakeGuidance: null,
     citations: [{ id: "citation-1", title: "Official", url: "https://official.example/product", providerSourceId: "https://official.example/product/?utm_source=openai" }],
     evidence: [{ id: "e1", origin: "hosted_web_search", excerptOrObservation: "Online fact", citationId: "citation-1", visibleOnPackage: false }],

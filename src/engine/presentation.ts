@@ -64,11 +64,11 @@ const DIET_COPY: Record<LanguageCode, { conflict: string; profile: string; uncle
 
 export function formatDietSignal(signal: DietarySignal, language: LanguageCode): { title: string; headline: string; detail: string } {
   const copy = DIET_COPY[language] ?? DIET_COPY.en;
-  const names = signal.matches.slice(0, 3).map((match) => match.displayName).join(", ");
+  const names = signal.matches.slice(0, 6).map((match) => match.displayName).join(", ");
   if (signal.kind === "veg_mark_conflict") return { title: copy.conflict, headline: names, detail: copy.conflictDetail };
   if (signal.kind === "source_unclear") return { title: copy.unclear, headline: names, detail: copy.unclearDetail };
   if (signal.kind === "allergen_profile") return { title: copy.allergens, headline: names, detail: copy.allergenDetail };
-  return { title: copy.profile, headline: names, detail: signal.matches.map((match) => match.note).slice(0, 2).join(" ") };
+  return { title: copy.profile, headline: names, detail: signal.matches.map((match) => match.note).slice(0, 3).join(" ") };
 }
 
 export function formatDerivedSignal(signal: DerivedSignal, language: LanguageCode): { title: string; headline: string; detail: string } {
@@ -93,7 +93,7 @@ export function buildCheckStrip(item: ProductAnalysis, signals: readonly Derived
 
 export function buildVerdict(signals: readonly DerivedSignal[], language: LanguageCode): string | null {
   if (!signals.length) return null;
-  return signals.slice(0, 2).map((signal) => formatDerivedSignal(signal, language).headline).join(" · ");
+  return signals.map((signal) => formatDerivedSignal(signal, language).headline).join(" · ");
 }
 
 export type AttentionLevel = "needs_attention" | "some_caution" | "no_major_concern" | "not_enough_information";
@@ -119,6 +119,7 @@ export function buildAttentionIndicator(item: ProductAnalysis, signals: readonly
 }
 
 export function buildProductProfile(item: ProductAnalysis, signals: readonly DerivedSignal[]): string | null {
+  if (item.profile?.length) return item.profile.map((tag) => tag.label).slice(0, 6).join(" · ");
   const parts: string[] = [];
   if (item.printedVegMark === "veg") parts.push("VEG mark");
   if (item.printedVegMark === "non_veg") parts.push("NON-VEG mark");
@@ -126,7 +127,7 @@ export function buildProductProfile(item: ProductAnalysis, signals: readonly Der
   if (signals.some((signal) => signal.kind === "veg_mark_conflict" || signal.kind === "diet_profile" && signal.severity === "high")) parts.push("animal/insect-derived ingredient");
   if (signals.some((signal) => signal.kind === "source_unclear")) parts.push("ingredient source unclear");
   if (signals.some((signal) => signal.kind === "allergen_profile")) parts.push("allergens identified");
-  return parts.length ? parts.slice(0, 3).join(" · ") : null;
+  return parts.length ? parts.slice(0, 6).join(" · ") : null;
 }
 
 export function getDecisionFindings(item: ProductAnalysis): Finding[] {
@@ -168,7 +169,7 @@ export function buildShopperIndicators(
   const indicators: ShopperIndicator[] = getDecisionFindings(item).map((finding) => {
     const text = `${finding.title} ${finding.explanation}`;
     return {
-      tone: finding.level === "attention" ? "red" : /(?:vegetarian|\bveg\b|no palm oil|claim supported)/iu.test(text) ? "green" : "amber",
+      tone: finding.level === "attention" ? "red" : /(?:unclear|uncertain|not established|not assessable|provisional|verify|conflict)/iu.test(text) ? "amber" : "green",
       title: finding.title.trim().toUpperCase(),
       detail: finding.explanation.trim(),
       evidenceIds: finding.evidenceIds ?? [],
@@ -201,7 +202,7 @@ export function buildShopperIndicators(
     }
   }
 
-  if (indicators.length > 0) return indicators.sort(compareIndicators).slice(0, 3);
+  if (indicators.length > 0) return indicators.sort(compareIndicators);
 
   const ranAnyCheck = Boolean(item.ingredientTokens?.length || item.nutrition?.basis || item.claimsAsPrinted?.length);
   if (ranAnyCheck && !item.needsClearerImage) {

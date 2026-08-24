@@ -85,7 +85,7 @@ test("delivery contract is ID-only and renderer emits one Unicode-safe bounded m
   assert.equal(parseDeliveryJob({ version: 1, whatsapp_job_id: "job", recipient: "9199" }), null);
   const chunks = renderWhatsAppChunks({ summary: "x".repeat(20_000) });
   assert.equal(chunks.length, 1);
-  assert.equal(Array.from(chunks[0]).length, 450);
+  assert.equal(Array.from(chunks[0]).length, 3_500);
   const localized = renderWhatsAppChunks({
     wholeImageSummary: "लेबल विश्लेषण पूर्ण झाले.",
     items: [{ identity: { brandAsPrinted: "ब्रँड" }, summary: "पॅकवरील माहिती." }],
@@ -112,10 +112,10 @@ test("WhatsApp rendering leads with named indicators and removes generic metadat
   assert.ok(message.indexOf("WARNING") < message.indexOf("Product"));
   assert.match(message, /INFO FIRST IN MODEL/);
   assert.match(message, /SECOND FACT/);
-  assert.doesNotMatch(message, /HIDDEN FACT/);
+  assert.match(message, /HIDDEN FACT/);
   assert.doesNotMatch(message, /Marketing claim/);
   assert.doesNotMatch(message, /example\.test/);
-  assert.doesNotMatch(message, /SOME CAUTION|Product match|Profile:/);
+  assert.doesNotMatch(message, /SOME CAUTION|Product match/);
 });
 
 test("WhatsApp uses searched evidence as an indicator without exposing source plumbing", () => {
@@ -155,6 +155,8 @@ test("Red Bull response names caffeine and sugar instead of an umbrella caution"
     position: 1,
     identity: { nameAsPrinted: "Red Bull Energy Drink", brandAsPrinted: "Red Bull", confidence: "high" },
     summary: "Limit this high-sugar caffeinated drink.",
+    rating: { score: 3, dimension: "nutrition", label: "Nutrition", basis: "High sugar and caffeine warning.", evidenceIds: ["ce", "se"], experimental: true },
+    profile: [{ label: "CAFFEINATED", evidenceIds: ["ce"] }, { label: "HIGH SUGAR", evidenceIds: ["se"] }],
     findings: [
       { id: "c", kind: "label_fact", title: "Caffeine warning", explanation: "75 mg · Avoid for children, pregnancy and caffeine sensitivity.", level: "attention", evidenceIds: ["ce"] },
       { id: "s", kind: "nutrition", title: "High sugar", explanation: "27 g per 250 ml can.", level: "attention", evidenceIds: ["se"] },
@@ -167,8 +169,56 @@ test("Red Bull response names caffeine and sugar instead of an umbrella caution"
   }] })[0];
   assert.match(message, /^🔴 \*CAFFEINE WARNING\*/u);
   assert.match(message, /🔴 \*HIGH SUGAR\*\n27 g per 250 ml can/u);
-  assert.doesNotMatch(message, /→/);
+  assert.match(message, /\*Rating:\* 3\/10 \(Nutrition · experimental\)/);
+  assert.match(message, /\*Profile:\* CAFFEINATED · HIGH SUGAR/);
+  assert.match(message, /\*Verdict:\* Limit this high-sugar caffeinated drink/);
   assert.doesNotMatch(message, /SOME CAUTION|Product match|https?:\/\//);
+});
+
+test("WhatsApp preserves every material warning and useful analysis point", () => {
+  const findings = [
+    ["Caffeine warning", "75 mg per can; restricted consumer groups should avoid it."],
+    ["High sugar", "27 g per can; a material whole-pack sugar contribution."],
+    ["High sodium", "810 mg per pack; a material whole-pack sodium contribution."],
+    ["Allergen: milk", "Contains milk; relevant for anyone avoiding milk allergens."],
+    ["Contains palm oil", "Palm olein is present in the matched ingredient list."],
+    ["High saturated fat", "The matched pack has a material saturated-fat contribution."],
+    ["Allergen: soy", "Contains soy; relevant for anyone avoiding soy allergens."],
+    ["Claim contradiction", "A printed claim conflicts with a listed ingredient."],
+  ].map(([title, explanation], index) => ({ id: `f${index}`, kind: "ingredient", title, explanation, level: "attention", evidenceIds: [] }));
+  const message = renderWhatsAppChunks({ language: "en", items: [{
+    position: 1, identity: { nameAsPrinted: "Product", confidence: "high" }, summary: "Multiple warnings deserve attention.",
+    rating: { score: 2, dimension: "nutrition", label: "Nutrition", basis: "Multiple material warnings.", evidenceIds: [], experimental: true },
+    profile: [{ label: "MULTIPLE WARNINGS", evidenceIds: [] }], findings, evidence: [],
+  }] })[0];
+  for (const [title] of findings.map((finding) => [finding.title])) assert.match(message, new RegExp(title, "iu"));
+  assert.ok(Array.from(message).length > 450);
+});
+
+test("McVitie's response combines warnings with rating profile verdict and positive analysis", () => {
+  const message = renderWhatsAppChunks({ language: "en", items: [{
+    position: 1, identity: { brandAsPrinted: "McVitie's", nameAsPrinted: "Digestive", confidence: "high" },
+    webMatchConfidence: "medium",
+    rating: { score: 4, dimension: "ingredients", label: "Ingredients", basis: "Palm oil and wheat need attention.", evidenceIds: ["p", "w"], experimental: true },
+    profile: [{ label: "PALM OIL", evidenceIds: ["p"] }, { label: "WHEAT ALLERGEN", evidenceIds: ["w"] }, { label: "WHOLEWHEAT", evidenceIds: ["g"] }],
+    summary: "Palm oil and wheat need attention; wholewheat is a useful positive.",
+    findings: [
+      { id: "f1", kind: "ingredient", level: "attention", title: "Contains palm oil", explanation: "Palm oil listed online.", evidenceIds: ["p"] },
+      { id: "f2", kind: "ingredient", level: "attention", title: "Allergen: wheat", explanation: "Wheat is declared online.", evidenceIds: ["w"] },
+      { id: "f3", kind: "ingredient", level: "information", title: "Wholewheat content", explanation: "Official brand page describes wholewheat and fibre.", evidenceIds: ["g"] },
+    ],
+    evidence: [
+      { id: "p", origin: "hosted_web_search", excerptOrObservation: "Palm oil listed." },
+      { id: "w", origin: "hosted_web_search", excerptOrObservation: "Wheat listed." },
+      { id: "g", origin: "hosted_web_search", excerptOrObservation: "Wholewheat listed." },
+    ],
+  }] })[0];
+  assert.match(message, /CONTAINS PALM OIL/);
+  assert.match(message, /ALLERGEN: WHEAT/);
+  assert.match(message, /\*Rating:\* 4\/10/);
+  assert.match(message, /\*Profile:\* PALM OIL · WHEAT ALLERGEN · WHOLEWHEAT/);
+  assert.match(message, /\*Verdict:\*/);
+  assert.match(message, /\*Analysis:\*[\s\S]*WHOLEWHEAT CONTENT/);
 });
 
 test("successful delivery reads stored output and clears all routing ciphertext", async () => {

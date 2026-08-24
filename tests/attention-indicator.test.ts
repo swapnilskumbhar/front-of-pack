@@ -8,6 +8,8 @@ import type { WholePackSignal } from "../src/engine/types.ts";
 const item = (overrides: Partial<ProductAnalysis> = {}): ProductAnalysis => ({
   position: 1, identity: { nameAsPrinted: "Product", brandAsPrinted: null, variantAsPrinted: null, gtin: null, confidence: "high" },
   category: "food", nutrition: null, ingredientTokens: [], claimsAsPrinted: [], printedVegMark: null,
+  rating: { score: null, dimension: "label_evidence", label: "Not rated", basis: "Insufficient evidence.", evidenceIds: [], experimental: true },
+  profile: [],
   coverage: { tier: "category_rules", rulePackIds: [], limitations: [] }, summary: "Product checked.",
   findings: [], claimAudits: [], evidence: [], citations: [], serviceRoute: null,
   needsClearerImage: false, retakeGuidance: null, ...overrides,

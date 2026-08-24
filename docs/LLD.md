@@ -144,7 +144,7 @@ There is one model call site: **lib/analyze/call-terra.ts**.
 ~~~ts
 export const VERSION = {
   prompt: "analysis-prompt.v1",
-  schema: "analysis-result.v1",
+  schema: "analysis-result.v2",
   rules: "india-category-rules.v2",
   services: "india-consumer-services.v1",
 } as const;
@@ -484,9 +484,11 @@ Rules:
 
 All properties are required and additionalProperties is false.
 
+The deployed `analysis-result.v2` product item also carries `rating { score, dimension, label, basis, evidenceIds, experimental }` and up to six evidence-linked factual profile tags. It retains up to twelve findings, twenty evidence observations, eight citations and four claim audits. Every material warning renders before rating/profile/verdict; supporting information follows without repeating warning topics. The rating is explicitly experimental and is omitted when the evidence threshold is not met.
+
 ~~~ts
 type AnalysisResult = {
-  schema_version: "analysis-result.v1";
+  schema_version: "analysis-result.v2";
   language: Language;
 
   image: {

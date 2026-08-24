@@ -4,7 +4,7 @@ import type { DerivedDecisionResult, ExtractedNutrition } from "../engine/types"
 
 export const MAX_PRODUCTS_PER_ANALYSIS = 6 as const;
 export const MAX_SERIALIZED_ANALYSIS_BYTES = 512 * 1024;
-export const ANALYSIS_SCHEMA_VERSION = "analysis-result.v1" as const;
+export const ANALYSIS_SCHEMA_VERSION = "analysis-result.v2" as const;
 
 export const ANALYSIS_STATUSES = [
   "queued",
@@ -102,6 +102,20 @@ export interface ProductIdentity {
   confidence: "high" | "medium" | "low" | "unknown";
 }
 
+export interface ProductRating {
+  score: number | null;
+  dimension: "nutrition" | "ingredients" | "claims" | "label_evidence";
+  label: string;
+  basis: string;
+  evidenceIds: string[];
+  experimental: true;
+}
+
+export interface ProductProfileTag {
+  label: string;
+  evidenceIds: string[];
+}
+
 export interface ProductAnalysis {
   position: number;
   identity: ProductIdentity;
@@ -112,6 +126,8 @@ export interface ProductAnalysis {
   printedVegMark?: "veg" | "non_veg" | null;
   webMatchConfidence?: "high" | "medium" | "low" | null;
   webMatchBasis?: string | null;
+  rating: ProductRating;
+  profile: ProductProfileTag[];
   coverage: Coverage;
   summary: string;
   findings: Finding[];

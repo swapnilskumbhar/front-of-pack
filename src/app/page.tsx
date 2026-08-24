@@ -30,7 +30,7 @@ export default function Home() {
         <ol className="steps">
           <li><span>01</span><div><h3>Share the pack</h3><p>Upload one clear image containing one product or a shelf of up to six.</p></div></li>
           <li><span>02</span><div><h3>One AI call reads it</h3><p>Terra transcribes visible facts; a versioned engine performs reproducible checks.</p></div></li>
-          <li><span>03</span><div><h3>See the decision first</h3><p>The most consequential warning appears before descriptions, evidence and next-step options.</p></div></li>
+          <li><span>03</span><div><h3>See every warning first</h3><p>All material warnings appear before the experimental rating, profile, verdict, supporting analysis and next-step options.</p></div></li>
         </ol>
       </section>
 
@@ -50,7 +50,7 @@ export default function Home() {
 
       <section className="whatsapp section" aria-labelledby="whatsapp-title">
         <div className="phone-preview" aria-hidden="true"><div className="phone-top"><span /><span /><span /></div><div className="message incoming">Send a clear photo of the product label.</div><div className="message outgoing">Photo attached</div><div className="message incoming lines"><i /><i /><i /></div></div>
-        <div className="whatsapp-copy"><p className="eyebrow">Live · WhatsApp</p><h2 id="whatsapp-title">The same decision, right where you shop.</h2><p>Send a label photo to the connected WhatsApp test channel and receive warning-first guidance in your saved language.</p><span className="status-chip">Live channel</span></div>
+        <div className="whatsapp-copy"><p className="eyebrow">Live · WhatsApp</p><h2 id="whatsapp-title">The same decision, right where you shop.</h2><p>Send one label photo and receive every material warning, rating, profile, verdict and supporting analysis in your saved language.</p><span className="status-chip">Live channel</span></div>
       </section>
 
       <footer><div className="footer-brand"><span className="brand-mark" aria-hidden="true">F</span><strong>Front of Pack</strong></div><p>Front of Pack is an independent consumer information service. It is not affiliated with or endorsed by any government authority. Information is educational, not medical or legal advice.</p><a href="#top">Back to top ↑</a></footer>

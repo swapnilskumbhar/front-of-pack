@@ -46,3 +46,12 @@ test("does not manufacture a decision from missing or rounding-noise data", () =
     printedPerServeRdaPct: { addedSugars: 1, saturatedFat: 1, sodium: 1, totalFat: 1 },
   }), []);
 });
+
+test("keeps every independently material nutrient signal", () => {
+  const signals = evaluateWholePack({
+    basis: "per_100g", servingSize: 100, netQuantity: 100,
+    values: { addedSugarsG: 25, saturatedFatG: 12, sodiumMg: 900, totalFatG: 35 },
+    printedPerServeRdaPct: { addedSugars: 50, saturatedFat: 55, sodium: 55, totalFat: 50 },
+  });
+  assert.deepEqual(new Set(signals.map((signal) => signal.nutrient)), new Set(["added_sugars", "saturated_fat", "sodium", "total_fat"]));
+});

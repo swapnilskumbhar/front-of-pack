@@ -1,9 +1,9 @@
 import { ANALYSIS_SCHEMA_VERSION } from "./types.ts";
 
-const stringArray = { type: "array", maxItems: 12, items: { type: "string", maxLength: 160 } } as const;
+const stringArray = { type: "array", maxItems: 20, items: { type: "string", maxLength: 160 } } as const;
 const nullableString = { type: ["string", "null"], maxLength: 200 } as const;
 const nullableNumber = { type: ["number", "null"], minimum: 0, maximum: 1_000_000 } as const;
-const ingredientTokens = { type: "array", maxItems: 30, items: { type: "string", maxLength: 80 } } as const;
+const ingredientTokens = { type: "array", maxItems: 60, items: { type: "string", maxLength: 80 } } as const;
 const printedClaims = { type: "array", maxItems: 8, items: { type: "string", maxLength: 120 } } as const;
 
 const nutrition = {
@@ -86,6 +86,30 @@ const finding = {
   },
 };
 
+const rating = {
+  type: "object",
+  additionalProperties: false,
+  required: ["score", "dimension", "label", "basis", "evidenceIds", "experimental"],
+  properties: {
+    score: { type: ["integer", "null"], minimum: 0, maximum: 10 },
+    dimension: { type: "string", enum: ["nutrition", "ingredients", "claims", "label_evidence"] },
+    label: { type: "string", maxLength: 60 },
+    basis: { type: "string", maxLength: 180 },
+    evidenceIds: stringArray,
+    experimental: { type: "boolean", const: true },
+  },
+};
+
+const profileTag = {
+  type: "object",
+  additionalProperties: false,
+  required: ["label", "evidenceIds"],
+  properties: {
+    label: { type: "string", maxLength: 50 },
+    evidenceIds: stringArray,
+  },
+};
+
 export const ANALYSIS_RESULT_SCHEMA: Record<string, unknown> = {
   type: "object",
   additionalProperties: false,
@@ -105,7 +129,7 @@ export const ANALYSIS_RESULT_SCHEMA: Record<string, unknown> = {
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["position", "identity", "category", "nutrition", "ingredientTokens", "claimsAsPrinted", "printedVegMark", "webMatchConfidence", "webMatchBasis", "coverage", "summary", "findings", "claimAudits", "evidence", "citations", "serviceRoute", "needsClearerImage", "retakeGuidance"],
+        required: ["position", "identity", "category", "nutrition", "ingredientTokens", "claimsAsPrinted", "printedVegMark", "webMatchConfidence", "webMatchBasis", "rating", "profile", "coverage", "summary", "findings", "claimAudits", "evidence", "citations", "serviceRoute", "needsClearerImage", "retakeGuidance"],
         properties: {
           position: { type: "integer", minimum: 1, maximum: 6 },
           identity,
@@ -116,6 +140,8 @@ export const ANALYSIS_RESULT_SCHEMA: Record<string, unknown> = {
           printedVegMark: { type: ["string", "null"], enum: ["veg", "non_veg", null] },
           webMatchConfidence: { type: ["string", "null"], enum: ["high", "medium", "low", null] },
           webMatchBasis: { type: ["string", "null"], maxLength: 180 },
+          rating,
+          profile: { type: "array", maxItems: 6, items: profileTag },
           coverage: {
             type: "object",
             additionalProperties: false,
@@ -127,10 +153,10 @@ export const ANALYSIS_RESULT_SCHEMA: Record<string, unknown> = {
             },
           },
           summary: { type: "string", maxLength: 160 },
-          findings: { type: "array", maxItems: 3, items: finding },
+          findings: { type: "array", maxItems: 12, items: finding },
           claimAudits: {
             type: "array",
-            maxItems: 2,
+            maxItems: 4,
             items: {
               type: "object",
               additionalProperties: false,
@@ -143,8 +169,8 @@ export const ANALYSIS_RESULT_SCHEMA: Record<string, unknown> = {
               },
             },
           },
-          evidence: { type: "array", maxItems: 6, items: evidence },
-          citations: { type: "array", maxItems: 4, items: citation },
+          evidence: { type: "array", maxItems: 20, items: evidence },
+          citations: { type: "array", maxItems: 8, items: citation },
           serviceRoute: {
             anyOf: [
               { type: "null" },

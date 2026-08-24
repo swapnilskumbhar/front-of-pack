@@ -38,12 +38,12 @@ export function buildTerraRequest(env: TerraEnv, input: TerraInput): ResponsesRe
         schema: ANALYSIS_RESULT_SCHEMA,
       },
     },
-    max_output_tokens: 4_000,
+    max_output_tokens: 6_000,
   };
   if (input.enableWebSearch !== false) {
     request.tools = [{ type: "web_search" }];
     request.tool_choice = input.requireWebSearch ? "required" : "auto";
-    request.max_tool_calls = 2;
+    request.max_tool_calls = 3;
     request.include = ["web_search_call.action.sources"];
   }
   return request;

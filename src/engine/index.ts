@@ -19,7 +19,7 @@ export function evaluateAnalysis(result: AnalysisResult): DerivedDecisionResult 
         ...evaluateClaimConsistency(item.claimsAsPrinted, item.ingredientTokens, item.category),
         ...evaluateWholePack(item.nutrition ?? null),
         ...evaluateDiet(item.ingredientTokens, item.printedVegMark, item.category),
-      ].slice(0, 4),
+      ],
     })),
   };
 }

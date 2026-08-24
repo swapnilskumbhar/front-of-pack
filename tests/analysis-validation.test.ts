@@ -10,7 +10,7 @@ const options = {
 
 function validResult() {
   return {
-    schemaVersion: "analysis-result.v1",
+    schemaVersion: "analysis-result.v2",
     language: "en",
     analyzedCount: 1,
     unknownCount: 0,
@@ -23,6 +23,8 @@ function validResult() {
       position: 1,
       identity: { nameAsPrinted: "Food", brandAsPrinted: null, variantAsPrinted: null, gtin: null, confidence: "high" },
       category: "food",
+      rating: { score: 6, dimension: "nutrition", label: "Nutrition", basis: "One material warning; some positive fibre.", evidenceIds: ["evidence-1"], experimental: true },
+      profile: [{ label: "VEG", evidenceIds: ["evidence-1"] }],
       coverage: { tier: "category_rules", rulePackIds: ["rule.food"], limitations: [] },
       summary: "The package declares its ingredients.",
       findings: [{ id: "finding-1", kind: "regulatory_context", level: "attention", title: "Declaration review", explanation: "A declaration needs attention.", evidenceIds: ["evidence-1"], ruleIds: ["rule.food"], experimental: false }],
@@ -112,4 +114,14 @@ test("enforces the configured serialized size ceiling", () => {
   result.wholeImageSummary = "x".repeat(2_000);
   const report = validateAnalysisResult(result, { ...options, maxSerializedBytes: 1_000 });
   assert.ok(report.errors.some(({ code }) => code === "serialized_size_exceeded"));
+});
+
+test("rejects unsupported or ungrounded experimental rating metadata", () => {
+  const result = validResult();
+  result.items[0].rating = { ...result.items[0].rating, score: 11, experimental: false, evidenceIds: ["missing"] };
+  result.items[0].profile = [{ label: "PALM OIL", evidenceIds: ["missing"] }];
+  const codes = validateAnalysisResult(result, options).errors.map(({ code }) => code);
+  assert.ok(codes.includes("invalid_shape"));
+  assert.ok(codes.includes("invalid_experimental_semantics"));
+  assert.ok(codes.includes("unresolved_evidence"));
 });
