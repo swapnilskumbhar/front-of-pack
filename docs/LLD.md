@@ -484,7 +484,7 @@ Rules:
 
 All properties are required and additionalProperties is false.
 
-The deployed `analysis-result.v2` product item also carries `rating { score, dimension, label, basis, evidenceIds, experimental }` and up to six evidence-linked factual profile tags. It retains up to twelve findings, twenty evidence observations, eight citations and four claim audits. Every material warning renders before rating/profile/verdict; supporting information follows without repeating warning topics. The rating is explicitly experimental and is omitted when the evidence threshold is not met.
+The deployed `analysis-result.v2` product item also carries `rating { score, dimension, label, basis, evidenceIds, experimental }` and up to six evidence-linked factual profile tags. It retains up to twelve findings, twenty evidence observations, eight citations and eight claim audits. Every material warning renders before rating/profile/verdict; supporting information follows without repeating warning topics. A Claims section renders only for claims visibly transcribed from the submitted package and records supported, partially supported, contradicted, not established or not assessable status. The rating is explicitly experimental and is omitted when the evidence threshold is not met.
 
 ~~~ts
 type AnalysisResult = {

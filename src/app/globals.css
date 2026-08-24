@@ -86,6 +86,17 @@ h1 em { color:var(--green); font-weight:400; }
 .analysis-key-findings li { display:grid; gap:4px; grid-template-columns:minmax(95px,.45fr) 1fr; padding:9px 0; }
 .analysis-key-findings li+li { border-top:1px solid var(--line); }
 .analysis-key-findings strong { font-size:13px; }.analysis-key-findings span { color:var(--muted); font-size:13px; line-height:1.5; }
+.analysis-claims-section { border-top:1px solid var(--line); margin-top:20px; padding-top:18px; }
+.analysis-claims-section h4 { font-size:11px; letter-spacing:.1em; margin:0 0 12px; text-transform:uppercase; }
+.analysis-claims-section>div { align-items:start; border-radius:9px; display:grid; gap:10px; grid-template-columns:24px 1fr; margin-top:8px; padding:11px 12px; }
+.analysis-claims-section>div>span { font-size:18px; font-weight:900; line-height:1; }
+.analysis-claims-section p { display:grid; gap:3px; margin:0; }
+.analysis-claims-section p strong { color:var(--ink); font-size:13px; }
+.analysis-claims-section p small { font-size:9px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; }
+.analysis-claims-section p em { color:var(--muted); font-size:12px; font-style:normal; }
+.claim-status-supported { background:#e5f3e9; color:var(--green); }
+.claim-status-partially_supported,.claim-status-not_established,.claim-status-not_assessable { background:#fff1d8; color:#85501c; }
+.claim-status-contradicted { background:#ffe7df; color:#8b2915; }
 .analysis-claim { background:#fff4df; border-radius:10px; display:grid; gap:4px; margin-top:18px; padding:14px; }
 .analysis-claim small { color:#9a4d24; font-size:9px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
 .analysis-claim p { margin:2px 0 0; }

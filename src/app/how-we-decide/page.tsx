@@ -75,6 +75,7 @@ export default function HowWeDecidePage() {
         <small>{test.limitation}</small>
       </article>)}</div>
       <p className="decision-note">These checks report an apparent package inconsistency. They do not determine formulation, intent, legality, or enforcement liability.</p>
+      <p className="decision-note">The Claims section appears only when a claim is visibly printed in the submitted image. Terra compares that exact wording with package facts and sufficiently matched sources, then marks it supported, partly supported, contradicted, not established or not assessable. Online-only marketing copy never creates the section.</p>
     </section>
 
     <section className="service-card">

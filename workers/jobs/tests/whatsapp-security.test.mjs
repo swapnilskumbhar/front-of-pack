@@ -202,10 +202,15 @@ test("McVitie's response combines warnings with rating profile verdict and posit
     rating: { score: 4, dimension: "ingredients", label: "Ingredients", basis: "Palm oil and wheat need attention.", evidenceIds: ["p", "w"], experimental: true },
     profile: [{ label: "PALM OIL", evidenceIds: ["p"] }, { label: "WHEAT ALLERGEN", evidenceIds: ["w"] }, { label: "WHOLEWHEAT", evidenceIds: ["g"] }],
     summary: "Palm oil and wheat need attention; wholewheat is a useful positive.",
+    claimsAsPrinted: ["High in Fibre", "Made with whole wheat"],
     findings: [
       { id: "f1", kind: "ingredient", level: "attention", title: "Contains palm oil", explanation: "Palm oil listed online.", evidenceIds: ["p"] },
       { id: "f2", kind: "ingredient", level: "attention", title: "Allergen: wheat", explanation: "Wheat is declared online.", evidenceIds: ["w"] },
       { id: "f3", kind: "ingredient", level: "information", title: "Wholewheat content", explanation: "Official brand page describes wholewheat and fibre.", evidenceIds: ["g"] },
+    ],
+    claimAudits: [
+      { claimAsPrinted: "High in Fibre", status: "not_assessable", assessment: "Nutrition panel is not visible.", evidenceIds: ["g"] },
+      { claimAsPrinted: "Made with whole wheat", status: "partially_supported", assessment: "Online ingredients list refined and whole wheat flour.", evidenceIds: ["g"] },
     ],
     evidence: [
       { id: "p", origin: "hosted_web_search", excerptOrObservation: "Palm oil listed." },
@@ -219,6 +224,18 @@ test("McVitie's response combines warnings with rating profile verdict and posit
   assert.match(message, /\*Profile:\* PALM OIL · WHEAT ALLERGEN · WHOLEWHEAT/);
   assert.match(message, /\*Verdict:\*/);
   assert.match(message, /\*Analysis:\*[\s\S]*WHOLEWHEAT CONTENT/);
+  assert.match(message, /\*Claims:\*/);
+  assert.match(message, /“High in Fibre” — Nutrition panel is not visible/);
+  assert.match(message, /“Made with whole wheat” — Online ingredients list refined and whole wheat flour/);
+});
+
+test("WhatsApp omits the claims section when no package claim is visible", () => {
+  const message = renderWhatsAppChunks({ language: "en", items: [{
+    position: 1, identity: { nameAsPrinted: "Plain Product", confidence: "high" },
+    rating: { score: null, dimension: "label_evidence", label: "Not rated", basis: "Insufficient evidence.", evidenceIds: [], experimental: true },
+    profile: [], summary: "No visible marketing claim.", claimsAsPrinted: [], claimAudits: [], findings: [], evidence: [],
+  }] })[0];
+  assert.doesNotMatch(message, /\*Claims:\*/);
 });
 
 test("successful delivery reads stored output and clears all routing ciphertext", async () => {

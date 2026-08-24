@@ -124,7 +124,7 @@ Tasks:
 - [x] Enforce no automatic provider retry; another provider call requires an explicit new attempt.
 - [x] Validate the returned evidence graph, provider citation ID+URL pairs, allow-listed coverage/service IDs, prohibited wording, and serialized size against the wired FSSAI, Legal Metrology, CDSCO, experimental INR, FoSCoS, BIS Care, and NCH packs.
 - [x] Persist a validated provider result, protect polling with a per-scan 256-bit capability whose digest alone is stored, and render the consumer result.
-- [x] Present every material warning first, followed by an evidence-linked experimental rating, factual profile, verdict, 4–8 useful facts when available, next action, and expandable evidence; WhatsApp uses the same hierarchy.
+- [x] Present every material warning first, followed by an evidence-linked experimental rating, factual profile, verdict, 4–8 useful facts when available, a conditional visible-claims audit, next action, and expandable evidence; WhatsApp uses the same hierarchy.
 - [x] Implement versioned exact-image cache identity and prove an authorized zero-call cache hit; production version-pack coverage remains.
 - [x] Wire explicit user resubmission to a new durable attempt with fresh normalized media; never automatically repeat a provider-started call.
 

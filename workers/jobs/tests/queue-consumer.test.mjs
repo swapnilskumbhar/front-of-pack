@@ -29,7 +29,7 @@ const validResult = {
 
 const pinnedVersions = {
   model_id: "gpt-5.6-terra",
-  prompt_version: "terra-analysis.v13",
+  prompt_version: "terra-analysis.v14",
   schema_version: "analysis-result.v2",
   rules_version: "india-category-rules.v2",
   services_version: "india-consumer-services.v1",

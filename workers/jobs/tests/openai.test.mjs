@@ -42,6 +42,8 @@ test("constructs one bounded strict Responses request with optional hosted searc
   assert.match(JSON.stringify(request.input), /normally return 4-8 findings/);
   assert.match(JSON.stringify(request.input), /experimental 0-10 label-based shopper rating/);
   assert.match(JSON.stringify(request.input), /CAFFEINE WARNING/);
+  assert.match(JSON.stringify(request.input), /CLAIMS CONTRACT/);
+  assert.match(JSON.stringify(request.text.format.schema), /contradicted/);
 });
 
 test("can require hosted search while allowing one targeted follow-up", () => {

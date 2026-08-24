@@ -152,6 +152,7 @@ function AnalysisResultView({ result }: { result: AnalysisResult }) {
         const indicators = buildShopperIndicators(item, derivedSignals, result.language);
         const warnings = indicators.filter((indicator) => indicator.tone === "red" || indicator.tone === "amber");
         const supporting = indicators.filter((indicator) => indicator.tone === "green" || indicator.tone === "grey");
+        const visibleClaims = item.claimsAsPrinted ?? [];
         return <article key={item.position}>
           <div className="analysis-item-heading">
             <span>Product {item.position}</span>
@@ -169,6 +170,11 @@ function AnalysisResultView({ result }: { result: AnalysisResult }) {
           </div>
           {item.summary && <p className="analysis-verdict"><strong>Verdict</strong>{item.summary}</p>}
           {supporting.length > 0 && <div className="analysis-key-findings"><h4>Analysis</h4><ul>{supporting.map((indicator, index) => <li key={`${indicator.title}-${index}`}><strong>{indicator.title}</strong><span>{indicator.detail}</span></li>)}</ul></div>}
+          {visibleClaims.length > 0 && <div className="analysis-claims-section"><h4>Claims</h4>{visibleClaims.map((claim) => {
+            const audit = item.claimAudits.find((candidate) => candidate.claimAsPrinted === claim);
+            const status = audit?.status ?? "not_assessable";
+            return <div className={`claim-status-${status}`} key={claim}><span>{claimStatusIcon(status)}</span><p><strong>“{claim}”</strong><small>{claimStatusLabel(status)}</small>{audit?.assessment && <em>{audit.assessment}</em>}</p></div>;
+          })}</div>}
           {item.serviceRoute && <a className="analysis-next-step" href="/grievance">See your next-step options →</a>}
           <details className="analysis-evidence">
             <summary>View full evidence</summary>
@@ -194,6 +200,17 @@ function webEvidenceConfidence(item: AnalysisResult["items"][number]): string {
   if (item.identity.confidence === "high" && (!item.webMatchConfidence || item.webMatchConfidence === "high")) return "High";
   if (["high", "medium"].includes(item.identity.confidence) && item.webMatchConfidence !== "low") return "Medium";
   return "Low";
+}
+
+function claimStatusIcon(status: AnalysisResult["items"][number]["claimAudits"][number]["status"]): string {
+  if (status === "supported") return "✓";
+  if (status === "contradicted") return "×";
+  if (status === "partially_supported") return "!";
+  return "—";
+}
+
+function claimStatusLabel(status: AnalysisResult["items"][number]["claimAudits"][number]["status"]): string {
+  return status.replaceAll("_", " ");
 }
 
 function categoryLabel(category: string): string {

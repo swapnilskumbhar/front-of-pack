@@ -156,7 +156,7 @@ export const ANALYSIS_RESULT_SCHEMA: Record<string, unknown> = {
           findings: { type: "array", maxItems: 12, items: finding },
           claimAudits: {
             type: "array",
-            maxItems: 4,
+            maxItems: 8,
             items: {
               type: "object",
               additionalProperties: false,
@@ -165,7 +165,7 @@ export const ANALYSIS_RESULT_SCHEMA: Record<string, unknown> = {
                 claimAsPrinted: { type: "string", maxLength: 200 },
                 assessment: { type: "string", maxLength: 300 },
                 evidenceIds: stringArray,
-                status: { type: "string", enum: ["supported", "partially_supported", "not_established", "not_assessable"] },
+                status: { type: "string", enum: ["supported", "partially_supported", "contradicted", "not_established", "not_assessable"] },
               },
             },
           },

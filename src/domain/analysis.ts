@@ -79,7 +79,7 @@ export interface ClaimAudit {
   claimAsPrinted: string;
   assessment: string;
   evidenceIds: string[];
-  status: "supported" | "partially_supported" | "not_established" | "not_assessable";
+  status: "supported" | "partially_supported" | "contradicted" | "not_established" | "not_assessable";
 }
 
 export interface ServiceRouteRef {

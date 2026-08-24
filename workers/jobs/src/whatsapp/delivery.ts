@@ -25,19 +25,19 @@ const FAILURE_COPY: Record<string, string> = {
   ur: "اس لیبل کی قابلِ اعتماد جانچ نہیں ہو سکی۔ تصویر دوبارہ یا پچھلا پینل واضح طور پر بھیجیں۔",
 };
 
-const RESPONSE_COPY: Record<LanguageCode, { rating: string; profile: string; verdict: string; analysis: string; evidence: string; experimental: string }> = {
-  en: { rating: "Rating", profile: "Profile", verdict: "Verdict", analysis: "Analysis", evidence: "Evidence confidence", experimental: "experimental" },
-  hi: { rating: "रेटिंग", profile: "प्रोफ़ाइल", verdict: "निष्कर्ष", analysis: "विश्लेषण", evidence: "साक्ष्य भरोसा", experimental: "प्रायोगिक" },
-  mr: { rating: "रेटिंग", profile: "प्रोफाइल", verdict: "निष्कर्ष", analysis: "विश्लेषण", evidence: "पुरावा विश्वास", experimental: "प्रायोगिक" },
-  bn: { rating: "রেটিং", profile: "প্রোফাইল", verdict: "সিদ্ধান্ত", analysis: "বিশ্লেষণ", evidence: "প্রমাণের আস্থা", experimental: "পরীক্ষামূলক" },
-  ta: { rating: "மதிப்பீடு", profile: "சுயவிவரம்", verdict: "முடிவு", analysis: "பகுப்பாய்வு", evidence: "ஆதார நம்பிக்கை", experimental: "சோதனை" },
-  te: { rating: "రేటింగ్", profile: "ప్రొఫైల్", verdict: "తీర్పు", analysis: "విశ్లేషణ", evidence: "ఆధార నమ్మకం", experimental: "ప్రయోగాత్మక" },
-  kn: { rating: "ರೇಟಿಂಗ್", profile: "ಪ್ರೊಫೈಲ್", verdict: "ತೀರ್ಮಾನ", analysis: "ವಿಶ್ಲೇಷಣೆ", evidence: "ಸಾಕ್ಷ್ಯ ವಿಶ್ವಾಸ", experimental: "ಪ್ರಾಯೋಗಿಕ" },
-  gu: { rating: "રેટિંગ", profile: "પ્રોફાઇલ", verdict: "નિષ્કર્ષ", analysis: "વિશ્લેષણ", evidence: "પુરાવાનો વિશ્વાસ", experimental: "પ્રાયોગિક" },
-  ml: { rating: "റേറ്റിംഗ്", profile: "പ്രൊഫൈൽ", verdict: "നിഗമനം", analysis: "വിശകലനം", evidence: "തെളിവ് വിശ്വാസം", experimental: "പരീക്ഷണാത്മകം" },
-  pa: { rating: "ਰੇਟਿੰਗ", profile: "ਪ੍ਰੋਫਾਈਲ", verdict: "ਨਤੀਜਾ", analysis: "ਵਿਸ਼ਲੇਸ਼ਣ", evidence: "ਸਬੂਤ ਭਰੋਸਾ", experimental: "ਪ੍ਰਯੋਗਾਤਮਕ" },
-  or: { rating: "ରେଟିଂ", profile: "ପ୍ରୋଫାଇଲ୍", verdict: "ନିଷ୍କର୍ଷ", analysis: "ବିଶ୍ଳେଷଣ", evidence: "ପ୍ରମାଣ ଭରସା", experimental: "ପରୀକ୍ଷାମୂଳକ" },
-  ur: { rating: "ریٹنگ", profile: "پروفائل", verdict: "نتیجہ", analysis: "تجزیہ", evidence: "ثبوت کا اعتماد", experimental: "تجرباتی" },
+const RESPONSE_COPY: Record<LanguageCode, { rating: string; profile: string; verdict: string; analysis: string; claims: string; evidence: string; experimental: string }> = {
+  en: { rating: "Rating", profile: "Profile", verdict: "Verdict", analysis: "Analysis", claims: "Claims", evidence: "Evidence confidence", experimental: "experimental" },
+  hi: { rating: "रेटिंग", profile: "प्रोफ़ाइल", verdict: "निष्कर्ष", analysis: "विश्लेषण", claims: "दावे", evidence: "साक्ष्य भरोसा", experimental: "प्रायोगिक" },
+  mr: { rating: "रेटिंग", profile: "प्रोफाइल", verdict: "निष्कर्ष", analysis: "विश्लेषण", claims: "दावे", evidence: "पुरावा विश्वास", experimental: "प्रायोगिक" },
+  bn: { rating: "রেটিং", profile: "প্রোফাইল", verdict: "সিদ্ধান্ত", analysis: "বিশ্লেষণ", claims: "দাবি", evidence: "প্রমাণের আস্থা", experimental: "পরীক্ষামূলক" },
+  ta: { rating: "மதிப்பீடு", profile: "சுயவிவரம்", verdict: "முடிவு", analysis: "பகுப்பாய்வு", claims: "கூற்றுகள்", evidence: "ஆதார நம்பிக்கை", experimental: "சோதனை" },
+  te: { rating: "రేటింగ్", profile: "ప్రొఫైల్", verdict: "తీర్పు", analysis: "విశ్లేషణ", claims: "క్లెయిమ్‌లు", evidence: "ఆధార నమ్మకం", experimental: "ప్రయోగాత్మక" },
+  kn: { rating: "ರೇಟಿಂಗ್", profile: "ಪ್ರೊಫೈಲ್", verdict: "ತೀರ್ಮಾನ", analysis: "ವಿಶ್ಲೇಷಣೆ", claims: "ಹೇಳಿಕೆಗಳು", evidence: "ಸಾಕ್ಷ್ಯ ವಿಶ್ವಾಸ", experimental: "ಪ್ರಾಯೋಗಿಕ" },
+  gu: { rating: "રેટિંગ", profile: "પ્રોફાઇલ", verdict: "નિષ્કર્ષ", analysis: "વિશ્લેષણ", claims: "દાવા", evidence: "પુરાવાનો વિશ્વાસ", experimental: "પ્રાયોગિક" },
+  ml: { rating: "റേറ്റിംഗ്", profile: "പ്രൊഫൈൽ", verdict: "നിഗമനം", analysis: "വിശകലനം", claims: "അവകാശവാദങ്ങൾ", evidence: "തെളിവ് വിശ്വാസം", experimental: "പരീക്ഷണാത്മകം" },
+  pa: { rating: "ਰੇਟਿੰਗ", profile: "ਪ੍ਰੋਫਾਈਲ", verdict: "ਨਤੀਜਾ", analysis: "ਵਿਸ਼ਲੇਸ਼ਣ", claims: "ਦਾਅਵੇ", evidence: "ਸਬੂਤ ਭਰੋਸਾ", experimental: "ਪ੍ਰਯੋਗਾਤਮਕ" },
+  or: { rating: "ରେଟିଂ", profile: "ପ୍ରୋଫାଇଲ୍", verdict: "ନିଷ୍କର୍ଷ", analysis: "ବିଶ୍ଳେଷଣ", claims: "ଦାବି", evidence: "ପ୍ରମାଣ ଭରସା", experimental: "ପରୀକ୍ଷାମୂଳକ" },
+  ur: { rating: "ریٹنگ", profile: "پروفائل", verdict: "نتیجہ", analysis: "تجزیہ", claims: "دعوے", evidence: "ثبوت کا اعتماد", experimental: "تجرباتی" },
 };
 
 export function parseDeliveryJob(value: unknown): DeliveryJob | null {
@@ -90,6 +90,22 @@ export function renderWhatsAppChunks(result: unknown): string[] {
       sections.push(meta.join("\n"));
       if (supporting.length) {
         sections.push(`*${copy.analysis}:*\n${supporting.map((indicator) => `• *${indicator.title}:* ${indicator.detail}`).join("\n")}`);
+      }
+      const visibleClaims = Array.isArray(item.claimsAsPrinted)
+        ? item.claimsAsPrinted.filter((claim): claim is string => typeof claim === "string" && claim.trim().length > 0)
+        : [];
+      const claimAudits = Array.isArray(item.claimAudits)
+        ? item.claimAudits.filter((audit): audit is Record<string, unknown> => Boolean(audit && typeof audit === "object"))
+        : [];
+      if (visibleClaims.length) {
+        const rows = visibleClaims.map((claim) => {
+          const audit = claimAudits.find((candidate) => candidate.claimAsPrinted === claim);
+          const status = typeof audit?.status === "string" ? audit.status : "not_assessable";
+          const icon = status === "supported" ? "✅" : status === "contradicted" ? "❌" : status === "partially_supported" ? "⚠️" : "➖";
+          const assessment = typeof audit?.assessment === "string" ? ` — ${audit.assessment}` : "";
+          return `${icon} “${claim}”${assessment}`;
+        });
+        sections.push(`*${copy.claims}:*\n${rows.join("\n")}`);
       }
       const serviceRoute = item.serviceRoute && typeof item.serviceRoute === "object" ? item.serviceRoute as Record<string, unknown> : null;
       if (serviceRoute && typeof serviceRoute.reason === "string") sections.push(`🏛️ ${serviceRoute.reason}`);
