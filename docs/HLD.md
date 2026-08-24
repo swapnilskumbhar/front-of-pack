@@ -354,10 +354,11 @@ WhatsApp uses the same Cloudflare-hosted API, D1 state, R2 media path, Queue con
 2. The first image is analyzed immediately rather than being held behind a language menu.
 3. The Worker verifies Meta's verification token and raw-body POST signature, writes the idempotent event and encrypted short-lived delivery context, enqueues the job, and acknowledges immediately.
 4. The Queue consumer retrieves the media through the fixed Graph media-ID flow into private R2, invokes the shared analysis path once, and enqueues delivery.
-5. WhatsApp returns localized, section-bounded shopper-brief chunks from the stored result: every product's structured red/amber indicators globally first, then rating, profile, verdict, analysis, visible claims and any service-route reason.
-6. A language command updates the profile for future image jobs; it does not change an already queued job. Delivery never invokes another model call.
+5. For multi-product images, WhatsApp returns closed, numbered product blocks: every warning-bearing product's red/amber block globally first, followed by a numbered detail block for every product. Continuation blocks repeat the same ordinal and product identity.
+6. Every outgoing result chunk and failure notice sets Meta `context.message_id` to that job's stored inbound image-message ID, so several asynchronous images remain visually tied to their own quoted photo even when completion order differs.
+7. A language command updates the profile for future image jobs; it does not change an already queued job. Delivery never invokes another model call.
 
-The web result is the complete expandable surface for large multi-product analyses. WhatsApp chunks only at section boundaries (3,500 Unicode code points each). Delivery retries only before the first chunk is sent; a later-chunk failure terminates rather than duplicating earlier messages.
+The web result is the complete expandable surface for large multi-product analyses. WhatsApp packs closed product blocks at no more than 3,500 Unicode code points per message and repeats the product header on continuations. All messages reply to the original inbound image. Delivery retries only before the first chunk is sent; a later-chunk failure terminates rather than duplicating earlier messages.
 
 Language-name/code commands are available without using the website. Until one is received, WhatsApp explicitly defaults to English and analyzes the first image. If the user changes language, future image jobs snapshot and use that language. Re-rendering an existing result in a new language requires a new one-call analysis unless that image-language combination is already cached.
 

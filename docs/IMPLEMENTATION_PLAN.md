@@ -145,6 +145,8 @@ Tasks:
 - [x] Reuse the analysis contracts and persistent language profile, including 12-language text commands.
 - [x] Default an unset WhatsApp profile to English, snapshot it on the job, and preserve an explicit later language selection.
 - [x] Render stored WhatsApp-safe output and retry Graph delivery independently from semantic analysis.
+- [x] Add closed numbered boundaries for every product in multi-product results while retaining global warning-first order.
+- [x] Reply every result chunk and failure notice to its originating inbound image through Meta `context.message_id`, including out-of-order multi-image completion.
 - [x] Clear encrypted routing fields and temporary media through terminal cleanup paths.
 
 Release gate: repeat the live Meta flow three times with owned, non-sensitive images; retain mocked security coverage and keep all Meta/OpenAI/encryption secrets out of logs, Git and submission media.

@@ -63,10 +63,22 @@ export function parseDeliveryJob(value: unknown): DeliveryJob | null {
     ? row as unknown as DeliveryJob : null;
 }
 
+interface WhatsAppProductBlock {
+  icon: "⚠️" | "📦";
+  ordinal: number;
+  total: number;
+  name: string;
+  rows: string[];
+}
+
+const PRODUCT_BLOCK_FOOTER = "╰────────────────────";
+
 export function renderWhatsAppChunks(result: unknown): string[] {
   const source = result && typeof result === "object" ? result as Record<string, unknown> : {};
   const warningSections: string[] = [];
   const detailSections: string[] = [];
+  const warningBlocks: WhatsAppProductBlock[] = [];
+  const detailBlocks: WhatsAppProductBlock[] = [];
   const requestedLanguage = typeof source.language === "string" ? source.language : null;
   const language = requestedLanguage && (SUPPORTED_LANGUAGES as readonly string[]).includes(requestedLanguage)
     ? requestedLanguage as LanguageCode
@@ -74,11 +86,12 @@ export function renderWhatsAppChunks(result: unknown): string[] {
   const derived = source.derived && typeof source.derived === "object" ? source.derived as Record<string, unknown> : {};
   const derivedItems = Array.isArray(derived.items) ? derived.items : [];
   const sourceItems = Array.isArray(source.items) ? source.items : [];
-  const multipleProducts = sourceItems.filter((value) => value && typeof value === "object").length > 1;
-  if (sourceItems.length) {
-    for (const value of sourceItems) {
-      if (!value || typeof value !== "object") continue;
+  const validItems = sourceItems.filter((value): value is Record<string, unknown> => Boolean(value && typeof value === "object"));
+  const multipleProducts = validItems.length > 1;
+  if (validItems.length) {
+    for (const [itemIndex, value] of validItems.entries()) {
       const item = value as Record<string, unknown>;
+      const ordinal = itemIndex + 1;
       const identity = item.identity && typeof item.identity === "object"
         ? item.identity as Record<string, unknown> : {};
       const name = formatProductIdentity(identity as unknown as ProductAnalysis["identity"]);
@@ -89,10 +102,14 @@ export function renderWhatsAppChunks(result: unknown): string[] {
       const indicators = buildShopperIndicators(typedItem, signals, language);
       const warnings = indicators.filter((indicator) => indicator.tone === "red" || indicator.tone === "amber");
       const supporting = indicators.filter((indicator) => indicator.tone === "green" || indicator.tone === "grey");
-      for (const indicator of warnings) {
+      const warningRows = warnings.map((indicator) => {
         const icon = indicator.tone === "red" ? "🔴" : indicator.tone === "amber" ? "🟠" : indicator.tone === "green" ? "🟢" : "⚪";
-        const productContext = multipleProducts && name ? `📦 _${name}_\n` : "";
-        warningSections.push(`${productContext}${icon} *${indicator.title}*\n${indicator.detail}`);
+        return `${icon} *${indicator.title}*\n${indicator.detail}`;
+      });
+      if (multipleProducts && warningRows.length) {
+        warningBlocks.push({ icon: "⚠️", ordinal, total: validItems.length, name, rows: warningRows });
+      } else {
+        warningSections.push(...warningRows);
       }
       const copy = RESPONSE_COPY[language] ?? RESPONSE_COPY.en;
       const rating = derivedItem?.rating && typeof derivedItem.rating === "object" ? derivedItem.rating as Record<string, unknown> : {};
@@ -107,15 +124,15 @@ export function renderWhatsAppChunks(result: unknown): string[] {
       const profile = Array.isArray(item.profile) ? item.profile.flatMap((tag) => tag && typeof tag === "object" && typeof (tag as Record<string, unknown>).label === "string" ? [(tag as Record<string, unknown>).label as string] : []) : [];
       const summary = typeof item.summary === "string" ? item.summary.trim() : "";
       const meta = [
-        name ? `📦 *${name}*` : null,
+        !multipleProducts && name ? `📦 *${name}*` : null,
         `*${copy.rating}:* ${score ?? "—"}/10${arithmetic}`,
         profile.length ? `*${copy.profile}:* ${profile.join(" · ")}` : null,
         summary ? `*${copy.verdict}:* ${summary}` : null,
         `*${copy.evidence}:* ${CONFIDENCE_COPY[language][evidenceConfidence(item)]}`,
       ].filter((line): line is string => Boolean(line));
-      detailSections.push(meta.join("\n"));
+      const productDetailRows = [meta.join("\n")];
       if (supporting.length) {
-        detailSections.push(`*${copy.analysis}:*\n${supporting.map((indicator) => `• *${indicator.title}:* ${indicator.detail}`).join("\n")}`);
+        productDetailRows.push(`*${copy.analysis}:*\n${supporting.map((indicator) => `• *${indicator.title}:* ${indicator.detail}`).join("\n")}`);
       }
       const visibleClaims = Array.isArray(item.claimsAsPrinted)
         ? item.claimsAsPrinted.filter((claim): claim is string => typeof claim === "string" && claim.trim().length > 0)
@@ -132,16 +149,61 @@ export function renderWhatsAppChunks(result: unknown): string[] {
           const assessment = typeof audit?.assessment === "string" ? ` — ${audit.assessment}` : "";
           return `${icon} “${claim}”${assessment}`;
         });
-        detailSections.push(`*${copy.claims}:*\n${rows.join("\n")}`);
+        productDetailRows.push(`*${copy.claims}:*\n${rows.join("\n")}`);
       }
       const serviceRoute = item.serviceRoute && typeof item.serviceRoute === "object" ? item.serviceRoute as Record<string, unknown> : null;
-      if (serviceRoute && typeof serviceRoute.reason === "string") detailSections.push(`🏛️ ${serviceRoute.reason}`);
+      if (serviceRoute && typeof serviceRoute.reason === "string") productDetailRows.push(`🏛️ ${serviceRoute.reason}`);
+      if (multipleProducts) {
+        detailBlocks.push({ icon: "📦", ordinal, total: validItems.length, name, rows: productDetailRows });
+      } else {
+        detailSections.push(...productDetailRows);
+      }
     }
   }
+  if (multipleProducts) return packWhatsAppProductBlocks([...warningBlocks, ...detailBlocks], 3_500);
   const sections = [...warningSections, ...detailSections];
   if (sections.length === 0 && typeof source.wholeImageSummary === "string") sections.push(source.wholeImageSummary);
   if (sections.length === 0 && typeof source.summary === "string") sections.push(source.summary);
   return packWhatsAppSections(sections.length ? sections : ["Your label analysis is ready."], 3_500);
+}
+
+function packWhatsAppProductBlocks(blocks: readonly WhatsAppProductBlock[], maximumCodePoints: number): string[] {
+  const closedSections: string[] = [];
+  for (const block of blocks) {
+    let rows: string[] = [];
+    let continued = false;
+    for (const row of block.rows) {
+      for (const piece of splitProductBlockRow(row, block, maximumCodePoints)) {
+        const candidate = renderProductBlock(block, [...rows, piece], continued);
+        if (rows.length && Array.from(candidate).length > maximumCodePoints) {
+          closedSections.push(renderProductBlock(block, rows, continued));
+          rows = [piece];
+          continued = true;
+        } else {
+          rows.push(piece);
+        }
+      }
+    }
+    if (rows.length) closedSections.push(renderProductBlock(block, rows, continued));
+  }
+  return packWhatsAppSections(closedSections, maximumCodePoints);
+}
+
+function splitProductBlockRow(row: string, block: WhatsAppProductBlock, maximumCodePoints: number): string[] {
+  const emptyBlockLength = Array.from(renderProductBlock(block, [""], true)).length;
+  const budget = Math.max(1, maximumCodePoints - emptyBlockLength);
+  const codePoints = Array.from(row);
+  const pieces: string[] = [];
+  for (let offset = 0; offset < codePoints.length; offset += budget) {
+    pieces.push(codePoints.slice(offset, offset + budget).join(""));
+  }
+  return pieces.length ? pieces : [""];
+}
+
+function renderProductBlock(block: WhatsAppProductBlock, rows: readonly string[], continued: boolean): string {
+  const continuation = continued ? " · ↪" : "";
+  const header = `╭─ ${block.icon} *${block.ordinal}/${block.total} · ${block.name}${continuation}*`;
+  return [header, ...rows, PRODUCT_BLOCK_FOOTER].join("\n\n");
 }
 
 function packWhatsAppSections(sections: readonly string[], maximumCodePoints: number): string[] {
@@ -186,11 +248,11 @@ export async function consumeDelivery(
   const job = parseDeliveryJob(message.body);
   if (!job) throw new Error("invalid_delivery_job");
   const row = await env.DB.prepare(`
-    SELECT w.recipient_ciphertext, w.recipient_nonce, w.status, w.send_attempts, w.expires_at, a.result_json
+    SELECT w.inbound_message_id, w.recipient_ciphertext, w.recipient_nonce, w.status, w.send_attempts, w.expires_at, a.result_json
     FROM whatsapp_jobs w JOIN scan_requests s ON s.id = w.scan_request_id
     JOIN analyses a ON a.id = s.analysis_id WHERE w.id = ? LIMIT 1
   `).bind(job.whatsapp_job_id).first<{
-    recipient_ciphertext: ArrayBuffer | null; recipient_nonce: ArrayBuffer | null;
+    inbound_message_id: string; recipient_ciphertext: ArrayBuffer | null; recipient_nonce: ArrayBuffer | null;
     status: string; send_attempts: number; expires_at: string; result_json: string | null;
   }>();
   if (!row || row.status === "sent" || row.status === "processing" || row.status === "failed") { message.ack(); return; }
@@ -212,7 +274,7 @@ export async function consumeDelivery(
   try {
     const recipient = await decryptIdentifier(row.recipient_ciphertext, row.recipient_nonce, env.DELIVERY_ENCRYPTION_KEY);
     for (const chunk of renderWhatsAppChunks(JSON.parse(row.result_json))) {
-      await sendWhatsAppText(recipient, chunk, env, fetcher);
+      await sendWhatsAppText(recipient, chunk, env, fetcher, { replyToMessageId: row.inbound_message_id });
       sentChunks += 1;
     }
   } catch (error) {
@@ -253,14 +315,15 @@ export async function sendWhatsAppAnalysisFailure(
   env: DeliveryEnv,
   fetcher: typeof fetch = fetch,
 ): Promise<void> {
-  const row = await env.DB.prepare(`SELECT recipient_ciphertext, recipient_nonce, language
+  const row = await env.DB.prepare(`SELECT inbound_message_id, recipient_ciphertext, recipient_nonce, language
     FROM whatsapp_jobs WHERE id = ? LIMIT 1`).bind(jobId).first<{
-      recipient_ciphertext: ArrayBuffer | null; recipient_nonce: ArrayBuffer | null; language: string;
+      inbound_message_id: string; recipient_ciphertext: ArrayBuffer | null; recipient_nonce: ArrayBuffer | null; language: string;
     }>();
   if (!row?.recipient_ciphertext || !row.recipient_nonce) return;
   try {
     const recipient = await decryptIdentifier(row.recipient_ciphertext, row.recipient_nonce, env.DELIVERY_ENCRYPTION_KEY);
-    await sendWhatsAppText(recipient, FAILURE_COPY[row.language] ?? FAILURE_COPY[DEFAULT_LANGUAGE], env, fetcher);
+    await sendWhatsAppText(recipient, FAILURE_COPY[row.language] ?? FAILURE_COPY[DEFAULT_LANGUAGE], env, fetcher,
+      { replyToMessageId: row.inbound_message_id });
   } catch {
     // The analysis is already terminal. Never retry it merely because the failure notice could not be sent.
   }

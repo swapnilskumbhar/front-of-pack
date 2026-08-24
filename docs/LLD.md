@@ -897,10 +897,12 @@ No bearer credential may ever be attached to a URL selected directly from incomi
 | First image, no saved language | Default to English, create/reuse one idempotent scan request, and analyze immediately |
 | Language selection/command | Save it for subsequently received image jobs; do not alter an already queued job |
 | Image with saved language | Snapshot that language and analyze through the shared API |
-| Completed result | Send localized, section-bounded shopper-brief chunks from the stored result |
+| Completed result | Send numbered product blocks; every chunk quotes the originating image via `context.message_id` |
 | Change language | Update the profile; applies to future image jobs |
 
-The renderer performs two global passes: every product's structured red/amber indicator first, then product metadata, deterministic rating arithmetic, model-authored profile/verdict, supporting analysis, visible claims and service-route reasons. It packs complete sections into Unicode-safe chunks of at most 3,500 code points, so a verbose first product cannot consume the budget before a later product warning. Red is engine-only; model context is at most amber. The delivery consumer sends stored chunks sequentially and never invokes the model. A retry is allowed only before any chunk has been sent; a later-chunk failure is terminal (`delivery_partial`) so earlier chunks are not duplicated. Failed/expired delivery deletes encrypted routing data after recording a non-sensitive code.
+The renderer performs two global passes. For more than one product it emits closed warning blocks headed `⚠️ n/total · product` for every warning-bearing product, then closed detail blocks headed `📦 n/total · product` for every product. It omits false empty-warning blocks, repeats the same ordinal/name on continuations, and keeps every closed block within 3,500 Unicode code points. Thus a later product warning cannot be hidden behind an earlier product's verbose claims, and a chunk can never lose product identity. Single-product output stays compact and unnumbered. Red is engine-only; model context is at most amber.
+
+The delivery query reads the already stored `whatsapp_jobs.inbound_message_id`. Every Graph text request—each success chunk and the analysis-failure notice—adds the documented root payload `context: { message_id: inbound_message_id }`. The opaque WAMID remains out of Queue payloads and logs. Two images from the same user can finish in either order: each response quotes its own original image rather than relying on arrival order. The delivery consumer sends stored chunks sequentially and never invokes the model. A retry is allowed only before any chunk has been sent; a later-chunk failure is terminal (`delivery_partial`) so earlier chunks are not duplicated. Failed/expired delivery deletes encrypted routing data after recording a non-sensitive code.
 
 ### 11.5 Legacy boundary
 

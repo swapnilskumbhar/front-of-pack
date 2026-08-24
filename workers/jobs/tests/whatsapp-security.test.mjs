@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { runInNewContext } from "node:vm";
-import { downloadWhatsAppMedia, isAllowedMetaMediaUrl } from "../src/whatsapp/graph.ts";
-import { consumeDelivery, parseDeliveryJob, renderWhatsAppChunks } from "../src/whatsapp/delivery.ts";
+import { downloadWhatsAppMedia, isAllowedMetaMediaUrl, sendWhatsAppText } from "../src/whatsapp/graph.ts";
+import { consumeDelivery, parseDeliveryJob, renderWhatsAppChunks, sendWhatsAppAnalysisFailure } from "../src/whatsapp/delivery.ts";
 import { decryptIdentifier } from "../src/whatsapp/crypto.ts";
 
 const config = { accessToken: "top-secret", apiVersion: "v23.0", phoneNumberId: "123" };
@@ -80,6 +80,24 @@ test("safe metadata download uses no redirects and bounded recognized media", as
   assert.equal(calls[1].init.headers.authorization, "Bearer top-secret");
 });
 
+test("Graph text replies quote the exact inbound WhatsApp message", async () => {
+  let payload;
+  await sendWhatsAppText("919876543210", "Result", config, async (_url, init) => {
+    payload = JSON.parse(init.body);
+    return new Response("{}", { status: 200 });
+  }, { replyToMessageId: "wamid.image_A+/==" });
+  assert.deepEqual(payload, {
+    messaging_product: "whatsapp",
+    recipient_type: "individual",
+    to: "919876543210",
+    context: { message_id: "wamid.image_A+/==" },
+    type: "text",
+    text: { preview_url: false, body: "Result" },
+  });
+  await assert.rejects(() => sendWhatsAppText("919876543210", "Result", config, fetch,
+    { replyToMessageId: "bad id" }), /invalid_reply_message_id/);
+});
+
 test("delivery contract is ID-only and renderer emits Unicode-safe bounded chunks", () => {
   assert.deepEqual(parseDeliveryJob({ version: 1, whatsapp_job_id: "job" }), { version: 1, whatsapp_job_id: "job" });
   assert.equal(parseDeliveryJob({ version: 1, whatsapp_job_id: "job", recipient: "9199" }), null);
@@ -117,6 +135,7 @@ test("WhatsApp rendering leads with named indicators and removes generic metadat
   assert.doesNotMatch(message, /Marketing claim/);
   assert.doesNotMatch(message, /example\.test/);
   assert.doesNotMatch(message, /SOME CAUTION|Product match/);
+  assert.doesNotMatch(message, /╭─|╰─/u);
 });
 
 test("WhatsApp uses searched evidence as an indicator without exposing source plumbing", () => {
@@ -301,9 +320,16 @@ test("multi-product warnings are packed before earlier product detail and none a
   const chunks = renderWhatsAppChunks(result);
   const complete = chunks.join("\n\n");
   assert.ok(chunks.every((chunk) => Array.from(chunk).length <= 3_500));
-  assert.match(complete, /Later Product[\s\S]*HIGH ADDED SUGAR/u);
+  assert.match(complete, /╭─ ⚠️ \*2\/2 · Later Product\*[\s\S]*HIGH ADDED SUGAR[\s\S]*╰────────────────────/u);
+  assert.doesNotMatch(complete, /╭─ ⚠️ \*1\/2 · Verbose Product\*/u);
+  assert.match(complete, /╭─ 📦 \*1\/2 · Verbose Product(?: · ↪)?\*/u);
+  assert.match(complete, /╭─ 📦 \*2\/2 · Later Product\*/u);
+  assert.ok(complete.indexOf("╭─ ⚠️") < complete.indexOf("╭─ 📦"));
   assert.ok(complete.indexOf("HIGH ADDED SUGAR") < complete.indexOf("*Claims:*"));
   assert.equal((complete.match(/More evidence is required\./gu) ?? []).length, 8);
+  for (const chunk of chunks) {
+    assert.equal((chunk.match(/╭─/gu) ?? []).length, (chunk.match(/╰────────────────────/gu) ?? []).length);
+  }
 });
 
 test("floored rating arithmetic renders max zero honestly", () => {
@@ -322,12 +348,13 @@ test("successful delivery reads stored output and clears all routing ciphertext"
   let cleaned = false;
   const db = { prepare(sql) { return {
     bind() { return this; },
-    async first() { return sql.includes("SELECT w.recipient") ? {
+    async first() { if (!sql.includes("SELECT w.inbound_message_id")) return null; return {
+      inbound_message_id: "wamid.image-success==",
       recipient_ciphertext: ciphertext, recipient_nonce: nonce.buffer, status: "ready",
       send_attempts: 0,
       expires_at: new Date(Date.now() + 60_000).toISOString(),
       result_json: JSON.stringify({ summary: "Stored result only" }),
-    } : null; },
+    }; },
     async run() { if (sql.includes("recipient_ciphertext = NULL")) cleaned = true;
       return { success: true, meta: { changes: 1 } }; },
   }; } };
@@ -338,8 +365,34 @@ test("successful delivery reads stored output and clears all routing ciphertext"
   }, async (url, init) => { calls.push({ url, body: init.body }); return new Response("{}", { status: 200 }); });
   assert.equal(calls.length, 1);
   assert.match(calls[0].body, /Stored result only/);
+  assert.deepEqual(JSON.parse(calls[0].body).context, { message_id: "wamid.image-success==" });
   assert.equal(cleaned, true);
   assert.equal(acknowledged, true);
+});
+
+test("analysis failure notice replies to the originating image", async () => {
+  const keyBytes = new Uint8Array(32).fill(10);
+  const key = await crypto.subtle.importKey("raw", keyBytes, "AES-GCM", false, ["encrypt"]);
+  const nonce = new Uint8Array(12).fill(4);
+  const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, key,
+    new TextEncoder().encode("919876543210"));
+  const db = { prepare(sql) { return {
+    bind() { return this; },
+    async first() {
+      assert.match(sql, /inbound_message_id/u);
+      return { inbound_message_id: "wamid.failed-image==", recipient_ciphertext: ciphertext,
+        recipient_nonce: nonce.buffer, language: "en" };
+    },
+  }; } };
+  let payload;
+  await sendWhatsAppAnalysisFailure("job", {
+    DB: db, DELIVERY_ENCRYPTION_KEY: Buffer.from(keyBytes).toString("base64"), ...config,
+  }, async (_url, init) => {
+    payload = JSON.parse(init.body);
+    return new Response("{}", { status: 200 });
+  });
+  assert.deepEqual(payload.context, { message_id: "wamid.failed-image==" });
+  assert.match(payload.text.body, /couldn't verify this label reliably/i);
 });
 
 async function deliveryFixture({ attempts = 0 } = {}) {
@@ -351,7 +404,8 @@ async function deliveryFixture({ attempts = 0 } = {}) {
   const state = { status: "ready", attempts, cleared: false, error: null };
   const db = { prepare(sql) { return {
     values: [], bind(...values) { this.values = values; return this; },
-    async first() { return {
+    async first() { assert.match(sql, /inbound_message_id/u); return {
+      inbound_message_id: "wamid.fixture-image==",
       recipient_ciphertext: ciphertext, recipient_nonce: nonce.buffer, status: state.status,
       send_attempts: state.attempts,
       expires_at: new Date(Date.now() + 60_000).toISOString(),
@@ -378,7 +432,9 @@ async function deliveryFixture({ attempts = 0 } = {}) {
 test("atomic claim lets only one concurrent duplicate send", async () => {
   const fixture = await deliveryFixture();
   let sends = 0;
-  const fetcher = async () => { sends += 1; await new Promise((resolve) => setTimeout(resolve, 5));
+  const fetcher = async (_url, init) => { sends += 1;
+    assert.deepEqual(JSON.parse(init.body).context, { message_id: "wamid.fixture-image==" });
+    await new Promise((resolve) => setTimeout(resolve, 5));
     return new Response("{}", { status: 200 }); };
   const env = { DB: fixture.db, DELIVERY_ENCRYPTION_KEY: fixture.key, ...config };
   await Promise.all([1, 2].map(() => consumeDelivery({ body: { version: 1, whatsapp_job_id: "job" }, ack() {} }, env, fetcher)));
@@ -386,6 +442,74 @@ test("atomic claim lets only one concurrent duplicate send", async () => {
   assert.equal(fixture.state.attempts, 1);
   assert.equal(fixture.state.status, "sent");
   assert.equal(fixture.state.cleared, true);
+});
+
+test("out-of-order image results keep every chunk linked to its own inbound image", async () => {
+  const keyBytes = new Uint8Array(32).fill(12);
+  const key = await crypto.subtle.importKey("raw", keyBytes, "AES-GCM", false, ["encrypt"]);
+  const nonce = new Uint8Array(12).fill(6);
+  const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, key,
+    new TextEncoder().encode("919876543210"));
+  const rows = new Map([
+    ["job-A", { inbound: "wamid.image-A==", result: JSON.stringify({ summary: "A".repeat(7_001) }), status: "ready", attempts: 0 }],
+    ["job-B", { inbound: "wamid.image-B==", result: JSON.stringify({ summary: "B result" }), status: "ready", attempts: 0 }],
+  ]);
+  const db = { prepare(sql) { return {
+    values: [], bind(...values) { this.values = values; return this; },
+    async first() {
+      assert.match(sql, /inbound_message_id/u);
+      const row = rows.get(String(this.values[0]));
+      return row ? { inbound_message_id: row.inbound, recipient_ciphertext: ciphertext,
+        recipient_nonce: nonce.buffer, status: row.status, send_attempts: row.attempts,
+        expires_at: new Date(Date.now() + 60_000).toISOString(), result_json: row.result } : null;
+    },
+    async run() {
+      if (sql.includes("send_attempts = send_attempts + 1")) {
+        const row = rows.get(String(this.values[0]));
+        if (!row || row.status !== "ready") return { meta: { changes: 0 } };
+        row.status = "processing"; row.attempts += 1; return { meta: { changes: 1 } };
+      }
+      if (sql.includes("status = 'sent'")) {
+        const row = rows.get(String(this.values[1]));
+        if (row) row.status = "sent";
+        return { meta: { changes: row ? 1 : 0 } };
+      }
+      if (sql.includes("status = 'failed'")) {
+        const row = rows.get(String(this.values[2]));
+        if (row) row.status = "failed";
+        return { meta: { changes: row ? 1 : 0 } };
+      }
+      return { meta: { changes: 1 } };
+    },
+  }; } };
+  let releaseA;
+  const aGate = new Promise((resolve) => { releaseA = resolve; });
+  let enteredA;
+  const aEntered = new Promise((resolve) => { enteredA = resolve; });
+  const payloads = [];
+  let firstA = true;
+  const fetcher = async (_url, init) => {
+    const payload = JSON.parse(init.body);
+    if (payload.context.message_id === "wamid.image-A==" && firstA) {
+      firstA = false;
+      enteredA();
+      await aGate;
+    }
+    payloads.push(payload);
+    return new Response("{}", { status: 200 });
+  };
+  const env = { DB: db, DELIVERY_ENCRYPTION_KEY: Buffer.from(keyBytes).toString("base64"), ...config };
+  const deliveryA = consumeDelivery({ body: { version: 1, whatsapp_job_id: "job-A" }, ack() {} }, env, fetcher);
+  await aEntered;
+  await consumeDelivery({ body: { version: 1, whatsapp_job_id: "job-B" }, ack() {} }, env, fetcher);
+  releaseA();
+  await deliveryA;
+  assert.deepEqual(payloads.map((payload) => payload.context.message_id), [
+    "wamid.image-B==", "wamid.image-A==", "wamid.image-A==", "wamid.image-A==",
+  ]);
+  assert.ok(payloads.every((payload) => !["job-A", "job-B"].includes(payload.context.message_id)));
+  assert.equal(rows.get("job-A").status, "sent");
+  assert.equal(rows.get("job-B").status, "sent");
 });
 
 test("retryable Graph failure restores ownership until capped", async () => {
