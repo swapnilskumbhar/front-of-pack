@@ -344,7 +344,7 @@ Next.js App Router, server-rendered and mobile-first. No login is required.
 
 There is no separate basket route or basket analysis engine. A scan naturally contains one or many items.
 
-The homepage includes instant cached demonstrations through the exact production renderer: AloFrut for printed and whole-bottle RDA plus additives/claims; English Oven for whole-pack sodium, allergens and claims; Haldiram for front-only online evidence; and a PII-free public-storefront grocery grid whose exact current-schema run identified three products. Cached demos disclose that no model call runs on click, and the grid is never described as a cart or private user screenshot.
+The homepage includes instant cached demonstrations through the exact production renderer: AloFrut for printed and whole-bottle RDA plus additives/claims; English Oven for whole-pack sodium, allergens and claims; Haldiram for front-only online evidence; and a user-provided five-item cart screenshot with no visible PII whose validated current-schema cached reconstruction identifies five products. Cached demos disclose that no model call runs on click or during recording. The cart image is disclosed as a third-party asset, and its ownership/permitted-use and attribution gate remains open until confirmed before the final recording.
 
 ### 8.2 WhatsApp — must-have access channel
 

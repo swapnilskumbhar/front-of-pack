@@ -3,7 +3,7 @@ import test from "node:test";
 
 import type { ProductAnalysis } from "../src/domain/analysis.ts";
 import { SUPPORTED_LANGUAGES } from "../src/domain/language.ts";
-import { buildAttentionIndicator, buildProductProfile, buildShopperIndicators } from "../src/engine/presentation.ts";
+import { buildAttentionIndicator, buildProductProfile, buildShopperIndicators, formatProductIdentity } from "../src/engine/presentation.ts";
 import type { AllergenSignal, WholePackSignal } from "../src/engine/types.ts";
 
 const item = (overrides: Partial<ProductAnalysis> = {}): ProductAnalysis => ({
@@ -59,6 +59,16 @@ test("low-confidence web evidence cannot create caution", () => {
 
 test("generic category alone is not a product profile", () => {
   assert.equal(buildProductProfile(item(), []), null);
+});
+
+test("product identity removes brand and variant already contained in the printed name", () => {
+  assert.equal(formatProductIdentity({
+    nameAsPrinted: "The Health Factory Zero Maida Whole Wheat Bread",
+    brandAsPrinted: "The Health Factory",
+    variantAsPrinted: "Zero Maida Whole Wheat Bread",
+    gtin: null,
+    confidence: "high",
+  }), "The Health Factory Zero Maida Whole Wheat Bread");
 });
 
 test("model-authored issues remain named but can never create a red warning", () => {

@@ -1,6 +1,6 @@
 import { decryptIdentifier } from "./crypto.ts";
 import { GraphSendError, sendWhatsAppText, type GraphConfig } from "./graph.ts";
-import { buildShopperIndicators, type DerivedSignal } from "../../../../src/engine/index.ts";
+import { buildShopperIndicators, formatProductIdentity, type DerivedSignal } from "../../../../src/engine/index.ts";
 import { DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, type LanguageCode } from "../../../../src/domain/language.ts";
 import type { ProductAnalysis } from "../../../../src/domain/analysis.ts";
 
@@ -81,8 +81,7 @@ export function renderWhatsAppChunks(result: unknown): string[] {
       const item = value as Record<string, unknown>;
       const identity = item.identity && typeof item.identity === "object"
         ? item.identity as Record<string, unknown> : {};
-      const name = [identity.brandAsPrinted, identity.nameAsPrinted, identity.variantAsPrinted]
-        .filter((part): part is string => typeof part === "string" && part.length > 0).join(" — ");
+      const name = formatProductIdentity(identity as unknown as ProductAnalysis["identity"]);
       const derivedItem = derivedItems.find((candidate) => candidate && typeof candidate === "object" &&
         (candidate as Record<string, unknown>).position === item.position) as Record<string, unknown> | undefined;
       const signals = Array.isArray(derivedItem?.signals) ? derivedItem.signals as DerivedSignal[] : [];

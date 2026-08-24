@@ -728,6 +728,8 @@ On failure, save MODEL_OUTPUT_INVALID and show Retry. Do not coerce, repair, tra
 
 After validation, decision-engine v8 attaches calculation/dictionary signals and the deterministic rating without rewriting model-owned identity, profile, summary, findings, claims, or evidence. Presentation then builds origin/topic/rule-linked indicators; engine warnings may be red, model context may be amber, and structured ordering is independent of translated text. The public registry route is a separate exact identifier lookup against clearly synthetic demonstration data; it does not alter scan findings and never claims a live government check. Grievance drafting similarly uses stored validated facts plus fixed templates and never submits externally.
 
+The current multi-product demonstration uses the user-provided five-item cart screenshot and a validated `analysis-result.v3` cached reconstruction from that exact image. The image contains no visible PII, all five products render through the production path, and selecting it makes no model call during recording. UI and submission copy must disclose the screenshot as third-party imagery; inclusion in the final recording remains conditional on confirmed ownership/permitted use and any required attribution.
+
 ---
 
 ## 10. HTTP API and cache behavior
@@ -978,7 +980,7 @@ Never turn a failure into a guessed result or expose partial provider JSON.
 - Rate-limit web by profile plus IP and WhatsApp by phone digest.
 - Keep secrets in Cloudflare Workers Secrets/Secrets Store bindings and out of Wrangler variables, logs and Git.
 - Use no official government logo or implied endorsement.
-- Real-package demos must remain factual, evidence-linked and non-accusatory; every synthetic fixture is labelled as synthetic and no demo declares a legal violation.
+- Real-package and cart demos must remain factual, evidence-linked and non-accusatory; every synthetic fixture is labelled as synthetic and no demo declares a legal violation. User-provided imagery is still a third-party asset unless rights are confirmed, so provenance must be disclosed and permission/attribution must pass the release checklist before recording.
 
 Standing result notice:
 
@@ -1075,6 +1077,7 @@ Instrument callTerraOnce:
 - `npm run preview` passes under the Cloudflare `workerd` runtime and the release runs on `workers.dev` or the custom domain;
 - local and remote D1 migrations, R2 cleanup and both Queue producer/consumer paths pass;
 - precomputed hero samples work without live model availability;
+- the user-provided five-item cart sample renders its validated current-schema cached reconstruction with no visible PII and zero recording-time model calls; its separate asset-rights/attribution gate is confirmed before recording;
 - no committed PII, credentials, or official branding;
 - `/how-we-decide` exposes formulas, fixed rating deductions, evidence rules, sources and limitations;
 - every feature shown in the video works in three consecutive clean runs.

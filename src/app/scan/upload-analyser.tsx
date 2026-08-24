@@ -1,14 +1,16 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { AnalysisResult } from "@/domain/analysis";
-import { buildShopperIndicators, type ShopperIndicator } from "@/engine/presentation";
+import { buildShopperIndicators, formatProductIdentity, type ShopperIndicator } from "@/engine/presentation";
 import { didAnyRuleBasedCheckRun, ratingBand } from "@/engine/rating";
 import { DEFAULT_LANGUAGE, type LanguageCode } from "@/domain/language";
 import { INTAKE_VERSION, MAX_IMAGE_BYTES, type CreatedAnalysisResponse, type SafeAnalysisResponse } from "@/intake";
 import { DEMO_LABELS, DEMO_RESULTS } from "@/demo/results";
 
 const LANGUAGE_STORAGE_KEY = "front-of-pack.language";
+type DemoLabel = (typeof DEMO_LABELS)[number];
 const languages: Array<[LanguageCode, string]> = [
   ["en", "English"], ["hi", "हिन्दी"], ["mr", "मराठी"], ["bn", "বাংলা"],
   ["ta", "தமிழ்"], ["te", "తెలుగు"], ["kn", "ಕನ್ನಡ"], ["gu", "ગુજરાતી"],
@@ -33,14 +35,17 @@ export default function UploadAnalyser() {
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [selectedDemo, setSelectedDemo] = useState<DemoLabel | null>(null);
   const stopped = useRef(false);
 
   useEffect(() => {
     let active = true;
-    const demo = new URLSearchParams(window.location.search).get("demo");
+    const demoId = new URLSearchParams(window.location.search).get("demo");
+    const demo = DEMO_LABELS.find((candidate) => candidate.id === demoId) ?? null;
     const demoTimer = window.setTimeout(() => {
-      if (active && demo && DEMO_RESULTS[demo]) {
-        setResult(DEMO_RESULTS[demo]);
+      if (active && demo && DEMO_RESULTS[demo.id]) {
+        setResult(DEMO_RESULTS[demo.id]);
+        setSelectedDemo(demo);
         setMessage("Cached demonstration result — no model call was made.");
       }
     }, 0);
@@ -66,6 +71,7 @@ export default function UploadAnalyser() {
     stopped.current = false;
     setMessage("");
     setResult(null);
+    setSelectedDemo(null);
     const form = new FormData(event.currentTarget);
     const image = form.get("image");
     if (!(image instanceof File) || image.size === 0) {
@@ -134,20 +140,22 @@ export default function UploadAnalyser() {
         <span>Try instantly:</span>
         {DEMO_LABELS.map((demo) => <button key={demo.id} type="button" onClick={() => {
           setResult(DEMO_RESULTS[demo.id]);
+          setSelectedDemo(demo);
           setMessage("Cached demonstration result — no model call was made.");
           window.history.replaceState(null, "", `?demo=${demo.id}`);
-        }}>{demo.imageSrc && <span className="demo-thumb" aria-hidden="true" style={{ backgroundImage: `url(${demo.imageSrc})` }} />}<strong>{demo.label}</strong><small>{demo.detail}</small></button>)}
+        }}>{demo.imageSrc && <span className="demo-thumb" aria-hidden="true" style={{ backgroundImage: `url(${demo.imageSrc})`, backgroundSize: demo.id === "cart" ? "contain" : "cover", backgroundRepeat: "no-repeat" }} />}<strong>{demo.label}</strong><small>{demo.detail}</small></button>)}
       </div>
-      {result && <AnalysisResultView result={result} />}
+      {result && <AnalysisResultView result={result} demo={selectedDemo} />}
     </>
   );
 }
 
-function AnalysisResultView({ result }: { result: AnalysisResult }) {
+function AnalysisResultView({ result, demo }: { result: AnalysisResult; demo: DemoLabel | null }) {
   return (
     <section className="analysis-result" aria-live="polite" aria-labelledby="analysis-result-title">
       <p className="eyebrow">Quick label check</p>
       <h2 id="analysis-result-title">Your shopper brief</h2>
+      {demo?.imageSrc && <figure className="analysis-demo-input"><div className="analysis-demo-input-frame"><Image src={demo.imageSrc} alt={`${demo.label} cached demo input`} fill sizes="(max-width: 700px) 90vw, 440px" /></div><figcaption>Cached demo input · no model call on click</figcaption></figure>}
       <p className="analysis-result-summary">{result.wholeImageSummary}</p>
       <div className="analysis-result-stats"><span><b>{result.analyzedCount}</b> products analysed</span><span><b>{result.flaggedCount}</b> engine-flagged products</span><span><b>{result.unknownCount}</b> unknown products</span><span>{INTAKE_VERSION.prompt} · {INTAKE_VERSION.engine}</span></div>
       {result.truncated && <p className="analysis-truncated">The image contained more products than this result could include.</p>}
@@ -209,9 +217,7 @@ function AnalysisResultView({ result }: { result: AnalysisResult }) {
 }
 
 function productName(item: AnalysisResult["items"][number]): string {
-  const parts = [item.identity.brandAsPrinted, item.identity.nameAsPrinted, item.identity.variantAsPrinted]
-    .filter((part): part is string => Boolean(part));
-  return [...new Set(parts)].join(" — ") || "Product identified from the image";
+  return formatProductIdentity(item.identity);
 }
 
 function webEvidenceConfidence(item: AnalysisResult["items"][number]): string {

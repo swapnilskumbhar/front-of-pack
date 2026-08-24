@@ -1,6 +1,6 @@
 import type { LanguageCode } from "../domain/language.ts";
 import type { ClaimContradictionSignal, DerivedNutrient, DerivedSignal, DietarySignal, ReferenceRdaSignal, WholePackSignal } from "./types.ts";
-import type { Finding, FindingKind, FindingTopic, ProductAnalysis } from "../domain/analysis.ts";
+import type { Finding, FindingKind, FindingTopic, ProductAnalysis, ProductIdentity } from "../domain/analysis.ts";
 import { didAnyRuleBasedCheckRun } from "./rating.ts";
 
 const COPY: Record<LanguageCode, { whole: string; daily: string; label: string; pack: string; nutrients: Record<DerivedNutrient, string> }> = {
@@ -129,6 +129,19 @@ export function buildVerdict(signals: readonly DerivedSignal[], language: Langua
 }
 
 export type AttentionLevel = "needs_attention" | "some_caution" | "no_major_concern" | "not_enough_information";
+
+export function formatProductIdentity(identity: ProductIdentity): string {
+  const name = identity.nameAsPrinted?.trim() || null;
+  const contains = (container: string | null, value: string | null) => Boolean(
+    container && value && container.toLocaleLowerCase("en-IN").includes(value.toLocaleLowerCase("en-IN")),
+  );
+  const parts = [
+    contains(name, identity.brandAsPrinted) ? null : identity.brandAsPrinted,
+    name,
+    contains(name, identity.variantAsPrinted) ? null : identity.variantAsPrinted,
+  ].filter((part): part is string => Boolean(part?.trim()));
+  return [...new Set(parts)].join(" — ") || "Product identified from the image";
+}
 
 export function buildAttentionIndicator(item: ProductAnalysis, signals: readonly DerivedSignal[], language: LanguageCode): { level: AttentionLevel; title: string; summary: string } {
   const highSignal = signals.find((signal) => signal.severity === "high");

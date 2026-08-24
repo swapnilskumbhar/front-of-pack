@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
 import { DEMO_LABELS, DEMO_RESULTS } from "../src/demo/results.ts";
@@ -20,12 +21,26 @@ test("every public cached demo has a real image and a valid current-schema resul
   }
 });
 
-test("the grocery-grid demo is image-backed, non-synthetic, and matches three real products", () => {
-  const demo = DEMO_LABELS.find((candidate) => candidate.id === "grid");
-  assert.equal(demo?.imageSrc, "/demo/bigbasket-breakfast-grid.png");
-  assert.match(demo?.detail ?? "", /public grocery grid/i);
-  const result = DEMO_RESULTS.grid;
-  assert.equal(result.analyzedCount, 3);
-  assert.deepEqual(result.items.map((item) => item.identity.brandAsPrinted), ["Quaker", "Kellogg's", "Kellogg's"]);
+test("the cart demo is image-backed, non-synthetic, and matches five real products in image order", () => {
+  const demo = DEMO_LABELS.find((candidate) => candidate.id === "cart");
+  assert.equal(demo?.label, "Five-item cart");
+  assert.equal(demo?.detail, "User cart · cached result");
+  assert.equal(demo?.imageSrc, "/demo/cart-five-items.jpeg");
+  const imageUrl = new URL(`../public${demo.imageSrc}`, import.meta.url);
+  assert.equal(
+    createHash("sha256").update(readFileSync(imageUrl)).digest("hex"),
+    "77ab7b7e7c5027fb97c21e47e9d826f74a21d7cdd72f236e931921e30a30ca0f",
+  );
+
+  const result = DEMO_RESULTS.cart;
+  assert.equal(result.analyzedCount, 5);
+  assert.deepEqual(result.items.map((item) => item.position), [1, 2, 3, 4, 5]);
+  assert.deepEqual(result.items.map((item) => item.identity.brandAsPrinted), [
+    "The Health Factory",
+    "The Whole Truth",
+    "Patanjali",
+    "Kurkure",
+    "Balaji",
+  ]);
   assert.doesNotMatch(result.disclaimer, /synthetic/i);
 });

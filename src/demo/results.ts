@@ -97,84 +97,135 @@ bread.evidence = [
   { id: "be3", origin: "package", excerptOrObservation: "Green vegetarian mark is printed on the pack.", citationId: null, visibleOnPackage: true },
 ];
 
-const gridQuaker = baseItem(1, "Rolled Oats", "food");
-gridQuaker.identity = { nameAsPrinted: "Rolled Oats", brandAsPrinted: "Quaker", variantAsPrinted: null, gtin: null, confidence: "high" };
-gridQuaker.nutrition = { source: "hosted_web_search", evidenceIds: ["gq2"], basis: "per_100g", servingSize: null, netQuantity: 1000,
-  values: { addedSugarsG: null, saturatedFatG: 1.3, sodiumMg: 4.9, totalFatG: 8.5 },
+const cartBread = baseItem(1, "The Health Factory Zero Maida Whole Wheat Bread", "food");
+cartBread.identity = { nameAsPrinted: "The Health Factory Zero Maida Whole Wheat Bread", brandAsPrinted: "The Health Factory", variantAsPrinted: "Zero Maida Whole Wheat Bread", gtin: null, confidence: "high" };
+cartBread.nutrition = { source: "hosted_web_search", evidenceIds: ["e2"], basis: "per_100g", servingSize: null, netQuantity: 250,
+  values: { addedSugarsG: 1.94, saturatedFatG: null, sodiumMg: null, totalFatG: null },
   printedPerServeRdaPct: { addedSugars: null, saturatedFat: null, sodium: null, totalFat: null } };
-gridQuaker.webMatchConfidence = "medium";
-gridQuaker.webMatchBasis = "Exact Quaker rolled-oats listing and 1 kg pouch; front image does not confirm the full variant wording.";
-gridQuaker.profile = [{ label: "LOW SODIUM", evidenceIds: ["gq2"] }, { label: "LOW SATURATED FAT", evidenceIds: ["gq2"] }, { label: "SOURCE UNCLEAR", evidenceIds: ["gq1"] }];
-gridQuaker.coverage = { tier: "category_rules", rulePackIds: ["in.fssai.labelling-display-2020.v1", "in.legal-metrology.packaged-commodities-2011.v1"], limitations: ["Back-panel ingredient and date declarations are not visible.", "Online listing may not reflect every batch."] };
-gridQuaker.summary = "Low sodium and saturated fat online; confirm the back label for exact ingredients.";
-gridQuaker.findings = [
-  { id: "gqf1", kind: "nutrition", topic: "sodium", level: "information", title: "LOW SODIUM", explanation: "4.9 mg per 100 g · online listing.", evidenceIds: ["gq2"], ruleIds: [], experimental: false },
-  { id: "gqf2", kind: "nutrition", topic: "saturated_fat", level: "information", title: "LOW SATURATED FAT", explanation: "1.3 g per 100 g · online listing.", evidenceIds: ["gq2"], ruleIds: [], experimental: false },
+cartBread.claimsAsPrinted = ["Zero Maida", "Whole Wheat"];
+cartBread.webMatchConfidence = "high";
+cartBread.webMatchBasis = "Exact brand, variant and 250 g Indian listing; official product page.";
+cartBread.profile = [{ label: "WHOLE WHEAT", evidenceIds: ["e1"] }, { label: "ALLERGENS", evidenceIds: ["e3"] }, { label: "SOURCE OF FIBRE", evidenceIds: ["e2"] }];
+cartBread.coverage = { tier: "category_rules", rulePackIds: ["in.fssai.labelling-display-2020.v1", "in.fssai.advertising-claims-2018.v1"], limitations: ["Back-panel declarations are not readable in this cart image.", "Online recipe information can change; check the pack before eating."] };
+cartBread.summary = "Contains wheat/gluten; official listing supports whole-wheat, no-maida recipe and fibre.";
+cartBread.findings = [
+  { id: "f1", kind: "ingredient", topic: "allergen", level: "attention", title: "ALLERGEN: WHEAT", explanation: "Contains wheat and gluten · avoid wheat/gluten allergy groups.", evidenceIds: ["e3"], ruleIds: [], experimental: false },
+  { id: "f2", kind: "nutrition", topic: "added_sugars", level: "information", title: "LOW ADDED SUGAR", explanation: "1.94 g per 100 g.", evidenceIds: ["e2"], ruleIds: [], experimental: false },
 ];
-gridQuaker.evidence = [
-  { id: "gq1", origin: "package", excerptOrObservation: "Listing visibly identifies Quaker Rolled Oats in a 1 kg pouch.", citationId: null, visibleOnPackage: true },
-  { id: "gq2", origin: "hosted_web_search", excerptOrObservation: "Matched 1 kg listing reports per 100 g: 8.5 g total fat, 1.3 g saturated fat and 4.9 mg sodium.", citationId: "gqc1", visibleOnPackage: false },
+cartBread.claimAudits = [
+  { claimAsPrinted: "Zero Maida", assessment: "Official ingredient description says whole-wheat flour is the sole grain ingredient.", evidenceIds: ["e1"], status: "supported" },
+  { claimAsPrinted: "Whole Wheat", assessment: "Official ingredient description identifies chakki atta/whole-wheat flour.", evidenceIds: ["e1"], status: "supported" },
 ];
-gridQuaker.citations = [{ id: "gqc1", title: "Quaker Natural Wholegrain Rolled Oats — Zepto", url: "https://www.zepto.com/pn/quaker-natural-wholegrain-rolled-oats/pvid/25065907-7921-4fb2-b44b-d7e5cf5c227e", providerSourceId: "https://www.zepto.com/pn/quaker-natural-wholegrain-rolled-oats/pvid/25065907-7921-4fb2-b44b-d7e5cf5c227e?utm_source=openai" }];
+cartBread.evidence = [
+  { id: "e1", origin: "hosted_web_search", excerptOrObservation: "Official page: chakki atta is the sole grain ingredient; no maida.", citationId: "c1", visibleOnPackage: false },
+  { id: "e2", origin: "hosted_web_search", excerptOrObservation: "Official page reports 1.94 g added sugar per 100 g and 15.78 g fibre per 250 g pack.", citationId: "c1", visibleOnPackage: false },
+  { id: "e3", origin: "hosted_web_search", excerptOrObservation: "Official allergen statement: contains wheat and gluten; facility also processes nuts, soy and milk.", citationId: "c1", visibleOnPackage: false },
+];
+cartBread.citations = [{ id: "c1", title: "The Health Factory Zero Maida Bread Whole Wheat 250g", url: "https://www.thehealthfactory.in/products/zero-maida-simply-whole-wheat?variant=40875412390097", providerSourceId: "https://www.thehealthfactory.in/products/zero-maida-simply-whole-wheat?variant=40875412390097&utm_source=openai" }];
 
-const gridMuesli = baseItem(2, "Fruit, Nut & Seeds Muesli 12 in 1 Power Breakfast", "food");
-gridMuesli.identity = { nameAsPrinted: "Fruit, Nut & Seeds Muesli 12 in 1 Power Breakfast", brandAsPrinted: "Kellogg's", variantAsPrinted: null, gtin: null, confidence: "high" };
-gridMuesli.claimsAsPrinted = ["12 in 1 POWER BREAKFAST"];
-gridMuesli.webMatchConfidence = "high";
-gridMuesli.webMatchBasis = "Exact Kellogg’s Fruit, Nut & Seeds Muesli, 750 g Indian pack matched.";
-gridMuesli.profile = [{ label: "ALLERGENS", evidenceIds: ["gm4"] }, { label: "NO PALM OIL", evidenceIds: ["gm3"] }, { label: "NO ADDED PRESERVATIVES", evidenceIds: ["gm3"] }, { label: "MULTIGRAIN", evidenceIds: ["gm4"] }];
-gridMuesli.coverage = { tier: "category_rules", rulePackIds: ["in.fssai.labelling-display-2020.v1", "in.fssai.advertising-claims-2018.v1", "in.legal-metrology.packaged-commodities-2011.v1"], limitations: ["Nutrition panel and batch-specific details are not visible in the image."] };
-gridMuesli.summary = "Contains multiple allergens; matched official recipe says no palm oil or added preservatives.";
-gridMuesli.findings = [
-  { id: "gmf1", kind: "ingredient", topic: "allergen", level: "attention", title: "ALLERGEN: WHEAT, NUTS", explanation: "Wheat, barley, oats, almonds and sulphite · avoid if allergic.", evidenceIds: ["gm4"], ruleIds: [], experimental: false },
-  { id: "gmf2", kind: "ingredient", topic: "palm_oil", level: "information", title: "NO PALM OIL", explanation: "Matched official product page says made without palm oil.", evidenceIds: ["gm3"], ruleIds: [], experimental: false },
-  { id: "gmf3", kind: "ingredient", topic: "preservatives", level: "information", title: "NO ADDED PRESERVATIVES", explanation: "Matched official product page says made without added preservatives.", evidenceIds: ["gm3"], ruleIds: [], experimental: false },
+const cartCocoa = baseItem(2, "The Whole Truth Hazelnut 47% Cocoa Bar", "food");
+cartCocoa.identity = { nameAsPrinted: "The Whole Truth Hazelnut 47% Cocoa Bar", brandAsPrinted: "The Whole Truth", variantAsPrinted: "Hazelnut 47% Cocoa Bar", gtin: null, confidence: "high" };
+cartCocoa.claimsAsPrinted = ["47% Cocoa"];
+cartCocoa.printedVegMark = "veg";
+cartCocoa.webMatchConfidence = "high";
+cartCocoa.webMatchBasis = "Exact brand, Hazelnut 47% Cocoa variant and 80 g Indian listing.";
+cartCocoa.profile = [{ label: "HAZELNUTS", evidenceIds: ["e5"] }, { label: "DATE-SWEETENED", evidenceIds: ["e5"] }, { label: "THREE INGREDIENTS", evidenceIds: ["e5"] }];
+cartCocoa.coverage = { tier: "category_rules", rulePackIds: ["in.fssai.labelling-display-2020.v1", "in.fssai.advertising-claims-2018.v1"], limitations: ["Back-panel nutrition and allergen statement are not readable in this cart image."] };
+cartCocoa.summary = "Contains hazelnuts; online listing shows dates as the sweetener and a three-ingredient recipe.";
+cartCocoa.findings = [
+  { id: "f3", kind: "ingredient", topic: "allergen", level: "attention", title: "ALLERGEN: HAZELNUT", explanation: "15% roasted hazelnuts · avoid tree-nut allergy groups.", evidenceIds: ["e5"], ruleIds: [], experimental: false },
+  { id: "f4", kind: "ingredient", topic: "ingredient", level: "information", title: "DATE-SWEETENED", explanation: "Online listing: 38% date powder; no refined sweetener listed.", evidenceIds: ["e5"], ruleIds: [], experimental: false },
 ];
-gridMuesli.claimAudits = [{ claimAsPrinted: "12 in 1 POWER BREAKFAST", assessment: "Official product page describes 12-in-1 fruits, nuts, seeds and grains.", evidenceIds: ["gm3", "gm4"], status: "supported" }];
-gridMuesli.evidence = [
-  { id: "gm1", origin: "package", excerptOrObservation: "Listing visibly identifies Kellogg’s Fruit, Nut & Seeds Muesli, 750 g.", citationId: null, visibleOnPackage: true },
-  { id: "gm2", origin: "package", excerptOrObservation: "Front pack visibly prints “12 in 1 POWER BREAKFAST.”", citationId: null, visibleOnPackage: true },
-  { id: "gm3", origin: "hosted_web_search", excerptOrObservation: "Official page describes a 12-in-1 mix made without palm oil and added preservatives.", citationId: "gmc1", visibleOnPackage: false },
-  { id: "gm4", origin: "hosted_web_search", excerptOrObservation: "Official ingredient/allergen statement lists wheat, barley, oats, almonds and sulphite; may contain other nuts, soy and milk.", citationId: "gmc1", visibleOnPackage: false },
+cartCocoa.claimAudits = [{ claimAsPrinted: "47% Cocoa", assessment: "Exact 80 g listing specifies cocoa at 47%.", evidenceIds: ["e5"], status: "supported" }];
+cartCocoa.evidence = [
+  { id: "e4", origin: "package", excerptOrObservation: "Cart text shows The Whole Truth Hazelnut 47% Cocoa Bar, 80 g.", citationId: null, visibleOnPackage: true },
+  { id: "e5", origin: "hosted_web_search", excerptOrObservation: "Exact listing: cocoa 47%, date powder 38%, roasted hazelnuts 15%.", citationId: "c2", visibleOnPackage: false },
 ];
-gridMuesli.citations = [{ id: "gmc1", title: "Kellogg’s Muesli Fruit, Nut & Seeds — official India product page", url: "https://www.kelloggs.com/en-in/products/muesli/kelloggs-muesli-fruit-nuts-seeds.html", providerSourceId: "https://www.kelloggs.com/en-in/products/muesli/kelloggs-muesli-fruit-nuts-seeds.html" }];
+cartCocoa.citations = [{ id: "c2", title: "The Whole Truth Hazelnut Dark Cocoa Bar, 80 g", url: "https://www.swiggy.com/instamart/p/the-whole-truth-dark-cocoa-bar-hazelnut-sweetened-with-dates-XHD3H6ZUPU", providerSourceId: "https://www.swiggy.com/instamart/p/the-whole-truth-dark-cocoa-bar-hazelnut-sweetened-with-dates-XHD3H6ZUPU?utm_source=openai" }];
 
-const gridCornFlakes = baseItem(3, "Corn Flakes Original Power Breakfast 7 Vitamins", "food");
-gridCornFlakes.identity = { nameAsPrinted: "Corn Flakes Original Power Breakfast 7 Vitamins", brandAsPrinted: "Kellogg's", variantAsPrinted: null, gtin: null, confidence: "high" };
-gridCornFlakes.claimsAsPrinted = ["POWER BREAKFAST", "7 VITAMINS", "1% FAT"];
-gridCornFlakes.webMatchConfidence = "high";
-gridCornFlakes.webMatchBasis = "Exact Indian product line and 1.15 kg listing matched; official page lists the closely corresponding 1.2 kg size.";
-gridCornFlakes.profile = [{ label: "ALLERGENS", evidenceIds: ["gc4"] }, { label: "LOW FAT", evidenceIds: ["gc3"] }, { label: "ADDED SUGAR", evidenceIds: ["gc4"] }, { label: "FORTIFIED", evidenceIds: ["gc3"] }];
-gridCornFlakes.coverage = { tier: "category_rules", rulePackIds: ["in.fssai.labelling-display-2020.v1", "in.fssai.advertising-claims-2018.v1", "in.legal-metrology.packaged-commodities-2011.v1"], limitations: ["Back-panel nutrition and ingredient declarations are not visible in the image.", "The official size is 1.2 kg, while the listing shows 1.15 kg."] };
-gridCornFlakes.summary = "Contains wheat and barley; low-fat claim is supported, but recipe includes sugar.";
-gridCornFlakes.findings = [
-  { id: "gcf1", kind: "ingredient", topic: "allergen", level: "attention", title: "ALLERGEN: WHEAT, BARLEY", explanation: "Official allergen statement lists wheat and barley · avoid if allergic.", evidenceIds: ["gc4"], ruleIds: [], experimental: false },
-  { id: "gcf2", kind: "ingredient", topic: "added_sugars", level: "information", title: "CONTAINS SUGAR", explanation: "Sugar appears in the matched official ingredient list.", evidenceIds: ["gc4"], ruleIds: [], experimental: false },
-  { id: "gcf3", kind: "nutrition", topic: "total_fat", level: "information", title: "LOW FAT", explanation: "1% fat · matched official product statement.", evidenceIds: ["gc3"], ruleIds: [], experimental: false },
+const cartBiscuit = baseItem(3, "Patanjali Whole Wheat Nariyal Biscuit", "food");
+cartBiscuit.identity = { nameAsPrinted: "Patanjali Whole Wheat Nariyal Biscuit", brandAsPrinted: "Patanjali", variantAsPrinted: "Whole Wheat Nariyal Biscuit", gtin: null, confidence: "high" };
+cartBiscuit.nutrition = { source: "hosted_web_search", evidenceIds: ["e7"], basis: "per_100g", servingSize: 14, netQuantity: 204,
+  values: { addedSugarsG: null, saturatedFatG: 9.5, sodiumMg: null, totalFatG: 21 },
+  printedPerServeRdaPct: { addedSugars: null, saturatedFat: null, sodium: null, totalFat: null } };
+cartBiscuit.claimsAsPrinted = ["Whole Wheat"];
+cartBiscuit.printedVegMark = "veg";
+cartBiscuit.webMatchConfidence = "high";
+cartBiscuit.webMatchBasis = "Exact Patanjali page includes the 204 g option; official nutrition page matches the named product.";
+cartBiscuit.profile = [{ label: "PALM OIL", evidenceIds: ["e6"] }, { label: "ALLERGENS", evidenceIds: ["e6"] }, { label: "WHOLE WHEAT", evidenceIds: ["e7"] }];
+cartBiscuit.coverage = { tier: "category_rules", rulePackIds: ["in.fssai.labelling-display-2020.v1", "in.fssai.advertising-claims-2018.v1"], limitations: ["Back-panel declarations are not readable in this cart image.", "Nutrition page does not confirm this exact pack's current recipe."] };
+cartBiscuit.summary = "Palm oil and milk listed; 9.5 g saturated fat and 19 g cane sugar per 100 g.";
+cartBiscuit.findings = [
+  { id: "f5", kind: "ingredient", topic: "palm_oil", level: "attention", title: "CONTAINS PALM OIL", explanation: "Refined palm oil listed in the exact product range.", evidenceIds: ["e6"], ruleIds: [], experimental: false },
+  { id: "f6", kind: "nutrition", topic: "saturated_fat", level: "attention", title: "HIGH SATURATED FAT", explanation: "9.5 g per 100 g.", evidenceIds: ["e7"], ruleIds: [], experimental: false },
+  { id: "f7", kind: "nutrition", topic: "total_sugars", level: "attention", title: "HIGH SUGAR", explanation: "19 g cane sugar per 100 g.", evidenceIds: ["e7"], ruleIds: [], experimental: false },
+  { id: "f8", kind: "ingredient", topic: "allergen", level: "attention", title: "ALLERGEN: WHEAT, MILK", explanation: "Wheat flour and milk solids listed.", evidenceIds: ["e6"], ruleIds: [], experimental: false },
 ];
-gridCornFlakes.claimAudits = [
-  { claimAsPrinted: "POWER BREAKFAST", assessment: "Marketing wording; no quantitative performance outcome is established.", evidenceIds: ["gc1"], status: "not_assessable" },
-  { claimAsPrinted: "7 VITAMINS", assessment: "Official page states enrichment with seven essential vitamins.", evidenceIds: ["gc3"], status: "supported" },
-  { claimAsPrinted: "1% FAT", assessment: "Official page states the product has only 1% fat.", evidenceIds: ["gc3"], status: "supported" },
+cartBiscuit.claimAudits = [{ claimAsPrinted: "Whole Wheat", assessment: "Official nutrition page describes the product as made from whole wheat atta.", evidenceIds: ["e7"], status: "supported" }];
+cartBiscuit.evidence = [
+  { id: "e6", origin: "hosted_web_search", excerptOrObservation: "Patanjali listing ingredients include wheat flour, refined palm oil and milk solids.", citationId: "c3", visibleOnPackage: false },
+  { id: "e7", origin: "hosted_web_search", excerptOrObservation: "Official page: per 100 g fat 21 g, saturated fatty acids 9.5 g, cane sugar 19 g; serving size 14 g.", citationId: "c4", visibleOnPackage: false },
 ];
-gridCornFlakes.evidence = [
-  { id: "gc1", origin: "package", excerptOrObservation: "Listing visibly identifies Kellogg’s Corn Flakes Original Power Breakfast 7 Vitamins, 1.15 kg.", citationId: null, visibleOnPackage: true },
-  { id: "gc2", origin: "package", excerptOrObservation: "Front pack visibly prints “POWER BREAKFAST,” “7 VITAMINS” and “1% FAT.”", citationId: null, visibleOnPackage: true },
-  { id: "gc3", origin: "hosted_web_search", excerptOrObservation: "Official page states enrichment with seven essential vitamins and only 1% fat.", citationId: "gcc1", visibleOnPackage: false },
-  { id: "gc4", origin: "hosted_web_search", excerptOrObservation: "Official recipe includes sugar; its allergen statement lists wheat and barley.", citationId: "gcc1", visibleOnPackage: false },
+cartBiscuit.citations = [
+  { id: "c3", title: "Patanjali Nariyal Biscuits product listing", url: "https://www.patanjaliayurved.net/product/natural-food-products/biscuits-and-cookies/patanjali-nariyal-biscuits/6909", providerSourceId: "https://www.patanjaliayurved.net/product/natural-food-products/biscuits-and-cookies/patanjali-nariyal-biscuits/6909?utm_source=openai" },
+  { id: "c4", title: "Patanjali Ayurved Nariyal Biscuits", url: "https://patanjaliayurved.org/product/nariyal-biscuits/", providerSourceId: "https://patanjaliayurved.org/product/nariyal-biscuits/?utm_source=openai" },
 ];
-gridCornFlakes.citations = [{ id: "gcc1", title: "Kellogg’s Corn Flakes Original — official India product page", url: "https://www.kelloggs.com/content/Asia/kelloggs_in/en-in/products/corn-flakes-original-and-the-best-cereal.html", providerSourceId: "https://www.kelloggs.com/content/Asia/kelloggs_in/en-in/products/corn-flakes-original-and-the-best-cereal.html?utm_source=openai" }];
+
+const cartKurkure = baseItem(4, "Kurkure Masala Munch Crisps", "food");
+cartKurkure.identity = { nameAsPrinted: "Kurkure Masala Munch Crisps", brandAsPrinted: "Kurkure", variantAsPrinted: "Masala Munch Crisps", gtin: null, confidence: "high" };
+cartKurkure.webMatchConfidence = "medium";
+cartKurkure.webMatchBasis = "Exact brand, product and 75 g pack; current retailer listing lacks oil type and nutrition values.";
+cartKurkure.profile = [{ label: "ADDED COLOUR", evidenceIds: ["e9"] }, { label: "FLAVOURINGS", evidenceIds: ["e9"] }, { label: "SOURCE UNCLEAR", evidenceIds: ["e10"] }];
+cartKurkure.coverage = { tier: "category_rules", rulePackIds: ["in.fssai.labelling-display-2020.v1"], limitations: ["Current exact listing does not provide a usable nutrition panel.", "Oil type differs across online sources; confirm the packet ingredient panel."] };
+cartKurkure.summary = "Seasoning includes sugar, flavourings, colour and acidity regulators; current oil type and nutrition are unclear.";
+cartKurkure.findings = [
+  { id: "f9", kind: "ingredient", topic: "colours", level: "information", title: "ADDED COLOUR", explanation: "Colour INS 160c listed in the exact 75 g retailer listing.", evidenceIds: ["e9"], ruleIds: [], experimental: false },
+  { id: "f10", kind: "ingredient", topic: "ingredient", level: "information", title: "FLAVOURINGS LISTED", explanation: "Natural and nature-identical flavouring substances listed.", evidenceIds: ["e9"], ruleIds: [], experimental: false },
+];
+cartKurkure.evidence = [
+  { id: "e8", origin: "package", excerptOrObservation: "Cart text shows Kurkure Masala Munch Crisps, 75 g.", citationId: null, visibleOnPackage: true },
+  { id: "e9", origin: "hosted_web_search", excerptOrObservation: "Exact 75 g listing includes seasoning with sugar, flavours, acidity regulators 330/296/334 and colour 160c.", citationId: "c5", visibleOnPackage: false },
+  { id: "e10", origin: "hosted_web_search", excerptOrObservation: "An older source names palmolein, while the current exact listing says only edible vegetable oil; oil type is uncertain.", citationId: "c6", visibleOnPackage: false },
+];
+cartKurkure.citations = [
+  { id: "c5", title: "Zepto Kurkure Namkeen Masala Munch, 75 g", url: "https://www.zepto.com/pn/kurkure-masala-munch/pvid/c32d9425-0bdb-4d31-bb21-47630f1811f9", providerSourceId: "https://www.zepto.com/pn/kurkure-masala-munch/pvid/c32d9425-0bdb-4d31-bb21-47630f1811f9?utm_source=openai" },
+  { id: "c6", title: "Kurkure Masala Munch 75 g product page", url: "https://www.indianonlinestore.de/product-page/kurkure-masala-munch-75-g", providerSourceId: "https://www.indianonlinestore.de/product-page/kurkure-masala-munch-75-g?utm_source=openai" },
+];
+
+const cartBalaji = baseItem(5, "Balaji Crunchem Cream & Onion Wafers", "food");
+cartBalaji.identity = { nameAsPrinted: "Balaji Crunchem Cream & Onion Wafers", brandAsPrinted: "Balaji", variantAsPrinted: "Crunchem Cream & Onion Wafers", gtin: null, confidence: "high" };
+cartBalaji.nutrition = { source: "hosted_web_search", evidenceIds: ["e12"], basis: "per_100g", servingSize: 30, netQuantity: 140,
+  values: { addedSugarsG: 3.1, saturatedFatG: 15.6, sodiumMg: 524, totalFatG: 32.8 },
+  printedPerServeRdaPct: { addedSugars: 2, saturatedFat: 21, sodium: 8, totalFat: 15 } };
+cartBalaji.printedVegMark = "veg";
+cartBalaji.webMatchConfidence = "high";
+cartBalaji.webMatchBasis = "Official Balaji page exactly matches Cream & Onion Wafers, 140 g.";
+cartBalaji.profile = [{ label: "PALM OIL", evidenceIds: ["e11"] }, { label: "ALLERGENS", evidenceIds: ["e11"] }, { label: "HIGH SATURATED FAT", evidenceIds: ["e12"] }, { label: "HIGH FAT", evidenceIds: ["e12"] }];
+cartBalaji.coverage = { tier: "category_rules", rulePackIds: ["in.fssai.labelling-display-2020.v1"], limitations: ["Nutrition is from the official online panel, not readable on this cart image."] };
+cartBalaji.summary = "High saturated fat; contains palmolein, milk and soy. Fibre is 5.7 g per 100 g.";
+cartBalaji.findings = [
+  { id: "f11", kind: "nutrition", topic: "saturated_fat", level: "attention", title: "HIGH SATURATED FAT", explanation: "4.68 g per pack serving · 21% daily value.", evidenceIds: ["e12"], ruleIds: [], experimental: false },
+  { id: "f12", kind: "nutrition", topic: "total_fat", level: "attention", title: "HIGH TOTAL FAT", explanation: "9.84 g per pack serving · 15% daily value.", evidenceIds: ["e12"], ruleIds: [], experimental: false },
+  { id: "f13", kind: "ingredient", topic: "palm_oil", level: "attention", title: "CONTAINS PALM OIL", explanation: "Palmolein is the listed edible vegetable oil.", evidenceIds: ["e11"], ruleIds: [], experimental: false },
+  { id: "f14", kind: "ingredient", topic: "allergen", level: "attention", title: "ALLERGEN: MILK, SOY", explanation: "Whey, cheese powder and hydrolysed soya listed.", evidenceIds: ["e11"], ruleIds: [], experimental: false },
+  { id: "f15", kind: "nutrition", topic: "nutrition", level: "information", title: "DIETARY FIBRE", explanation: "5.7 g per 100 g.", evidenceIds: ["e12"], ruleIds: [], experimental: false },
+];
+cartBalaji.evidence = [
+  { id: "e11", origin: "hosted_web_search", excerptOrObservation: "Official ingredients: potato 88%, palmolein, whey, cheese powder and hydrolysed vegetable powder (soya).", citationId: "c7", visibleOnPackage: false },
+  { id: "e12", origin: "hosted_web_search", excerptOrObservation: "Official per 100 g panel: total fat 32.8 g, saturated fat 15.6 g, sodium 524 mg, added sugars 3.1 g; per-30 g RDA percentages shown.", citationId: "c7", visibleOnPackage: false },
+];
+cartBalaji.citations = [{ id: "c7", title: "Balaji Crunchem Cream & Onion Wafers, 140 g", url: "https://www.balajiwafers.com/products/crunchem-cream-onion-wafers", providerSourceId: "https://www.balajiwafers.com/products/crunchem-cream-onion-wafers?utm_source=openai" }];
 
 export const DEMO_RESULTS: Record<string, AnalysisResult> = {
   alofrut: result([alofrut], "A 300 ml beverage demonstrates printed and whole-bottle RDA, ingredients and claim review."),
   haldirams: result([haldirams], "A front-only Haldiram’s pack triggers a provisional official-source lookup."),
   bread: result([bread], "A real bread label supports whole-pack and allergen checks."),
-  grid: result([gridQuaker, gridMuesli, gridCornFlakes], "Store listing shows three identifiable breakfast cereals; back labels are not visible."),
+  cart: result([cartBread, cartCocoa, cartBiscuit, cartKurkure, cartBalaji], "Five cart items analysed: bread, cocoa bar, biscuits and two savoury snacks."),
 };
 
 export const DEMO_LABELS = [
   { id: "alofrut", label: "Sugar + RDA", detail: "Real pack · claims + additives", imageSrc: "/demo/alofrut-annar-aloevera.jpeg" },
   { id: "bread", label: "Whole-pack reality", detail: "Real pack · RDA + allergens", imageSrc: "/demo/english-oven-fibre-up.jpeg" },
   { id: "haldirams", label: "Front-only search", detail: "Real pack · online evidence", imageSrc: "/demo/haldirams-ratlami-sev.jpeg" },
-  { id: "grid", label: "Three products", detail: "Public grocery grid · cached result", imageSrc: "/demo/bigbasket-breakfast-grid.png" },
+  { id: "cart", label: "Five-item cart", detail: "User cart · cached result", imageSrc: "/demo/cart-five-items.jpeg" },
 ] as const;

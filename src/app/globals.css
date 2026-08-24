@@ -53,6 +53,10 @@ h1 em { color:var(--green); font-weight:400; }
 .demo-thumb { background-position:center; background-size:cover; border-radius:6px; height:54px; width:100%; }
 .analysis-result { background:white; border:1px solid var(--line); border-radius:24px; grid-column:1/-1; margin-top:-35px; padding:clamp(24px,4vw,48px); }
 .analysis-result h2 { font-family:Georgia,serif; font-size:clamp(30px,4vw,48px); font-weight:400; margin:0; }
+.analysis-demo-input { background:#f5f2ea; border:1px solid var(--line); border-radius:14px; display:grid; gap:8px; margin:20px 0 0; max-width:440px; padding:12px; }
+.analysis-demo-input-frame { height:min(52vh,500px); position:relative; width:100%; }
+.analysis-demo-input-frame img { object-fit:contain; }
+.analysis-demo-input figcaption { color:var(--muted); font-size:10px; font-weight:800; text-align:center; text-transform:uppercase; }
 .analysis-result-summary { color:var(--muted); font-size:15px; line-height:1.55; margin:15px 0 0; max-width:760px; }
 .analysis-result-stats { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }.analysis-result-stats span { background:#f1efe8; border-radius:999px; color:var(--muted); font-size:10px; font-weight:700; padding:7px 10px; }.analysis-result-stats b { color:var(--ink); }
 .analysis-truncated { background:#fff1d8; border-radius:8px; color:#85501c; font-size:12px; font-weight:700; padding:10px 12px; }
