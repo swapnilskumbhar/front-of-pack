@@ -80,12 +80,13 @@ test("safe metadata download uses no redirects and bounded recognized media", as
   assert.equal(calls[1].init.headers.authorization, "Bearer top-secret");
 });
 
-test("delivery contract is ID-only and renderer emits one Unicode-safe bounded message", () => {
+test("delivery contract is ID-only and renderer emits Unicode-safe bounded chunks", () => {
   assert.deepEqual(parseDeliveryJob({ version: 1, whatsapp_job_id: "job" }), { version: 1, whatsapp_job_id: "job" });
   assert.equal(parseDeliveryJob({ version: 1, whatsapp_job_id: "job", recipient: "9199" }), null);
   const chunks = renderWhatsAppChunks({ summary: "x".repeat(20_000) });
-  assert.equal(chunks.length, 1);
-  assert.equal(Array.from(chunks[0]).length, 3_500);
+  assert.ok(chunks.length > 1);
+  assert.ok(chunks.every((chunk) => Array.from(chunk).length <= 3_500));
+  assert.equal(chunks.join(""), "x".repeat(20_000));
   const localized = renderWhatsAppChunks({
     wholeImageSummary: "लेबल विश्लेषण पूर्ण झाले.",
     items: [{ identity: { brandAsPrinted: "ब्रँड" }, summary: "पॅकवरील माहिती." }],
@@ -151,15 +152,18 @@ test("WhatsApp hides identity-only search evidence and does not invent caution",
 });
 
 test("Red Bull response names caffeine and sugar instead of an umbrella caution", () => {
-  const message = renderWhatsAppChunks({ language: "en", items: [{
+  const message = renderWhatsAppChunks({ language: "en", derived: { items: [{
+    position: 1,
+    signals: [{ kind: "whole_pack_rda", nutrient: "added_sugars", severity: "high", wholePackAmount: 27, unit: "g", wholePackRdaPercent: 54, printedServingRdaPercent: 54, servingSize: 250, netQuantity: 250, quantityUnit: "ml", basis: "pack_printed_rda" }],
+    rating: { score: 7, deductions: [{ ruleId: "engine.whole_pack_rda.added_sugars", points: 3, reason: "High whole-can added sugar." }] },
+  }] }, items: [{
     position: 1,
     identity: { nameAsPrinted: "Red Bull Energy Drink", brandAsPrinted: "Red Bull", confidence: "high" },
     summary: "Limit this high-sugar caffeinated drink.",
-    rating: { score: 3, dimension: "nutrition", label: "Nutrition", basis: "High sugar and caffeine warning.", evidenceIds: ["ce", "se"], experimental: true },
     profile: [{ label: "CAFFEINATED", evidenceIds: ["ce"] }, { label: "HIGH SUGAR", evidenceIds: ["se"] }],
     findings: [
-      { id: "c", kind: "label_fact", title: "Caffeine warning", explanation: "75 mg · Avoid for children, pregnancy and caffeine sensitivity.", level: "attention", evidenceIds: ["ce"] },
-      { id: "s", kind: "nutrition", title: "High sugar", explanation: "27 g per 250 ml can.", level: "attention", evidenceIds: ["se"] },
+      { id: "c", kind: "regulatory_context", title: "Caffeine warning", explanation: "75 mg · Avoid for children, pregnancy and caffeine sensitivity.", level: "attention", evidenceIds: ["ce"] },
+      { id: "s", kind: "nutrition", topic: "added_sugars", title: "High sugar", explanation: "27 g per 250 ml can.", level: "attention", evidenceIds: ["se"] },
     ],
     evidence: [
       { id: "ce", origin: "package", excerptOrObservation: "Caffeine warning printed." },
@@ -167,9 +171,9 @@ test("Red Bull response names caffeine and sugar instead of an umbrella caution"
     ],
     webMatchConfidence: "high",
   }] })[0];
-  assert.match(message, /^🔴 \*CAFFEINE WARNING\*/u);
-  assert.match(message, /🔴 \*HIGH SUGAR\*\n27 g per 250 ml can/u);
-  assert.match(message, /\*Rating:\* 3\/10 \(Nutrition · experimental\)/);
+  assert.match(message, /^🟠 \*CAFFEINE WARNING\*/u);
+  assert.match(message, /🔴 \*HIGH ADDED SUGAR\*\n27 g added sugar · ~54%/u);
+  assert.match(message, /\*Rating:\* 7\/10 · 10 − 3 = 7/);
   assert.match(message, /\*Profile:\* CAFFEINATED · HIGH SUGAR/);
   assert.match(message, /\*Verdict:\* Limit this high-sugar caffeinated drink/);
   assert.doesNotMatch(message, /SOME CAUTION|Product match|https?:\/\//);
@@ -188,7 +192,6 @@ test("WhatsApp preserves every material warning and useful analysis point", () =
   ].map(([title, explanation], index) => ({ id: `f${index}`, kind: "ingredient", title, explanation, level: "attention", evidenceIds: [] }));
   const message = renderWhatsAppChunks({ language: "en", items: [{
     position: 1, identity: { nameAsPrinted: "Product", confidence: "high" }, summary: "Multiple warnings deserve attention.",
-    rating: { score: 2, dimension: "nutrition", label: "Nutrition", basis: "Multiple material warnings.", evidenceIds: [], experimental: true },
     profile: [{ label: "MULTIPLE WARNINGS", evidenceIds: [] }], findings, evidence: [],
   }] })[0];
   for (const [title] of findings.map((finding) => [finding.title])) assert.match(message, new RegExp(title, "iu"));
@@ -196,10 +199,14 @@ test("WhatsApp preserves every material warning and useful analysis point", () =
 });
 
 test("McVitie's response combines warnings with rating profile verdict and positive analysis", () => {
-  const message = renderWhatsAppChunks({ language: "en", items: [{
+  const message = renderWhatsAppChunks({ language: "en", derived: { items: [{
+    position: 1, signals: [], rating: { score: 6, deductions: [
+      { ruleId: "engine.reference_rda.added_sugars", points: 2, reason: "Moderate added sugars." },
+      { ruleId: "engine.reference_rda.saturated_fat", points: 2, reason: "Moderate saturated fat." },
+    ] },
+  }] }, items: [{
     position: 1, identity: { brandAsPrinted: "McVitie's", nameAsPrinted: "Digestive", confidence: "high" },
     webMatchConfidence: "medium",
-    rating: { score: 4, dimension: "ingredients", label: "Ingredients", basis: "Palm oil and wheat need attention.", evidenceIds: ["p", "w"], experimental: true },
     profile: [{ label: "PALM OIL", evidenceIds: ["p"] }, { label: "WHEAT ALLERGEN", evidenceIds: ["w"] }, { label: "WHOLEWHEAT", evidenceIds: ["g"] }],
     summary: "Palm oil and wheat need attention; wholewheat is a useful positive.",
     claimsAsPrinted: ["High in Fibre", "Made with whole wheat"],
@@ -220,7 +227,7 @@ test("McVitie's response combines warnings with rating profile verdict and posit
   }] })[0];
   assert.match(message, /CONTAINS PALM OIL/);
   assert.match(message, /ALLERGEN: WHEAT/);
-  assert.match(message, /\*Rating:\* 4\/10/);
+  assert.match(message, /\*Rating:\* 6\/10 · 10 − 2 − 2 = 6/);
   assert.match(message, /\*Profile:\* PALM OIL · WHEAT ALLERGEN · WHOLEWHEAT/);
   assert.match(message, /\*Verdict:\*/);
   assert.match(message, /\*Analysis:\*[\s\S]*WHOLEWHEAT CONTENT/);
@@ -232,10 +239,79 @@ test("McVitie's response combines warnings with rating profile verdict and posit
 test("WhatsApp omits the claims section when no package claim is visible", () => {
   const message = renderWhatsAppChunks({ language: "en", items: [{
     position: 1, identity: { nameAsPrinted: "Plain Product", confidence: "high" },
-    rating: { score: null, dimension: "label_evidence", label: "Not rated", basis: "Insufficient evidence.", evidenceIds: [], experimental: true },
     profile: [], summary: "No visible marketing claim.", claimsAsPrinted: [], claimAudits: [], findings: [], evidence: [],
   }] })[0];
   assert.doesNotMatch(message, /\*Claims:\*/);
+});
+
+test("model-only claim contradiction is amber unless the engine confirms it", () => {
+  const baseItem = {
+    position: 1, identity: { nameAsPrinted: "Product", confidence: "high" }, profile: [], summary: "Claim checked.",
+    claimsAsPrinted: ["No added sugar"],
+    claimAudits: [{ claimAsPrinted: "No added sugar", status: "contradicted", assessment: "Matched evidence lists sugar.", evidenceIds: [] }],
+    findings: [], evidence: [],
+  };
+  const modelOnly = renderWhatsAppChunks({ language: "en", items: [baseItem] }).join("\n");
+  assert.match(modelOnly, /⚠️ “No added sugar”/u);
+  assert.doesNotMatch(modelOnly, /❌ “No added sugar”/u);
+  const confirmed = renderWhatsAppChunks({ language: "en", derived: { items: [{ position: 1, rating: { score: 7, deductions: [] }, signals: [{
+    kind: "claim_contradiction", severity: "high", testId: "claim.no-added-sugar", claimAsPrinted: "No added sugar", foundIngredient: "sugar", ruleId: "in.fssai.advertising-claims-2018.v1", basis: "literal_package_consistency",
+  }] }] }, items: [baseItem] }).join("\n");
+  assert.match(confirmed, /❌ “No added sugar”/u);
+});
+
+test("WhatsApp defaults renderer headings to English when result language is absent", () => {
+  const message = renderWhatsAppChunks({ derived: { items: [{ position: 1, signals: [], rating: { score: null, deductions: [] } }] }, items: [{
+    position: 1,
+    identity: { nameAsPrinted: "Product", confidence: "high" },
+    profile: [{ label: "VEG", evidenceIds: [] }],
+    summary: "A concise result.",
+    claimsAsPrinted: ["Made with oats"],
+    claimAudits: [{ claimAsPrinted: "Made with oats", status: "supported", assessment: "Oats are listed.", evidenceIds: [] }],
+    findings: [{ id: "f", kind: "ingredient", title: "Oats listed", explanation: "Oats appear in ingredients.", level: "information", evidenceIds: [] }],
+    evidence: [],
+  }] })[0];
+  assert.match(message, /\*Rating:\*/);
+  assert.match(message, /\*Profile:\*/);
+  assert.match(message, /\*Verdict:\*/);
+  assert.match(message, /\*Analysis:\*/);
+  assert.match(message, /\*Claims:\*/);
+  assert.match(message, /\*Evidence confidence:\*/);
+});
+
+test("multi-product warnings are packed before earlier product detail and none are truncated", () => {
+  const longClaims = Array.from({ length: 8 }, (_, index) => `Very long visible claim ${index} ${"detail ".repeat(18)}`);
+  const result = {
+    language: "en",
+    derived: { items: [{ position: 1, signals: [], rating: { score: null, deductions: [] } }, {
+      position: 2,
+      signals: [{ kind: "whole_pack_rda", nutrient: "added_sugars", severity: "high", wholePackAmount: 40, unit: "g", wholePackRdaPercent: 80, printedServingRdaPercent: 20, servingSize: 100, netQuantity: 400, quantityUnit: "g", basis: "pack_printed_rda" }],
+      rating: { score: 7, deductions: [{ ruleId: "engine.whole_pack_rda.added_sugars", points: 3, reason: "High added sugar." }] },
+    }] },
+    items: [{
+      position: 1, identity: { nameAsPrinted: "Verbose Product", confidence: "high" }, profile: [], summary: "First product.",
+      claimsAsPrinted: longClaims,
+      claimAudits: longClaims.map((claim) => ({ claimAsPrinted: claim, status: "not_assessable", assessment: "More evidence is required.", evidenceIds: [] })),
+      findings: [], evidence: [],
+    }, {
+      position: 2, identity: { nameAsPrinted: "Later Product", confidence: "high" }, profile: [], summary: "Second product.",
+      findings: [], evidence: [], claimsAsPrinted: [], claimAudits: [],
+    }],
+  };
+  const chunks = renderWhatsAppChunks(result);
+  const complete = chunks.join("\n\n");
+  assert.ok(chunks.every((chunk) => Array.from(chunk).length <= 3_500));
+  assert.match(complete, /Later Product[\s\S]*HIGH ADDED SUGAR/u);
+  assert.ok(complete.indexOf("HIGH ADDED SUGAR") < complete.indexOf("*Claims:*"));
+  assert.equal((complete.match(/More evidence is required\./gu) ?? []).length, 8);
+});
+
+test("floored rating arithmetic renders max zero honestly", () => {
+  const message = renderWhatsAppChunks({ language: "en", derived: { items: [{
+    position: 1, signals: [], rating: { score: 0, deductions: [3, 3, 3, 3].map((points, index) => ({ ruleId: `r${index}`, points, reason: "Rule." })) },
+  }] }, items: [{ position: 1, identity: { nameAsPrinted: "Product", confidence: "high" }, profile: [], summary: "Result.", findings: [], evidence: [] }] }).join("\n");
+  assert.match(message, /max\(0, 10 − 3 − 3 − 3 − 3\) = 0/u);
+  assert.doesNotMatch(message, /10 − 3 − 3 − 3 − 3 = 0(?!\))/u);
 });
 
 test("successful delivery reads stored output and clears all routing ciphertext", async () => {

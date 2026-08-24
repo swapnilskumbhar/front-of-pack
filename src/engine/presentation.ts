@@ -1,6 +1,6 @@
 import type { LanguageCode } from "../domain/language.ts";
 import type { ClaimContradictionSignal, DerivedNutrient, DerivedSignal, DietarySignal, ReferenceRdaSignal, WholePackSignal } from "./types.ts";
-import type { Finding, ProductAnalysis } from "../domain/analysis.ts";
+import type { Finding, FindingKind, FindingTopic, ProductAnalysis } from "../domain/analysis.ts";
 
 const COPY: Record<LanguageCode, { whole: string; daily: string; label: string; pack: string; nutrients: Record<DerivedNutrient, string> }> = {
   en: { whole: "WHOLE PACK", daily: "of the pack's daily reference", label: "Label shows", pack: "whole pack is", nutrients: { added_sugars: "added sugar", saturated_fat: "saturated fat", sodium: "sodium", total_fat: "total fat" } },
@@ -183,9 +183,14 @@ export function getDecisionUsefulWebEvidenceIds(item: ProductAnalysis): Set<stri
 }
 
 export type ShopperIndicatorTone = "red" | "amber" | "green" | "grey";
+export type ShopperIndicatorOrigin = "engine" | "model";
+export type ShopperIndicatorTopic = FindingTopic | "unknown";
 
 export interface ShopperIndicator {
   tone: ShopperIndicatorTone;
+  origin: ShopperIndicatorOrigin;
+  topic: ShopperIndicatorTopic;
+  ruleId: string | null;
   title: string;
   detail: string;
   evidenceIds: string[];
@@ -198,9 +203,11 @@ export function buildShopperIndicators(
   language: LanguageCode,
 ): ShopperIndicator[] {
   const indicators: ShopperIndicator[] = getDecisionFindings(item).map((finding) => {
-    const text = `${finding.title} ${finding.explanation}`;
     return {
-      tone: finding.level === "attention" ? "red" : /(?:unclear|uncertain|not established|not assessable|provisional|verify|conflict)/iu.test(text) ? "amber" : "green",
+      tone: finding.level === "attention" ? "amber" : "green",
+      origin: "model",
+      topic: findingTopic(finding),
+      ruleId: null,
       title: finding.title.trim().toUpperCase(),
       detail: finding.explanation.trim(),
       evidenceIds: finding.evidenceIds ?? [],
@@ -211,30 +218,36 @@ export function buildShopperIndicators(
     const copy = formatDerivedSignal(signal, language);
     const tone: ShopperIndicatorTone = signal.severity === "high"
       ? "red"
-      : signal.kind === "source_unclear" || signal.kind === "whole_pack_rda" && signal.severity === "moderate"
+      : signal.kind === "source_unclear" ||
+          (signal.kind === "whole_pack_rda" || signal.kind === "reference_rda") && signal.severity === "moderate"
         ? "amber"
         : "green";
-    const title = signal.kind === "whole_pack_rda" && signal.severity === "high"
+    const title = (signal.kind === "whole_pack_rda" || signal.kind === "reference_rda") && signal.severity === "high"
       ? `${highWord(language)} ${COPY[language]?.nutrients[signal.nutrient] ?? COPY.en.nutrients[signal.nutrient]}`.toUpperCase()
-      : copy.title.toUpperCase();
-    const sameTopic = indicators.find((indicator) => indicatorTopic(indicator.title) === indicatorTopic(title));
-    if (sameTopic && (signal.kind === "whole_pack_rda" || signal.kind === "reference_rda")) {
+      : signal.kind === "whole_pack_rda"
+        ? (COPY[language]?.nutrients[signal.nutrient] ?? COPY.en.nutrients[signal.nutrient]).toUpperCase()
+        : copy.title.toUpperCase();
+    const topic = signalTopic(signal);
+    const canMerge = ["added_sugars", "saturated_fat", "sodium", "total_fat", "allergen"].includes(topic);
+    const sameTopic = canMerge ? indicators.find((indicator) => indicator.topic === topic) : undefined;
+    if (sameTopic) {
+      sameTopic.title = title;
       sameTopic.detail = copy.headline;
-      sameTopic.tone = strongerTone(sameTopic.tone, tone);
+      sameTopic.tone = signal.severity === "info" && sameTopic.tone === "amber" ? "amber" : tone;
+      sameTopic.origin = "engine";
+      sameTopic.topic = topic;
+      sameTopic.ruleId = signalRuleId(signal);
       if (signal.kind === "reference_rda") sameTopic.evidenceIds = [...new Set([...sameTopic.evidenceIds, ...signal.evidenceIds])];
-    } else if (!indicators.some((indicator) => sameIndicator(indicator, title, copy.headline))) {
-      indicators.push({ tone, title, detail: copy.headline, evidenceIds: signal.kind === "reference_rda" ? signal.evidenceIds : [] });
-    }
-  }
-
-  if (item.webMatchConfidence === "high" || item.webMatchConfidence === "medium") {
-    for (const evidence of item.evidence ?? []) {
-      if (evidence.origin !== "hosted_web_search") continue;
-      for (const indicator of indicatorsFromWebEvidence(evidence.id, evidence.excerptOrObservation)) {
-        if (!indicators.some((existing) => indicatorTopic(existing.title) === indicatorTopic(indicator.title))) {
-          indicators.push(indicator);
-        }
-      }
+    } else {
+      indicators.push({
+        tone,
+        origin: "engine",
+        topic,
+        ruleId: signalRuleId(signal),
+        title,
+        detail: copy.headline,
+        evidenceIds: signal.kind === "reference_rda" ? signal.evidenceIds : [],
+      });
     }
   }
 
@@ -242,10 +255,13 @@ export function buildShopperIndicators(
 
   const ranAnyCheck = Boolean(item.ingredientTokens?.length || item.nutrition?.basis || item.claimsAsPrinted?.length);
   if (ranAnyCheck && !item.needsClearerImage) {
-    return [{ tone: "green", title: indicatorTitle("no_major_concern", language), detail: item.summary, evidenceIds: [] }];
+    return [{ tone: "green", origin: "model", topic: "label", ruleId: null, title: indicatorTitle("no_major_concern", language), detail: item.summary, evidenceIds: [] }];
   }
   return [{
     tone: "grey",
+    origin: "model",
+    topic: "unknown",
+    ruleId: null,
     title: indicatorTitle("not_enough_information", language),
     detail: item.retakeGuidance ?? item.summary ?? "Send one clear back-panel photo.",
     evidenceIds: [],
@@ -253,58 +269,56 @@ export function buildShopperIndicators(
 }
 
 function compareIndicators(left: ShopperIndicator, right: ShopperIndicator): number {
-  const warning = (indicator: ShopperIndicator) => /(?:warning|children|pregnan|lactat|avoid)/iu.test(`${indicator.title} ${indicator.detail}`) ? 0 : 1;
-  const tone = (indicator: ShopperIndicator) => ({ red: 0, amber: 1, green: 2, grey: 3 })[indicator.tone];
-  const priority = (indicator: ShopperIndicator) => {
-    const text = `${indicator.title} ${indicator.detail}`;
-    if (/(?:allergen|caffeine)/iu.test(text)) return 0;
-    if (/(?:high added sugar|high sugar)/iu.test(text)) return 1;
-    if (/(?:saturated fat|sodium|added sugar)/iu.test(text)) return 2;
-    if (/(?:preservative|colour|color|palm oil|claim)/iu.test(text)) return 3;
-    return 4;
+  const attention = (indicator: ShopperIndicator) => indicator.tone === "red" || indicator.tone === "amber" ? 0 : indicator.tone === "green" ? 1 : 2;
+  const topic: Record<ShopperIndicatorTopic, number> = {
+    statutory_warning: 0,
+    allergen: 1,
+    added_sugars: 2,
+    saturated_fat: 3,
+    sodium: 4,
+    total_fat: 5,
+    palm_oil: 6,
+    claim: 7,
+    diet: 8,
+    preservatives: 9,
+    colours: 10,
+    total_sugars: 11,
+    nutrition: 12,
+    ingredient: 13,
+    label: 14,
+    other: 15,
+    unknown: 16,
   };
-  return warning(left) - warning(right) || tone(left) - tone(right) || priority(left) - priority(right);
+  const tone = (indicator: ShopperIndicator) => ({ red: 0, amber: 1, green: 2, grey: 3 })[indicator.tone];
+  const origin = (indicator: ShopperIndicator) => indicator.origin === "engine" ? 0 : 1;
+  return attention(left) - attention(right) || topic[left.topic] - topic[right.topic] || tone(left) - tone(right) || origin(left) - origin(right);
 }
 
-function strongerTone(left: ShopperIndicatorTone, right: ShopperIndicatorTone): ShopperIndicatorTone {
-  const order: ShopperIndicatorTone[] = ["red", "amber", "green", "grey"];
-  return order.indexOf(left) <= order.indexOf(right) ? left : right;
+function findingTopic(finding: Finding): ShopperIndicatorTopic {
+  if (finding.topic) return finding.topic;
+  const kind: FindingKind = finding.kind;
+  if (kind === "regulatory_context") return "statutory_warning";
+  if (kind === "nutrition" || kind === "experimental_fop") return "nutrition";
+  if (kind === "ingredient") return "ingredient";
+  if (kind === "claim_audit") return "claim";
+  return "label";
 }
 
-function sameIndicator(indicator: ShopperIndicator, title: string, detail: string): boolean {
-  const normalize = (value: string) => value.toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
-  const existing = normalize(`${indicator.title} ${indicator.detail}`);
-  const incoming = normalize(`${title} ${detail}`);
-  return existing === incoming || existing.includes(incoming) || incoming.includes(existing);
+function signalTopic(signal: DerivedSignal): ShopperIndicatorTopic {
+  if (signal.kind === "whole_pack_rda" || signal.kind === "reference_rda") return signal.nutrient;
+  if (signal.kind === "allergen_profile") return "allergen";
+  if (signal.kind === "claim_contradiction") return "claim";
+  return "diet";
 }
 
-function indicatorsFromWebEvidence(evidenceId: string, detail: string): ShopperIndicator[] {
-  const normalized = detail.toLocaleLowerCase();
-  const indicators: ShopperIndicator[] = [];
-  if (/(?:allergen|may contain|contains? (?:wheat|milk|peanut|nuts?|sesame|soy)|containing (?:wheat|milk|peanut|nuts?|sesame|soy))/iu.test(normalized)) {
-    indicators.push({ tone: "red", title: "ALLERGEN INFO", detail, evidenceIds: [evidenceId] });
-  }
-  if (/(?:palm oil|palm olein|palmolein)/iu.test(normalized)) {
-    const absent = /(?:no|without|free from) palm/iu.test(normalized);
-    indicators.push({ tone: absent ? "green" : "red", title: absent ? "NO PALM OIL" : "CONTAINS PALM OIL", detail, evidenceIds: [evidenceId] });
-  }
-  if (/saturated fat/iu.test(normalized)) indicators.push({ tone: "amber", title: "SATURATED FAT", detail, evidenceIds: [evidenceId] });
-  if (/\bsodium\b/iu.test(normalized)) indicators.push({ tone: "amber", title: "SODIUM", detail, evidenceIds: [evidenceId] });
-  if (/\b(?:added )?sugars?\b/iu.test(normalized)) indicators.push({ tone: "amber", title: "SUGAR", detail, evidenceIds: [evidenceId] });
-  if (/\bcaffeine\b/iu.test(normalized)) indicators.push({ tone: "amber", title: "CAFFEINE", detail, evidenceIds: [evidenceId] });
-  return indicators;
-}
-
-function indicatorTopic(title: string): string {
-  const normalized = title.toLocaleLowerCase();
-  if (/(?:sugar|चीनी|शक्कर|साखर|চিনি|சர்க்கரை|చక్కెర|ಸಕ್ಕರೆ|ખાંડ|പഞ്ചസാര|ਖੰਡ|ଚିନି|شکر)/iu.test(normalized)) return "sugar";
-  if (/(?:saturated fat|संतृप्त वसा|सॅच्युरेटेड फॅट|স্যাচুরেটেড ফ্যাট|செறிவுற்ற கொழுப்பு|సంతృప్త కొవ్వు|ಸ್ಯಾಚುರೇಟೆಡ್ ಕೊಬ್ಬು|સંતૃપ્ત ચરબી|പൂരിത കൊഴുപ്പ്|ਸੈਚੁਰੇਟਿਡ ਫੈਟ|ସାଚୁରେଟେଡ୍ ଫ୍ୟାଟ୍|سیر شدہ چکنائی)/iu.test(normalized)) return "saturated-fat";
-  if (/(?:sodium|सोडियम|সোডিয়াম|சோடியம்|సోడియం|ಸೋಡಿಯಂ|સોડિયમ|സോഡിയം|ਸੋਡੀਅਮ|ସୋଡିୟମ୍|سوڈیم)/iu.test(normalized)) return "sodium";
-  if (/(?:caffeine|कैफीन|कॅफीन|ক্যাফেইন|கஃபைன்|కెఫీన్|ಕೆಫೀನ್|કેફીન|കഫീൻ|ਕੈਫੀਨ|କ୍ୟାଫେଇନ୍|کیفین)/iu.test(normalized)) return "caffeine";
-  if (/palm/iu.test(normalized)) return "palm-oil";
-  if (/allergen|wheat|milk|peanut|sesame|soy/iu.test(normalized)) return "allergen";
-  if (/claim/iu.test(normalized)) return "claim";
-  return normalized.replace(/[^\p{L}\p{N}]+/gu, "-");
+function signalRuleId(signal: DerivedSignal): string {
+  if (signal.kind === "whole_pack_rda") return "rule-whole-pack-rda";
+  if (signal.kind === "reference_rda") return "rule-reference-rda";
+  if (signal.kind === "claim_contradiction") return "rule-claim-consistency";
+  if (signal.kind === "allergen_profile") return "rule-allergen-profile";
+  if (signal.kind === "veg_mark_conflict") return "rule-veg-mark-conflict";
+  if (signal.kind === "source_unclear") return "rule-source-unclear";
+  return "rule-diet-profile";
 }
 
 function highWord(language: LanguageCode): string {

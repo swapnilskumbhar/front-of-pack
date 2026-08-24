@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { parseWhatsAppLanguageSelection, persistAndEnqueueWhatsAppEvents } from "../src/channels/whatsapp/intake.ts";
+import { DEFAULT_LANGUAGE, type LanguageCode } from "../src/domain/language.ts";
 
 class FakeStatement {
   values: unknown[] = [];
@@ -12,7 +13,7 @@ class FakeStatement {
   async run() { this.db.run(this.sql, this.values); return { success: true, meta: { changes: 1 } }; }
 }
 class FakeDb {
-  profile: { id: string; preferred_language: "en" | "mr" | "ur" } | null = null;
+  profile: { id: string; preferred_language: LanguageCode | null } | null = null;
   jobs = new Map<string, { id: string; status: string; values: unknown[] }>();
   prepare(sql: string) { return new FakeStatement(this, sql); }
   first(sql: string, values: unknown[]) {
@@ -24,9 +25,11 @@ class FakeDb {
     return null;
   }
   run(sql: string, values: unknown[]) {
-    if (sql.includes("INSERT OR IGNORE INTO profiles")) this.profile = { id: String(values[0]), preferred_language: "en" };
+    if (sql.includes("INSERT OR IGNORE INTO profiles")) {
+      this.profile = { id: String(values[0]), preferred_language: values[1] as LanguageCode };
+    }
     if (sql.includes("UPDATE profiles SET preferred_language")) {
-      if (this.profile) this.profile.preferred_language = values[0] as "en" | "mr" | "ur";
+      if (this.profile) this.profile.preferred_language = values[0] as LanguageCode;
     }
     if (sql.includes("INSERT OR IGNORE INTO whatsapp_jobs")) {
       this.jobs.set(String(values[1]), { id: String(values[0]), status: "received", values });
@@ -67,6 +70,35 @@ test("status callbacks never enter the analysis queue", async () => {
   assert.deepEqual(queued, []);
 });
 
+test("fresh WhatsApp profiles default image analysis to English", async () => {
+  const db = new FakeDb();
+  const queued: unknown[] = [];
+  await persistAndEnqueueWhatsAppEvents([
+    { kind: "image", messageId: "wamid.default.fresh", sender: "919876543210",
+      phoneNumberId: "phone", mediaId: "media-fresh" },
+  ], { DB: db, ANALYSIS_QUEUE: { async send(value: unknown) { queued.push(value); } },
+    PROFILE_HMAC_SECRET: "secret", DELIVERY_ENCRYPTION_KEY: Buffer.alloc(32).toString("base64") });
+
+  assert.equal(db.profile?.preferred_language, DEFAULT_LANGUAGE);
+  assert.equal(db.jobs.get("wamid.default.fresh")?.values[8], DEFAULT_LANGUAGE);
+  assert.equal(queued.length, 1);
+});
+
+test("legacy WhatsApp profiles without a language default image analysis to English", async () => {
+  const db = new FakeDb();
+  db.profile = { id: "legacy-profile", preferred_language: null };
+  const queued: unknown[] = [];
+  await persistAndEnqueueWhatsAppEvents([
+    { kind: "image", messageId: "wamid.default.legacy", sender: "919876543210",
+      phoneNumberId: "phone", mediaId: "media-legacy" },
+  ], { DB: db, ANALYSIS_QUEUE: { async send(value: unknown) { queued.push(value); } },
+    PROFILE_HMAC_SECRET: "secret", DELIVERY_ENCRYPTION_KEY: Buffer.alloc(32).toString("base64") });
+
+  assert.equal(db.profile.preferred_language, null);
+  assert.equal(db.jobs.get("wamid.default.legacy")?.values[8], DEFAULT_LANGUAGE);
+  assert.equal(queued.length, 1);
+});
+
 test("language commands support codes, English aliases and native names", () => {
   assert.equal(parseWhatsAppLanguageSelection("language: mr"), "mr");
   assert.equal(parseWhatsAppLanguageSelection("मराठी"), "mr");
@@ -84,4 +116,20 @@ test("recognized WhatsApp text persists the profile language without queuing ana
     PROFILE_HMAC_SECRET: "secret", DELIVERY_ENCRYPTION_KEY: Buffer.alloc(32).toString("base64") });
   assert.equal(db.profile?.preferred_language, "mr");
   assert.deepEqual(queued, []);
+});
+
+test("explicit WhatsApp language selection wins over the English default", async () => {
+  const db = new FakeDb();
+  const queued: unknown[] = [];
+  await persistAndEnqueueWhatsAppEvents([
+    { kind: "text", messageId: "wamid.lang.selected", sender: "919876543210",
+      phoneNumberId: "phone", text: "मराठी" },
+    { kind: "image", messageId: "wamid.image.selected", sender: "919876543210",
+      phoneNumberId: "phone", mediaId: "media-selected" },
+  ], { DB: db, ANALYSIS_QUEUE: { async send(value: unknown) { queued.push(value); } },
+    PROFILE_HMAC_SECRET: "secret", DELIVERY_ENCRYPTION_KEY: Buffer.alloc(32).toString("base64") });
+
+  assert.equal(db.profile?.preferred_language, "mr");
+  assert.equal(db.jobs.get("wamid.image.selected")?.values[8], "mr");
+  assert.equal(queued.length, 1);
 });

@@ -4,7 +4,7 @@ import type { DerivedDecisionResult, ExtractedNutrition } from "../engine/types"
 
 export const MAX_PRODUCTS_PER_ANALYSIS = 6 as const;
 export const MAX_SERIALIZED_ANALYSIS_BYTES = 512 * 1024;
-export const ANALYSIS_SCHEMA_VERSION = "analysis-result.v2" as const;
+export const ANALYSIS_SCHEMA_VERSION = "analysis-result.v3" as const;
 
 export const ANALYSIS_STATUSES = [
   "queued",
@@ -44,6 +44,12 @@ export type FindingKind =
   | "regulatory_context"
   | "experimental_fop";
 export type FindingLevel = "information" | "attention" | "unknown";
+export const FINDING_TOPICS = [
+  "statutory_warning", "allergen", "added_sugars", "total_sugars", "saturated_fat",
+  "sodium", "total_fat", "palm_oil", "preservatives", "colours", "claim", "diet",
+  "nutrition", "ingredient", "label", "other",
+] as const;
+export type FindingTopic = (typeof FINDING_TOPICS)[number];
 
 export interface Citation {
   id: string;
@@ -66,6 +72,8 @@ export interface Evidence {
 export interface Finding {
   id: string;
   kind: FindingKind;
+  /** Required in provider schema v3; optional here only for cached v2 compatibility. */
+  topic?: FindingTopic;
   level: FindingLevel;
   title: string;
   explanation: string;
@@ -102,15 +110,6 @@ export interface ProductIdentity {
   confidence: "high" | "medium" | "low" | "unknown";
 }
 
-export interface ProductRating {
-  score: number | null;
-  dimension: "nutrition" | "ingredients" | "claims" | "label_evidence";
-  label: string;
-  basis: string;
-  evidenceIds: string[];
-  experimental: true;
-}
-
 export interface ProductProfileTag {
   label: string;
   evidenceIds: string[];
@@ -126,7 +125,6 @@ export interface ProductAnalysis {
   printedVegMark?: "veg" | "non_veg" | null;
   webMatchConfidence?: "high" | "medium" | "low" | null;
   webMatchBasis?: string | null;
-  rating: ProductRating;
   profile: ProductProfileTag[];
   coverage: Coverage;
   summary: string;
@@ -140,8 +138,8 @@ export interface ProductAnalysis {
 }
 
 /**
- * Complete consumer-facing semantic output. Terra authors this result in one response;
- * application code validates and renders it without semantic repair or paraphrasing.
+ * Complete consumer-facing result. Terra authors the semantic provider fields in one response;
+ * application code validates them and attaches reproducible decisions without paraphrasing.
  */
 export interface AnalysisResult {
   schemaVersion: string;

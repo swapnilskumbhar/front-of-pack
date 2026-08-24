@@ -124,17 +124,17 @@ Tasks:
 - [x] Enforce no automatic provider retry; another provider call requires an explicit new attempt.
 - [x] Validate the returned evidence graph, provider citation ID+URL pairs, allow-listed coverage/service IDs, prohibited wording, and serialized size against the wired FSSAI, Legal Metrology, CDSCO, experimental INR, FoSCoS, BIS Care, and NCH packs.
 - [x] Persist a validated provider result, protect polling with a per-scan 256-bit capability whose digest alone is stored, and render the consumer result.
-- [x] Present every material warning first, followed by an evidence-linked experimental rating, factual profile, verdict, 4–8 useful facts when available, a conditional visible-claims audit, next action, and expandable evidence; WhatsApp uses the same hierarchy.
+- [x] Present every material signal first, reserve red for engine-derived high rules, then show the deterministic experimental rating, factual profile, verdict, useful model-authored context, conditional visible-claims audit, next action, and expandable evidence; WhatsApp uses the same hierarchy.
 - [x] Implement versioned exact-image cache identity and prove an authorized zero-call cache hit; production version-pack coverage remains.
 - [x] Wire explicit user resubmission to a new durable attempt with fresh normalized media; never automatically repeat a provider-started call.
 
-Current proof (2026-08-24): the one-call Terra path uses required hosted search with follow-up exact-product research. Schema v2 retains up to twelve findings and twenty evidence facts per product. Decision-engine v7 never truncates derived material signals and adds clearly scoped FSSAI-reference %RDA beside absolute nutrient values when printed %RDA is unavailable. Web and WhatsApp preserve every warning, then show an explicitly experimental evidence-linked rating, factual profile, verdict, supporting analysis and conditional visible-claims audit. `/how-we-decide` publishes the warning order, score anchors, RDA formula, evidence rules and limitations. Real Haldiram and English Oven demos include photographs; the cart fixture remains explicitly synthetic until a real image is supplied.
+Current proof (2026-08-24): the one-call Terra path uses required hosted search with follow-up exact-product research. Schema v3 retains up to twelve findings and twenty evidence facts per product but no model-authored score. Decision-engine v8 adds scoped FSSAI-reference %RDA, whole-pack arithmetic, structured language-independent ordering, origin markers and a fixed-deduction experimental rating. Red is engine-only; model-authored findings remain concise amber/green context. `/how-we-decide` publishes every deduction, warning authority, RDA formula, evidence rule and limitation. Real AloFrut, Haldiram and English Oven demos include photographs; the cart fixture remains explicitly synthetic until a real image is supplied.
 
 Exit proof: instrumentation proves zero Terra calls on a fresh cache hit and exactly one on a cache miss.
 
 ### Phase 4 — Direct WhatsApp channel
 
-State: LOCAL IMPLEMENTATION DONE; live Meta end-to-end BLOCKED until legacy credential rotation and test credentials are supplied
+State: LIVE — Meta webhook, image analysis and reply delivery have passed a real end-to-end user test; final rehearsal remains
 
 Tasks:
 
@@ -143,10 +143,11 @@ Tasks:
 - [x] Fetch media through fixed Meta Graph endpoints with mocked clients and type/size validation.
 - [x] Encrypt short-lived recipient/media routing values in D1.
 - [x] Reuse the analysis contracts and persistent language profile, including 12-language text commands.
+- [x] Default an unset WhatsApp profile to English, snapshot it on the job, and preserve an explicit later language selection.
 - [x] Render stored WhatsApp-safe output and retry Graph delivery independently from semantic analysis.
 - [x] Clear encrypted routing fields and temporary media through terminal cleanup paths.
 
-Pre-deploy gate: the transport is implemented and covered with mocked Graph clients. Do not configure the production Meta callback until the exposed predecessor credential is rotated and a real Meta test-number flow proves signature, media retrieval, replay safety, delivery, and cleanup.
+Release gate: repeat the live Meta flow three times with owned, non-sensitive images; retain mocked security coverage and keep all Meta/OpenAI/encryption secrets out of logs, Git and submission media.
 
 Exit proof: forged signatures fail; valid events are durably recorded and acknowledged only after Queue dispatch; webhook replay and Queue redelivery cause zero duplicate Terra calls; a real image receives the localized stored result.
 
@@ -181,16 +182,16 @@ Exit proof: local gates G1–G5 pass and the demo can be repeated from a clean c
 
 ### Phase 7 — Cloudflare provisioning and release
 
-State: IN PROGRESS — both Workers and all Cloudflare resources are live; Meta/officer credentials and final release rehearsal remain
+State: IN PROGRESS — both Workers, all Cloudflare resources and the Meta citizen flow are live; officer credentials and final release rehearsal remain
 
 Tasks:
 
 - [x] Run `wrangler login` and confirm the intended Cloudflare account.
 - [ ] Confirm Workers Paid/Standard coverage; startup credits alone do not prove plan activation.
 - [x] Create D1, private R2, Analysis Queue, Delivery Queue, and their DLQs.
-- [ ] Apply remote migrations, lifecycle backstop, bindings, and scoped production secrets. D1 migrations, lifecycle, OpenAI/profile/encryption/session secrets are complete; Meta/officer demo credentials remain.
+- [ ] Apply remote migrations, lifecycle backstop, bindings, and scoped production secrets. D1 migrations, lifecycle, OpenAI/profile/encryption/session and Meta secrets are complete; officer demo credentials remain.
 - [x] Deploy Jobs Worker, then public OpenNext Worker to `workers.dev`.
-- [ ] Verify public TLS, Meta webhook reachability, cleanup, logs, and end-to-end journeys. Public TLS and production web scan/cache pass; live Meta remains.
+- [ ] Verify public TLS, Meta webhook reachability, cleanup, logs, and end-to-end journeys. Public TLS, production web scan/cache and live Meta delivery pass; final repeated rehearsal remains.
 - [ ] Add a custom domain only after the `workers.dev` release passes and the exact purchase is approved.
 - [ ] Push the verified release commit and preserve submission evidence.
 

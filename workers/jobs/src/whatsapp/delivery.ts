@@ -1,7 +1,7 @@
 import { decryptIdentifier } from "./crypto.ts";
 import { GraphSendError, sendWhatsAppText, type GraphConfig } from "./graph.ts";
 import { buildShopperIndicators, type DerivedSignal } from "../../../../src/engine/index.ts";
-import type { LanguageCode } from "../../../../src/domain/language.ts";
+import { DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, type LanguageCode } from "../../../../src/domain/language.ts";
 import type { ProductAnalysis } from "../../../../src/domain/analysis.ts";
 
 export interface DeliveryJob { version: 1; whatsapp_job_id: string }
@@ -25,19 +25,34 @@ const FAILURE_COPY: Record<string, string> = {
   ur: "اس لیبل کی قابلِ اعتماد جانچ نہیں ہو سکی۔ تصویر دوبارہ یا پچھلا پینل واضح طور پر بھیجیں۔",
 };
 
-const RESPONSE_COPY: Record<LanguageCode, { rating: string; profile: string; verdict: string; analysis: string; claims: string; evidence: string; experimental: string }> = {
-  en: { rating: "Rating", profile: "Profile", verdict: "Verdict", analysis: "Analysis", claims: "Claims", evidence: "Evidence confidence", experimental: "experimental" },
-  hi: { rating: "रेटिंग", profile: "प्रोफ़ाइल", verdict: "निष्कर्ष", analysis: "विश्लेषण", claims: "दावे", evidence: "साक्ष्य भरोसा", experimental: "प्रायोगिक" },
-  mr: { rating: "रेटिंग", profile: "प्रोफाइल", verdict: "निष्कर्ष", analysis: "विश्लेषण", claims: "दावे", evidence: "पुरावा विश्वास", experimental: "प्रायोगिक" },
-  bn: { rating: "রেটিং", profile: "প্রোফাইল", verdict: "সিদ্ধান্ত", analysis: "বিশ্লেষণ", claims: "দাবি", evidence: "প্রমাণের আস্থা", experimental: "পরীক্ষামূলক" },
-  ta: { rating: "மதிப்பீடு", profile: "சுயவிவரம்", verdict: "முடிவு", analysis: "பகுப்பாய்வு", claims: "கூற்றுகள்", evidence: "ஆதார நம்பிக்கை", experimental: "சோதனை" },
-  te: { rating: "రేటింగ్", profile: "ప్రొఫైల్", verdict: "తీర్పు", analysis: "విశ్లేషణ", claims: "క్లెయిమ్‌లు", evidence: "ఆధార నమ్మకం", experimental: "ప్రయోగాత్మక" },
-  kn: { rating: "ರೇಟಿಂಗ್", profile: "ಪ್ರೊಫೈಲ್", verdict: "ತೀರ್ಮಾನ", analysis: "ವಿಶ್ಲೇಷಣೆ", claims: "ಹೇಳಿಕೆಗಳು", evidence: "ಸಾಕ್ಷ್ಯ ವಿಶ್ವಾಸ", experimental: "ಪ್ರಾಯೋಗಿಕ" },
-  gu: { rating: "રેટિંગ", profile: "પ્રોફાઇલ", verdict: "નિષ્કર્ષ", analysis: "વિશ્લેષણ", claims: "દાવા", evidence: "પુરાવાનો વિશ્વાસ", experimental: "પ્રાયોગિક" },
-  ml: { rating: "റേറ്റിംഗ്", profile: "പ്രൊഫൈൽ", verdict: "നിഗമനം", analysis: "വിശകലനം", claims: "അവകാശവാദങ്ങൾ", evidence: "തെളിവ് വിശ്വാസം", experimental: "പരീക്ഷണാത്മകം" },
-  pa: { rating: "ਰੇਟਿੰਗ", profile: "ਪ੍ਰੋਫਾਈਲ", verdict: "ਨਤੀਜਾ", analysis: "ਵਿਸ਼ਲੇਸ਼ਣ", claims: "ਦਾਅਵੇ", evidence: "ਸਬੂਤ ਭਰੋਸਾ", experimental: "ਪ੍ਰਯੋਗਾਤਮਕ" },
-  or: { rating: "ରେଟିଂ", profile: "ପ୍ରୋଫାଇଲ୍", verdict: "ନିଷ୍କର୍ଷ", analysis: "ବିଶ୍ଳେଷଣ", claims: "ଦାବି", evidence: "ପ୍ରମାଣ ଭରସା", experimental: "ପରୀକ୍ଷାମୂଳକ" },
-  ur: { rating: "ریٹنگ", profile: "پروفائل", verdict: "نتیجہ", analysis: "تجزیہ", claims: "دعوے", evidence: "ثبوت کا اعتماد", experimental: "تجرباتی" },
+const RESPONSE_COPY: Record<LanguageCode, { rating: string; profile: string; verdict: string; analysis: string; claims: string; evidence: string }> = {
+  en: { rating: "Rating", profile: "Profile", verdict: "Verdict", analysis: "Analysis", claims: "Claims", evidence: "Evidence confidence" },
+  hi: { rating: "रेटिंग", profile: "प्रोफ़ाइल", verdict: "निष्कर्ष", analysis: "विश्लेषण", claims: "दावे", evidence: "साक्ष्य भरोसा" },
+  mr: { rating: "रेटिंग", profile: "प्रोफाइल", verdict: "निष्कर्ष", analysis: "विश्लेषण", claims: "दावे", evidence: "पुरावा विश्वास" },
+  bn: { rating: "রেটিং", profile: "প্রোফাইল", verdict: "সিদ্ধান্ত", analysis: "বিশ্লেষণ", claims: "দাবি", evidence: "প্রমাণের আস্থা" },
+  ta: { rating: "மதிப்பீடு", profile: "சுயவிவரம்", verdict: "முடிவு", analysis: "பகுப்பாய்வு", claims: "கூற்றுகள்", evidence: "ஆதார நம்பிக்கை" },
+  te: { rating: "రేటింగ్", profile: "ప్రొఫైల్", verdict: "తీర్పు", analysis: "విశ్లేషణ", claims: "క్లెయిమ్‌లు", evidence: "ఆధార నమ్మకం" },
+  kn: { rating: "ರೇಟಿಂಗ್", profile: "ಪ್ರೊಫೈಲ್", verdict: "ತೀರ್ಮಾನ", analysis: "ವಿಶ್ಲೇಷಣೆ", claims: "ಹೇಳಿಕೆಗಳು", evidence: "ಸಾಕ್ಷ್ಯ ವಿಶ್ವಾಸ" },
+  gu: { rating: "રેટિંગ", profile: "પ્રોફાઇલ", verdict: "નિષ્કર્ષ", analysis: "વિશ્લેષણ", claims: "દાવા", evidence: "પુરાવાનો વિશ્વાસ" },
+  ml: { rating: "റേറ്റിംഗ്", profile: "പ്രൊഫൈൽ", verdict: "നിഗമനം", analysis: "വിശകലനം", claims: "അവകാശവാദങ്ങൾ", evidence: "തെളിവ് വിശ്വാസം" },
+  pa: { rating: "ਰੇਟਿੰਗ", profile: "ਪ੍ਰੋਫਾਈਲ", verdict: "ਨਤੀਜਾ", analysis: "ਵਿਸ਼ਲੇਸ਼ਣ", claims: "ਦਾਅਵੇ", evidence: "ਸਬੂਤ ਭਰੋਸਾ" },
+  or: { rating: "ରେଟିଂ", profile: "ପ୍ରୋଫାଇଲ୍", verdict: "ନିଷ୍କର୍ଷ", analysis: "ବିଶ୍ଳେଷଣ", claims: "ଦାବି", evidence: "ପ୍ରମାଣ ଭରସା" },
+  ur: { rating: "ریٹنگ", profile: "پروفائل", verdict: "نتیجہ", analysis: "تجزیہ", claims: "دعوے", evidence: "ثبوت کا اعتماد" },
+};
+
+const CONFIDENCE_COPY: Record<LanguageCode, Record<"high" | "medium" | "low", string>> = {
+  en: { high: "high", medium: "medium", low: "low" },
+  hi: { high: "उच्च", medium: "मध्यम", low: "कम" },
+  mr: { high: "उच्च", medium: "मध्यम", low: "कमी" },
+  bn: { high: "উচ্চ", medium: "মাঝারি", low: "কম" },
+  ta: { high: "உயர்", medium: "நடுத்தரம்", low: "குறைவு" },
+  te: { high: "అధిక", medium: "మధ్యస్థ", low: "తక్కువ" },
+  kn: { high: "ಹೆಚ್ಚು", medium: "ಮಧ್ಯಮ", low: "ಕಡಿಮೆ" },
+  gu: { high: "ઊંચો", medium: "મધ્યમ", low: "ઓછો" },
+  ml: { high: "ഉയർന്ന", medium: "ഇടത്തരം", low: "കുറവ്" },
+  pa: { high: "ਉੱਚਾ", medium: "ਦਰਮਿਆਨਾ", low: "ਘੱਟ" },
+  or: { high: "ଉଚ୍ଚ", medium: "ମଧ୍ୟମ", low: "କମ" },
+  ur: { high: "زیادہ", medium: "درمیانہ", low: "کم" },
 };
 
 export function parseDeliveryJob(value: unknown): DeliveryJob | null {
@@ -50,12 +65,18 @@ export function parseDeliveryJob(value: unknown): DeliveryJob | null {
 
 export function renderWhatsAppChunks(result: unknown): string[] {
   const source = result && typeof result === "object" ? result as Record<string, unknown> : {};
-  const sections: string[] = [];
-  const language = (typeof source.language === "string" ? source.language : "en") as LanguageCode;
+  const warningSections: string[] = [];
+  const detailSections: string[] = [];
+  const requestedLanguage = typeof source.language === "string" ? source.language : null;
+  const language = requestedLanguage && (SUPPORTED_LANGUAGES as readonly string[]).includes(requestedLanguage)
+    ? requestedLanguage as LanguageCode
+    : DEFAULT_LANGUAGE;
   const derived = source.derived && typeof source.derived === "object" ? source.derived as Record<string, unknown> : {};
   const derivedItems = Array.isArray(derived.items) ? derived.items : [];
-  if (Array.isArray(source.items)) {
-    for (const value of source.items) {
+  const sourceItems = Array.isArray(source.items) ? source.items : [];
+  const multipleProducts = sourceItems.filter((value) => value && typeof value === "object").length > 1;
+  if (sourceItems.length) {
+    for (const value of sourceItems) {
       if (!value || typeof value !== "object") continue;
       const item = value as Record<string, unknown>;
       const identity = item.identity && typeof item.identity === "object"
@@ -71,25 +92,31 @@ export function renderWhatsAppChunks(result: unknown): string[] {
       const supporting = indicators.filter((indicator) => indicator.tone === "green" || indicator.tone === "grey");
       for (const indicator of warnings) {
         const icon = indicator.tone === "red" ? "🔴" : indicator.tone === "amber" ? "🟠" : indicator.tone === "green" ? "🟢" : "⚪";
-        sections.push(`${icon} *${indicator.title}*\n${indicator.detail}`);
+        const productContext = multipleProducts && name ? `📦 _${name}_\n` : "";
+        warningSections.push(`${productContext}${icon} *${indicator.title}*\n${indicator.detail}`);
       }
       const copy = RESPONSE_COPY[language] ?? RESPONSE_COPY.en;
-      const rating = item.rating && typeof item.rating === "object" ? item.rating as Record<string, unknown> : {};
-      const score = typeof rating.score === "number" ? `${rating.score}/10` : "—/10";
-      const ratingLabel = typeof rating.label === "string" ? rating.label : "Not enough evidence";
-      const ratingDisclosure = ratingLabel.toLocaleLowerCase().includes(copy.experimental.toLocaleLowerCase()) ? "" : ` · ${copy.experimental}`;
+      const rating = derivedItem?.rating && typeof derivedItem.rating === "object" ? derivedItem.rating as Record<string, unknown> : {};
+      const score = typeof rating.score === "number" ? rating.score : null;
+      const deductions = Array.isArray(rating.deductions) ? rating.deductions.filter((entry) => entry && typeof entry === "object") as Array<Record<string, unknown>> : [];
+      const points = deductions.flatMap((deduction) => typeof deduction.points === "number" ? [deduction.points] : []);
+      const deductionTotal = points.reduce((sum, point) => sum + point, 0);
+      const expression = `10 ${points.map((point) => `− ${point}`).join(" ")}`;
+      const arithmetic = score !== null && points.length
+        ? ` · ${deductionTotal > 10 ? `max(0, ${expression})` : expression} = ${score}`
+        : "";
       const profile = Array.isArray(item.profile) ? item.profile.flatMap((tag) => tag && typeof tag === "object" && typeof (tag as Record<string, unknown>).label === "string" ? [(tag as Record<string, unknown>).label as string] : []) : [];
       const summary = typeof item.summary === "string" ? item.summary.trim() : "";
       const meta = [
         name ? `📦 *${name}*` : null,
-        `*${copy.rating}:* ${score} (${ratingLabel}${ratingDisclosure})`,
+        `*${copy.rating}:* ${score ?? "—"}/10${arithmetic}`,
         profile.length ? `*${copy.profile}:* ${profile.join(" · ")}` : null,
         summary ? `*${copy.verdict}:* ${summary}` : null,
-        `*${copy.evidence}:* ${evidenceConfidence(item)}`,
+        `*${copy.evidence}:* ${CONFIDENCE_COPY[language][evidenceConfidence(item)]}`,
       ].filter((line): line is string => Boolean(line));
-      sections.push(meta.join("\n"));
+      detailSections.push(meta.join("\n"));
       if (supporting.length) {
-        sections.push(`*${copy.analysis}:*\n${supporting.map((indicator) => `• *${indicator.title}:* ${indicator.detail}`).join("\n")}`);
+        detailSections.push(`*${copy.analysis}:*\n${supporting.map((indicator) => `• *${indicator.title}:* ${indicator.detail}`).join("\n")}`);
       }
       const visibleClaims = Array.isArray(item.claimsAsPrinted)
         ? item.claimsAsPrinted.filter((claim): claim is string => typeof claim === "string" && claim.trim().length > 0)
@@ -101,24 +128,50 @@ export function renderWhatsAppChunks(result: unknown): string[] {
         const rows = visibleClaims.map((claim) => {
           const audit = claimAudits.find((candidate) => candidate.claimAsPrinted === claim);
           const status = typeof audit?.status === "string" ? audit.status : "not_assessable";
-          const icon = status === "supported" ? "✅" : status === "contradicted" ? "❌" : status === "partially_supported" ? "⚠️" : "➖";
+          const engineConfirmed = signals.some((signal) => signal.kind === "claim_contradiction" && signal.claimAsPrinted === claim);
+          const icon = status === "supported" ? "✅" : status === "contradicted" && engineConfirmed ? "❌" : status === "contradicted" || status === "partially_supported" ? "⚠️" : "➖";
           const assessment = typeof audit?.assessment === "string" ? ` — ${audit.assessment}` : "";
           return `${icon} “${claim}”${assessment}`;
         });
-        sections.push(`*${copy.claims}:*\n${rows.join("\n")}`);
+        detailSections.push(`*${copy.claims}:*\n${rows.join("\n")}`);
       }
       const serviceRoute = item.serviceRoute && typeof item.serviceRoute === "object" ? item.serviceRoute as Record<string, unknown> : null;
-      if (serviceRoute && typeof serviceRoute.reason === "string") sections.push(`🏛️ ${serviceRoute.reason}`);
+      if (serviceRoute && typeof serviceRoute.reason === "string") detailSections.push(`🏛️ ${serviceRoute.reason}`);
     }
   }
+  const sections = [...warningSections, ...detailSections];
   if (sections.length === 0 && typeof source.wholeImageSummary === "string") sections.push(source.wholeImageSummary);
   if (sections.length === 0 && typeof source.summary === "string") sections.push(source.summary);
-  const summary = sections.length > 0 ? sections.join("\n\n") : "Your label analysis is ready.";
-  const codePoints = Array.from(summary);
-  return [codePoints.slice(0, 3_500).join("") || "Your label analysis is ready."];
+  return packWhatsAppSections(sections.length ? sections : ["Your label analysis is ready."], 3_500);
 }
 
-function evidenceConfidence(item: Record<string, unknown>): string {
+function packWhatsAppSections(sections: readonly string[], maximumCodePoints: number): string[] {
+  const chunks: string[] = [];
+  let current = "";
+  for (const section of sections) {
+    let remaining = section.trim();
+    if (!remaining) continue;
+    const candidate = current ? `${current}\n\n${remaining}` : remaining;
+    if (Array.from(candidate).length <= maximumCodePoints) {
+      current = candidate;
+      continue;
+    }
+    if (current) {
+      chunks.push(current);
+      current = "";
+    }
+    while (Array.from(remaining).length > maximumCodePoints) {
+      const codePoints = Array.from(remaining);
+      chunks.push(codePoints.slice(0, maximumCodePoints).join(""));
+      remaining = codePoints.slice(maximumCodePoints).join("").trimStart();
+    }
+    current = remaining;
+  }
+  if (current) chunks.push(current);
+  return chunks.length ? chunks : ["Your label analysis is ready."];
+}
+
+function evidenceConfidence(item: Record<string, unknown>): "high" | "medium" | "low" {
   const identity = item.identity && typeof item.identity === "object" ? item.identity as Record<string, unknown> : {};
   const identityConfidence = typeof identity.confidence === "string" ? identity.confidence : "unknown";
   const webConfidence = typeof item.webMatchConfidence === "string" ? item.webMatchConfidence : null;
@@ -156,10 +209,19 @@ export async function consumeDelivery(
     await clearWhatsAppCiphertext(env.DB, job.whatsapp_job_id, "delivery_state_missing");
     message.ack(); return;
   }
+  let sentChunks = 0;
   try {
     const recipient = await decryptIdentifier(row.recipient_ciphertext, row.recipient_nonce, env.DELIVERY_ENCRYPTION_KEY);
-    await sendWhatsAppText(recipient, renderWhatsAppChunks(JSON.parse(row.result_json))[0], env, fetcher);
+    for (const chunk of renderWhatsAppChunks(JSON.parse(row.result_json))) {
+      await sendWhatsAppText(recipient, chunk, env, fetcher);
+      sentChunks += 1;
+    }
   } catch (error) {
+    if (sentChunks > 0) {
+      await clearWhatsAppCiphertext(env.DB, job.whatsapp_job_id, "delivery_partial");
+      message.ack();
+      return;
+    }
     if (error instanceof GraphSendError && error.retryable) {
       await env.DB.prepare(`UPDATE whatsapp_jobs SET status = CASE WHEN send_attempts < 3 THEN 'ready' ELSE 'failed' END,
         last_error_code = ?, completed_at = CASE WHEN send_attempts < 3 THEN NULL ELSE ? END,
@@ -199,7 +261,7 @@ export async function sendWhatsAppAnalysisFailure(
   if (!row?.recipient_ciphertext || !row.recipient_nonce) return;
   try {
     const recipient = await decryptIdentifier(row.recipient_ciphertext, row.recipient_nonce, env.DELIVERY_ENCRYPTION_KEY);
-    await sendWhatsAppText(recipient, FAILURE_COPY[row.language] ?? FAILURE_COPY.en, env, fetcher);
+    await sendWhatsAppText(recipient, FAILURE_COPY[row.language] ?? FAILURE_COPY[DEFAULT_LANGUAGE], env, fetcher);
   } catch {
     // The analysis is already terminal. Never retry it merely because the failure notice could not be sent.
   }

@@ -5,7 +5,7 @@ import { TerraError } from "../src/openai/errors.ts";
 import { parseTerraResponse } from "../src/openai/parser.ts";
 
 const emptyResult = {
-  schemaVersion: "analysis-result.v2",
+  schemaVersion: "analysis-result.v3",
   language: "hi",
   analyzedCount: 0,
   unknownCount: 0,
@@ -38,12 +38,20 @@ test("constructs one bounded strict Responses request with optional hosted searc
   assert.equal(request.input.length, 2);
   assert.match(JSON.stringify(request.input), /data:image\/jpeg;base64,AA==/);
   assert.match(JSON.stringify(request.input), /"detail":"original"/);
-  assert.match(JSON.stringify(request.input), /every independently useful, substantiated warning/);
-  assert.match(JSON.stringify(request.input), /normally return 4-8 findings/);
-  assert.match(JSON.stringify(request.input), /experimental 0-10 label-based shopper rating/);
+  const prompt = JSON.stringify(request.input);
+  assert.match(prompt, /only independently useful, substantiated findings/);
+  assert.match(prompt, /Fewer is better; never pad to a count/);
+  assert.doesNotMatch(prompt, /normally return 4-8 findings|at most three findings|For rating|Rating anchors/);
   assert.match(JSON.stringify(request.input), /CAFFEINE WARNING/);
   assert.match(JSON.stringify(request.input), /CLAIMS CONTRACT/);
   assert.match(JSON.stringify(request.text.format.schema), /contradicted/);
+  const productSchema = request.text.format.schema.properties.items.items;
+  assert.equal(productSchema.required.includes("rating"), false);
+  assert.equal("rating" in productSchema.properties, false);
+  const findingSchema = productSchema.properties.findings.items;
+  assert.ok(findingSchema.required.includes("topic"));
+  assert.ok(findingSchema.properties.topic.enum.includes("total_sugars"));
+  assert.ok(findingSchema.properties.topic.enum.includes("preservatives"));
 });
 
 test("can require hosted search while allowing one targeted follow-up", () => {

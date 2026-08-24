@@ -15,7 +15,7 @@ const worker = await import(`data:text/javascript;base64,${Buffer.from(bundled.o
 const { consumeWebAnalysis, parseWebAnalysisMessage } = worker;
 
 const validResult = {
-  schemaVersion: "analysis-result.v2",
+  schemaVersion: "analysis-result.v3",
   language: "en",
   analyzedCount: 0,
   unknownCount: 0,
@@ -29,11 +29,11 @@ const validResult = {
 
 const pinnedVersions = {
   model_id: "gpt-5.6-terra",
-  prompt_version: "terra-analysis.v15",
-  schema_version: "analysis-result.v2",
+  prompt_version: "terra-analysis.v16",
+  schema_version: "analysis-result.v3",
   rules_version: "india-category-rules.v2",
   services_version: "india-consumer-services.v1",
-  engine_version: "decision-engine.v7",
+  engine_version: "decision-engine.v8",
 };
 
 function createDb({
@@ -220,7 +220,6 @@ test("hosted citation accepts a returned canonical URL when provider source id i
   const result = { ...validResult, analyzedCount: 1, items: [{
     position: 1, identity: { nameAsPrinted: "Product", brandAsPrinted: "Brand", variantAsPrinted: null, gtin: null, confidence: "high" },
     category: "food", coverage: { tier: "category_rules", rulePackIds: [], limitations: [] }, summary: "Product",
-    rating: { score: null, dimension: "label_evidence", label: "Not rated", basis: "Insufficient evidence.", evidenceIds: [], experimental: true },
     profile: [],
     findings: [], claimAudits: [], serviceRoute: null, needsClearerImage: false, retakeGuidance: null,
     citations: [{ id: "citation-1", title: "Official", url: "https://official.example/product", providerSourceId: "https://official.example/product/?utm_source=openai" }],

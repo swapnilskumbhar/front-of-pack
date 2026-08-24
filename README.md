@@ -1,6 +1,6 @@
 # Front of Pack
 
-Consumer-first package-label intelligence for web and WhatsApp. A user uploads one image, receives one localized analysis covering up to six products, and can follow validated regulatory or consumer-service routes.
+Consumer-first package-label intelligence for web and WhatsApp. A user uploads one image, receives one localized analysis covering up to six products, and can follow validated consumer-service routes. Terra reads and researches the label once; a versioned engine owns red warnings, RDA arithmetic and the reproducible experimental rating.
 
 ## Local development
 
@@ -27,8 +27,10 @@ The OpenAI key belongs only to that private Jobs Worker file and must never be e
 ```powershell
 npm run lint
 npm run typecheck
+npm test
 npm run build
 npm --prefix workers/jobs run typecheck
+npm --prefix workers/jobs test
 ```
 
 ## Cloudflare

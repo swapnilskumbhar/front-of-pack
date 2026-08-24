@@ -4,6 +4,7 @@ import {
   MAX_PRODUCTS_PER_ANALYSIS,
   MAX_SERIALIZED_ANALYSIS_BYTES,
   PRODUCT_CATEGORIES,
+  FINDING_TOPICS,
   type AnalysisResult,
 } from "../domain/analysis.ts";
 import { SUPPORTED_LANGUAGES } from "../domain/language.ts";
@@ -224,6 +225,9 @@ export function validateAnalysisResult(
       if (!isString(finding.id)) add("invalid_shape", `${path}.id`, "Finding id is required.");
       else if (findingIds.has(finding.id)) add("duplicate_id", `${path}.id`, "Finding ids must be unique within a product.");
       else findingIds.add(finding.id);
+      if (!isString(finding.topic) || !(FINDING_TOPICS as readonly string[]).includes(finding.topic)) {
+        add("invalid_enum", `${path}.topic`, "Finding topic is not supported.");
+      }
       const isExperimentalKind = finding.kind === "experimental_fop";
       if (finding.experimental !== isExperimentalKind) {
         add("invalid_experimental_semantics", `${path}.experimental`, "Only experimental_fop findings must be marked experimental.");
@@ -238,23 +242,6 @@ export function validateAnalysisResult(
       validateEvidenceRefs(audit, path);
       if (isRecord(audit)) consumerText.push([`${path}.assessment`, audit.assessment]);
     });
-
-    const rating = rawItem.rating;
-    if (!isRecord(rating)) {
-      add("invalid_shape", `${base}.rating`, "Rating must be an object.");
-    } else {
-      validateEvidenceRefs(rating, `${base}.rating`);
-      if (rating.score !== null && (!isInteger(rating.score) || Number(rating.score) < 0 || Number(rating.score) > 10)) {
-        add("invalid_shape", `${base}.rating.score`, "Rating score must be null or an integer from zero to ten.");
-      }
-      if (!isString(rating.dimension) || !["nutrition", "ingredients", "claims", "label_evidence"].includes(rating.dimension)) {
-        add("invalid_enum", `${base}.rating.dimension`, "Rating dimension is not supported.");
-      }
-      if (rating.experimental !== true) {
-        add("invalid_experimental_semantics", `${base}.rating.experimental`, "Product rating must be explicitly experimental.");
-      }
-      consumerText.push([`${base}.rating.label`, rating.label], [`${base}.rating.basis`, rating.basis]);
-    }
 
     if (!Array.isArray(rawItem.profile)) {
       add("invalid_shape", `${base}.profile`, "Profile must be an array.");

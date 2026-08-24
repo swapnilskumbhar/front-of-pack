@@ -10,7 +10,7 @@ const options = {
 
 function validResult() {
   return {
-    schemaVersion: "analysis-result.v2",
+    schemaVersion: "analysis-result.v3",
     language: "en",
     analyzedCount: 1,
     unknownCount: 0,
@@ -23,11 +23,10 @@ function validResult() {
       position: 1,
       identity: { nameAsPrinted: "Food", brandAsPrinted: null, variantAsPrinted: null, gtin: null, confidence: "high" },
       category: "food",
-      rating: { score: 6, dimension: "nutrition", label: "Nutrition", basis: "One material warning; some positive fibre.", evidenceIds: ["evidence-1"], experimental: true },
       profile: [{ label: "VEG", evidenceIds: ["evidence-1"] }],
       coverage: { tier: "category_rules", rulePackIds: ["rule.food"], limitations: [] },
       summary: "The package declares its ingredients.",
-      findings: [{ id: "finding-1", kind: "regulatory_context", level: "attention", title: "Declaration review", explanation: "A declaration needs attention.", evidenceIds: ["evidence-1"], ruleIds: ["rule.food"], experimental: false }],
+      findings: [{ id: "finding-1", kind: "regulatory_context", topic: "statutory_warning", level: "attention", title: "Declaration review", explanation: "A declaration needs attention.", evidenceIds: ["evidence-1"], ruleIds: ["rule.food"], experimental: false }],
       claimAudits: [{ claimAsPrinted: "Natural", assessment: "Not established from this label alone.", evidenceIds: ["evidence-1"], status: "not_established" }],
       evidence: [{ id: "evidence-1", origin: "verified_rule", excerptOrObservation: "A declaration is visible.", citationId: "citation-1" }],
       citations: [{ id: "citation-1", title: "FSSAI", url: "https://www.fssai.gov.in/" }],
@@ -57,6 +56,12 @@ test("rejects an unsupported schema version", () => {
   const result = validResult();
   result.schemaVersion = "analysis-result.v0";
   assert.ok(validateAnalysisResult(result, options).errors.some(({ code }) => code === "unsupported_schema_version"));
+});
+
+test("rejects a missing or unsupported structured finding topic", () => {
+  const result = validResult();
+  result.items[0].findings[0].topic = "not-a-topic";
+  assert.ok(validateAnalysisResult(result, options).errors.some(({ code, path }) => code === "invalid_enum" && path.endsWith(".topic")));
 });
 
 test("reports cross-product evidence references and duplicate positions", () => {
@@ -116,13 +121,10 @@ test("enforces the configured serialized size ceiling", () => {
   assert.ok(report.errors.some(({ code }) => code === "serialized_size_exceeded"));
 });
 
-test("rejects unsupported or ungrounded experimental rating metadata", () => {
+test("rejects ungrounded profile metadata", () => {
   const result = validResult();
-  result.items[0].rating = { ...result.items[0].rating, score: 11, experimental: false, evidenceIds: ["missing"] };
   result.items[0].profile = [{ label: "PALM OIL", evidenceIds: ["missing"] }];
   const codes = validateAnalysisResult(result, options).errors.map(({ code }) => code);
-  assert.ok(codes.includes("invalid_shape"));
-  assert.ok(codes.includes("invalid_experimental_semantics"));
   assert.ok(codes.includes("unresolved_evidence"));
 });
 

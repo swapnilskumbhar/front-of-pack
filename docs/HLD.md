@@ -1,7 +1,7 @@
 # Front of Pack — High Level Design
 
-> **Status:** v5.0 — deployed competition-ready shopper-brief architecture
-> **Runtime pins:** `terra-analysis.v15` · `analysis-result.v2` · `decision-engine.v7`
+> **Status:** v6.0 — competition release-candidate shopper-brief architecture
+> **Runtime pins:** `terra-analysis.v16` · `analysis-result.v3` · `decision-engine.v8`
 > **Audience:** the implementing agent (Codex) and the solo maintainer
 > **Companion docs:** [`LLD.md`](./LLD.md) — implementation contract; [`FINAL_PLAN.md`](./FINAL_PLAN.md) — authoritative scope and deadline; [`EXECUTION_PIPELINE.md`](./EXECUTION_PIPELINE.md) — live tasks and proof; [`CLOUDFLARE_SETUP.md`](./CLOUDFLARE_SETUP.md) — repository, billing, account, resource, deployment, and domain onboarding
 > **Supersedes:** the retired *Front of Pack Playbook*. The Playbook is background material, not an implementation source of truth.
@@ -17,7 +17,7 @@ India requires important information to be printed on packaged consumer products
 
 **Front of Pack** gives the consumer one simple interaction:
 
-1. Select a language once; the channel remembers it.
+1. Use the channel's remembered language; WhatsApp uses English when none has been set.
 2. Upload or photograph **one image**.
 3. Receive a result for up to six sufficiently identifiable products in the image.
 
@@ -30,7 +30,7 @@ The image may show:
 
 The result can include:
 
-- every evidence-backed warning, absolute nutrition plus printed or clearly calculated %RDA, and an explicitly experimental 0–10 shopper rating,
+- every evidence-backed warning, absolute nutrition plus printed or clearly calculated %RDA, and a deterministic experimental 0–10 shopper rating when reproducible deductions exist,
 - ingredients and additives in plain language,
 - a factual profile, direct verdict, supporting analysis, and visible marketing claims checked against the available composition,
 - a separate exact synthetic identifier demonstration,
@@ -51,12 +51,12 @@ GPT-5.6 Terra performs the complete semantic analysis in one pinned request:
 - extracts visible label facts,
 - uses required hosted web search for exact-product corroboration and comprehensive nutrition, ingredient, allergen and claim research,
 - applies the supplied verified regulatory context,
-- produces the verdict, evidence, and explanation, and
+- produces product identity, profile tags, the verdict/summary, claims, evidence, and finding prose, and
 - writes all consumer-facing explanation text directly in the selected language.
 
 There is no separate triage call, crop/segment loop, cart parser, per-product fan-out, product-resolution model, synthesis model, or explanation model.
 
-Application code does not paraphrase Terra's prose. After strict validation, decision-engine v7 derives reproducible whole-pack arithmetic, printed-first or FSSAI-reference %RDA, literal claim consistency, diet/veg-source and allergen signals from provenance-linked structured values. Calculated values are labelled by scope and source; missing inputs produce no derived conclusion.
+Application code does not paraphrase Terra's prose. After strict validation, decision-engine v8 derives reproducible whole-pack arithmetic, printed-first or FSSAI-reference %RDA, literal claim consistency, diet/veg-source and allergen signals from provenance-linked structured values. It also computes the experimental 0–10 rating from fixed, published deductions; the score is null when no reproducible deduction applies. The presentation layer merges duplicate nutrient topics and orders structured indicators consistently across languages. Terra does not author the rating or final severity colour/order: red is reserved for engine-origin warnings, while model context may be amber or green. Calculated values are labelled by scope and source; missing inputs produce no derived conclusion.
 
 The engine may report that an exact printed “free-from” claim conflicts with an exact transcribed ingredient token. It does not infer chemical classes, formulation, intent, legality, or automatically characterize a cosmetic claim as greenwashing. Every formula, test, reference and limitation is public at `/how-we-decide`.
 
@@ -133,7 +133,7 @@ Every enabled rule, numeric threshold, and clause citation must have a verified 
 
 The model may reference only rule IDs included in the request's verified rule context. The validator rejects unknown, disabled, or unverified rule IDs. This validates the contract; it does not recalculate the model's verdict.
 
-The public `/how-we-decide` page groups the enabled rules, formulas, rating anchors, ingredient dictionary and source links supplied to the model. A versioned service directory exposes only verified routes such as FSSAI/FoSCoS, BIS Care, and the National Consumer Helpline. Every experimental food rating carries a standing disclaimer:
+The public `/how-we-decide` page groups the enabled rules, formulas, fixed rating deductions, ingredient dictionary and source links used by the system. A versioned service directory exposes only verified routes such as FSSAI/FoSCoS, BIS Care, and the National Consumer Helpline. Every experimental food rating carries a standing disclaimer:
 
 > Experimental research presentation based on draft FSSAI front-of-pack policy context. It is not an official FSSAI score, warning, approval, or legal determination.
 
@@ -177,7 +177,7 @@ flowchart TB
     JOBS -->|one image + language + verified rules| TERRA
     TERRA -->|within the same response| SEARCH
     TERRA --> JOBS
-    JOBS -->|validate + decision-engine v7| D1
+    JOBS -->|validate + decision-engine v8| D1
     JOBS --> DQ
     DQ --> JOBS
     JOBS --> WAUSER
@@ -207,7 +207,7 @@ Both channels use the same queue consumer. Cloudflare Queues carries only small 
 Each cache miss sends Terra:
 
 - the validated original image bytes and dimensions,
-- the user's selected language,
+- the resolved channel language (including WhatsApp's English fallback when unset),
 - the unified analysis instructions,
 - the strict JSON Schema,
 - the current prompt and schema versions,
@@ -215,23 +215,23 @@ Each cache miss sends Terra:
 - the allowed evidence and copy policies, and
 - the hosted `web_search` tool in required mode, with follow-up searches available for exact-product nutrition, ingredients and allergens.
 
-Terra returns one atomic `AnalysisResult` containing:
+Terra returns one atomic model `AnalysisResult`; after validation, the application attaches the derived engine result. The model result contains:
 
 - image readability and result completeness,
 - zero or more product items,
 - product identity and category,
 - visible and web-derived facts with field-level provenance,
-- nutrition and ingredient observations, including printed %RDA or clearly labelled FSSAI-reference calculations beside absolute values,
+- nutrition and ingredient observations, including printed %RDA and the exact inputs needed for clearly labelled engine calculations,
 - only visibly printed claims and their evidence-backed status; no claim section is rendered when the submitted image contains no claim,
-- every material warning, followed by an evidence-linked experimental rating, factual profile, verdict and supporting analysis,
+- independently useful findings, a factual profile, verdict/summary and supporting analysis, with evidence links,
 - localized consumer explanation,
 - category coverage and an allowed next-service route ID when appropriate,
 - web sources actually used, and
 - a whole-image summary.
 
-Per product, schema v2 allows up to twelve findings, twenty evidence observations, eight citations, eight visible-claim audits and six factual profile tags. The render order is fixed: every red/amber warning; product identity; experimental rating; profile; verdict; supporting analysis; conditional Claims section; evidence confidence and match basis; expandable package/online evidence; verified next step.
+Per product, schema v3 allows up to twelve findings, twenty evidence observations, eight citations, eight visible-claim audits and six factual profile tags. Each finding has a required semantic `topic` so total sugar, added sugar, sodium nutrition and sodium-named ingredients cannot collide through title text. The schema has no model-authored `rating` field. Decision-engine v8 attaches signals plus the deterministic rating, and the presentation layer maps model and engine material into `ShopperIndicator` records carrying `origin`, `topic`, and `ruleId`. The render order is fixed from those structured fields: red/amber indicators; product identity; experimental rating; profile; verdict; supporting analysis; conditional Claims section; evidence confidence and match basis; expandable package/online evidence; verified next step.
 
-The detailed contract is defined in `LLD.md` §5.
+The detailed contract is defined in `LLD.md` §7.
 
 ### 5.1 Model responsibilities
 
@@ -245,7 +245,7 @@ Terra must:
 6. Keep image and web provenance separate at field level.
 7. Use only the supplied verified regulatory rules and service route IDs.
 8. Return `unknown` when evidence is insufficient or contradictory.
-9. Produce the verdict and explanation in the requested language.
+9. Produce identity, profile, summary/verdict, claim/evidence structures, and finding prose in the requested language where consumer-facing.
 10. Keep raw brand, product, claim, and ingredient text as printed.
 11. Use restrained regulatory wording, not medical or wellness advice.
 
@@ -255,11 +255,11 @@ Application code must:
 
 1. Validate MIME, decoded dimensions and pixel count; preserve the original encoded bytes and pixel dimensions; hash and cache those bytes.
 2. Load the verified rule context and construct one request.
-3. Validate the response and every rating/profile/claim/nutrition evidence reference without repairing model prose.
-4. Apply decision-engine v7 to add deterministic whole-pack, printed-first/calculated-RDA, literal-claim, diet and allergen signals with provenance.
+3. Validate the response and every profile/claim/nutrition/finding evidence reference without repairing model prose.
+4. Apply decision-engine v8 to add deterministic whole-pack, printed-first/calculated-RDA, literal-claim, diet and allergen signals plus fixed rating deductions with provenance.
 5. Keep exact synthetic identifier lookup as a separate clearly labelled demonstration surface; never imply a live registry query.
 6. Persist the model result, derived signals, evidence, versions, usage, and validation report.
-7. Render every material warning first, then rating, profile, verdict, supporting analysis and a conditional visible-claims audit without duplicate nutrient topics.
+7. Build structured `ShopperIndicator` records, reserve red for engine-origin warnings, use amber for model context or moderate engine signals, merge duplicate nutrient topics, and apply the same topic order in every language before rendering rating, profile, verdict, analysis and visible claims.
 8. Resolve an allowed service route ID to its verified public link and add fixed UI notices and statutory disclaimers.
 
 ### 5.3 Removed architecture
@@ -297,10 +297,10 @@ Rules:
 2. Every web-derived material fact must reference a source returned by the hosted search execution; a URL invented in JSON is not accepted as proof.
 3. Search sources and response annotations are stored with the scan.
 4. Contradictory sources are returned as structured competing values with their source references; the UI displays the conflict and the affected conclusion must be `unknown`.
-5. No model warning may use an invented value. Deterministic RDA/whole-pack arithmetic may use exact structured values and must show formula, scope and reference.
+5. No model finding may use an invented value. Model-origin findings never become red warnings; deterministic RDA/whole-pack arithmetic may use exact structured values and must show formula, scope and reference.
 6. Low-confidence or incomplete fields must be listed under `uncertainties` rather than silently filled.
 7. Mixed conclusions use separate package and hosted-search evidence references; `mixed` is not an evidence-origin enum.
-8. Identity fields, warnings, experimental ratings and regulatory concerns carry the rule/source/input references needed to audit them; free-form prose alone is not evidence.
+8. Model-authored identity carries confidence and match basis; profile, claim and finding structures carry evidence references, and the model supplies the evidence objects themselves. Engine warnings and experimental rating deductions carry deterministic rule/input references; free-form prose alone is not evidence.
 
 Strict structured output guarantees a predictable shape, not factual truth. The trust strategy is evidence visibility, source storage, verified prompt context, honest unknowns, and regression testing—not pretending the model cannot be wrong.
 
@@ -337,7 +337,7 @@ Next.js App Router, server-rendered and mobile-first. No login is required.
 | Route | Purpose |
 |---|---|
 | `/` | Remember language, upload one image, select a cached demo, and render the complete shopper brief |
-| `/how-we-decide` | Warning order, rating anchors, RDA formulas, claim tests, ingredient dictionary, limitations and official sources |
+| `/how-we-decide` | Warning order, fixed rating deductions, RDA formulas, claim tests, ingredient dictionary, limitations and official sources |
 | `/grievance` | Review and copy an editable local draft; never submits |
 | `/registry` | Exact identifier lookup against clearly synthetic demonstration data |
 | `/officer` | Minimal dashboard of aggregate human-review leads |
@@ -350,16 +350,16 @@ The homepage includes instant cached demonstrations through the exact production
 
 WhatsApp uses the same Cloudflare-hosted API, D1 state, R2 media path, Queue consumer, and one-call invariant as web. There is no n8n deployment.
 
-1. On first contact, the user selects a language; it is remembered for later messages.
-2. The user sends one image.
+1. The user sends one image; the saved language is used, or English when no language has been set.
+2. The first image is analyzed immediately rather than being held behind a language menu.
 3. The Worker verifies Meta's verification token and raw-body POST signature, writes the idempotent event and encrypted short-lived delivery context, enqueues the job, and acknowledges immediately.
 4. The Queue consumer retrieves the media through the fixed Graph media-ID flow into private R2, invokes the shared analysis path once, and enqueues delivery.
-5. WhatsApp returns one localized, bounded shopper brief from the stored result: all retained warnings first, then rating, profile, verdict, analysis, visible claims and any service-route reason.
-6. Language changes apply to the next scan. Delivery never invokes another model call.
+5. WhatsApp returns localized, section-bounded shopper-brief chunks from the stored result: every product's structured red/amber indicators globally first, then rating, profile, verdict, analysis, visible claims and any service-route reason.
+6. A language command updates the profile for future image jobs; it does not change an already queued job. Delivery never invokes another model call.
 
-The web result is the complete expandable surface for large multi-product analyses. WhatsApp is deliberately bounded to one delivery message for duplicate-safe hackathon transport.
+The web result is the complete expandable surface for large multi-product analyses. WhatsApp chunks only at section boundaries (3,500 Unicode code points each). Delivery retries only before the first chunk is sent; a later-chunk failure terminates rather than duplicating earlier messages.
 
-Language-name/code commands are available without using the website. If the user changes language, the next analysis uses that language. Re-rendering an existing result in a new language requires a new one-call analysis unless that image-language combination is already cached.
+Language-name/code commands are available without using the website. Until one is received, WhatsApp explicitly defaults to English and analyzes the first image. If the user changes language, future image jobs snapshot and use that language. Re-rendering an existing result in a new language requires a new one-call analysis unless that image-language combination is already cached.
 
 The delivery consumer may retry Graph message delivery. It reads only the already stored result and can never repeat Terra analysis.
 
@@ -375,7 +375,7 @@ Supported language codes:
 
 `en`, `hi`, `mr`, `bn`, `ta`, `te`, `kn`, `gu`, `ml`, `pa`, `or`, `ur`
 
-The user chooses the response language once. The app remembers it per anonymous browser profile or WhatsApp number and applies it before submission. It remains changeable through the web selector or a WhatsApp language command. The hackathon does not silently link the two channel identities.
+The web user chooses a response language and the app remembers it for that anonymous browser profile. WhatsApp uses English when its profile has no language, analyzes the first image with that fallback, and remembers any later language command for future jobs. The hackathon does not silently link the two channel identities.
 
 The deployed profile stores only preferred language plus opaque channel identity metadata. It does not store allergies, medical conditions, pregnancy, diet, or other sensitive health data. Language never changes the objective product finding.
 
@@ -527,15 +527,15 @@ A reviewer can:
 
 1. Return to the public mobile web experience and have Marathi remembered without creating an account.
 2. Upload one packaged-product image and receive a useful localized result from exactly one Terra request.
-3. See every warning, absolute values plus printed/calculated %RDA, experimental rating, profile, verdict, supporting analysis and conditional visible-claims audit.
+3. See engine-owned red warnings, model context, absolute values plus printed/calculated %RDA, deterministic experimental rating, profile, verdict, supporting analysis and conditional visible-claims audit.
 4. Distinguish facts read from the package from provisional facts found online, including name-only/cart results.
 5. Create a clearly unsubmitted, editable grievance draft when an allow-listed route is appropriate.
 6. Upload an image containing several food and/or non-food products and receive up to six ordered results without crops or per-product model calls.
-7. Send an image over WhatsApp and receive the same kind of analysis in the language remembered for that number.
+7. Send a first image over WhatsApp and receive an English analysis by default, or use a language command to change future analyses.
 8. Inspect clearly synthetic licence/recall matches and the minimal registry/officer proof without mistaking them for live government systems.
 9. See FSSAI/FoSCoS, BIS Care, or NCH guidance only when the category and issue match an allow-listed route.
-10. Open `/how-we-decide` to inspect formulas, rating anchors, evidence rules, limitations and official sources.
+10. Open `/how-we-decide` to inspect formulas, fixed rating deductions, evidence rules, limitations and official sources.
 
 The two-minute architecture explanation is:
 
-> The consumer's saved language is applied when they upload one image. A Cloudflare Worker stores idempotent state in D1, places validated original media temporarily in private R2, and publishes one Analysis Queue job. The Jobs Worker makes one GPT-5.6 Terra Responses API request for up to six products with required hosted product-evidence search. It validates provenance and citations, adds deterministic RDA/whole-pack/claim/diet signals, stores one complete result, deletes the media, and renders the shopper brief on web or through the Delivery Queue to WhatsApp.
+> The resolved channel language is applied when the consumer uploads one image; WhatsApp explicitly falls back to English when unset. A Cloudflare Worker stores idempotent state in D1, places validated original media temporarily in private R2, and publishes one Analysis Queue job. The Jobs Worker makes one GPT-5.6 Terra Responses API request for up to six products with required hosted product-evidence search. It validates model-owned identity/profile/summary/findings/claims/evidence, then adds deterministic RDA/whole-pack/claim/diet/allergen signals and a fixed-deduction rating. Structured indicators reserve red for engine warnings, merge nutrients, and order topics across languages before the result is stored and rendered on web or through the WhatsApp Delivery Queue.

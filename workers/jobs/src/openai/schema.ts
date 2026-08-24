@@ -75,30 +75,17 @@ const citation = {
 const finding = {
   type: "object",
   additionalProperties: false,
-  required: ["id", "kind", "level", "title", "explanation", "evidenceIds", "ruleIds", "experimental"],
+  required: ["id", "kind", "topic", "level", "title", "explanation", "evidenceIds", "ruleIds", "experimental"],
   properties: {
     id: { type: "string", maxLength: 80 },
     kind: { type: "string", enum: ["label_fact", "ingredient", "nutrition", "claim_audit", "regulatory_context", "experimental_fop"] },
+    topic: { type: "string", enum: ["statutory_warning", "allergen", "added_sugars", "total_sugars", "saturated_fat", "sodium", "total_fat", "palm_oil", "preservatives", "colours", "claim", "diet", "nutrition", "ingredient", "label", "other"] },
     level: { type: "string", enum: ["information", "attention", "unknown"] },
     title: { type: "string", maxLength: 60 },
     explanation: { type: "string", maxLength: 180 },
     evidenceIds: stringArray,
     ruleIds: stringArray,
     experimental: { type: "boolean" },
-  },
-};
-
-const rating = {
-  type: "object",
-  additionalProperties: false,
-  required: ["score", "dimension", "label", "basis", "evidenceIds", "experimental"],
-  properties: {
-    score: { type: ["integer", "null"], minimum: 0, maximum: 10 },
-    dimension: { type: "string", enum: ["nutrition", "ingredients", "claims", "label_evidence"] },
-    label: { type: "string", maxLength: 60 },
-    basis: { type: "string", maxLength: 180 },
-    evidenceIds: stringArray,
-    experimental: { type: "boolean", const: true },
   },
 };
 
@@ -131,7 +118,7 @@ export const ANALYSIS_RESULT_SCHEMA: Record<string, unknown> = {
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["position", "identity", "category", "nutrition", "ingredientTokens", "claimsAsPrinted", "printedVegMark", "webMatchConfidence", "webMatchBasis", "rating", "profile", "coverage", "summary", "findings", "claimAudits", "evidence", "citations", "serviceRoute", "needsClearerImage", "retakeGuidance"],
+        required: ["position", "identity", "category", "nutrition", "ingredientTokens", "claimsAsPrinted", "printedVegMark", "webMatchConfidence", "webMatchBasis", "profile", "coverage", "summary", "findings", "claimAudits", "evidence", "citations", "serviceRoute", "needsClearerImage", "retakeGuidance"],
         properties: {
           position: { type: "integer", minimum: 1, maximum: 6 },
           identity,
@@ -142,7 +129,6 @@ export const ANALYSIS_RESULT_SCHEMA: Record<string, unknown> = {
           printedVegMark: { type: ["string", "null"], enum: ["veg", "non_veg", null] },
           webMatchConfidence: { type: ["string", "null"], enum: ["high", "medium", "low", null] },
           webMatchBasis: { type: ["string", "null"], maxLength: 180 },
-          rating,
           profile: { type: "array", maxItems: 6, items: profileTag },
           coverage: {
             type: "object",
