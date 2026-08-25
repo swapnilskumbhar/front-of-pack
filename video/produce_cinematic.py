@@ -185,11 +185,9 @@ def main() -> None:
     concat.write_text("\n".join(f"file '{p.as_posix()}'" for p in rendered), encoding="utf-8")
     base = OUTPUT / "front-of-pack-cinematic-v3-base.mp4"
     run("-f", "concat", "-safe", "0", "-i", str(concat), "-c", "copy", "-movflags", "+faststart", str(base))
-    captions = write_captions()
+    write_captions()
     music = make_music(key)
     final = OUTPUT / "front-of-pack-cinematic-v3.mp4"
-    subtitle_path = captions.resolve().as_posix().replace(":", "\\:")
-    style = "FontName=Arial,FontSize=17,PrimaryColour=&H00FFFFFF,OutlineColour=&H0018251D,BorderStyle=3,Outline=1,Shadow=0,MarginV=45,Alignment=2"
     audio_mix = (
         "[0:a]loudnorm=I=-16:LRA=7:TP=-1.0[voice];"
         "[1:a]loudnorm=I=-24:LRA=8:TP=-2,volume=-10dB,"
@@ -197,9 +195,8 @@ def main() -> None:
         "[voice][music]amix=inputs=2:duration=first:dropout_transition=2,alimiter=limit=0.891[aout]"
     )
     run("-i", str(base), "-i", str(music),
-        "-vf", f"subtitles=filename='{subtitle_path}':force_style='{style}'",
         "-filter_complex", audio_mix, "-map", "0:v:0", "-map", "[aout]",
-        "-c:v", "libx264", "-preset", "medium", "-crf", "18",
+        "-c:v", "copy",
         "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-ac", "2",
         "-movflags", "+faststart", str(final))
     manifest = {"duration_seconds": TOTAL_DURATION, "voice_id": VOICE_ID,

@@ -61,7 +61,7 @@ India, Build What Moves India, hackathon, public interest technology, food safet
 - Audience: **No, it is not made for kids**
 - Paid promotion: **No**
 - Thumbnail: `output/front-of-pack-thumbnail-v3.png`
-- Captions: `output/cinematic-v3-captions.srt`
+- Captions: use YouTube automatic captions, or upload `output/cinematic-v3-captions.srt` for exact text
 - Final video: `output/front-of-pack-cinematic-v3.mp4`
 
 ## Final checks
@@ -72,4 +72,3 @@ India, Build What Moves India, hackathon, public interest technology, food safet
 4. Open the Unlisted URL in a signed-out window.
 5. Confirm product/cart imagery rights or attribution before public submission.
 6. Submit the YouTube URL—not the local file path—to the hackathon form.
-
