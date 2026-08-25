@@ -1,9 +1,16 @@
 # Demo video production
 
+For the final cinematic cut, start with [cinematic-storyboard.md](cinematic-storyboard.md)
+and [elevenlabs-prompts.md](elevenlabs-prompts.md). The existing deterministic
+renderer remains the reproducible fallback and supplies real product footage.
+
 The final submission cut is rendered locally and deliberately excluded from Git.
 
 ## Outputs
 
+- `output/front-of-pack-cinematic.mp4` — final 1:51 story-led cut with ElevenLabs video, narration, score and burned captions
+- `output/cinematic-captions.srt` — matching captions for the cinematic cut
+- `output/cinematic-manifest.json` — cinematic scene timing and voice metadata
 - `output/front-of-pack-demo.mp4` — final 1920×1080, 30 fps, H.264/AAC cut with burned captions
 - `output/captions.srt` — matching subtitle file
 - `output/thumbnail.png` — upload thumbnail
@@ -24,4 +31,3 @@ $env:PYTHONPATH = "E:\projects\front-of-pack\video\.python-packages"
 `produce.py --animatic` builds without ElevenLabs. Existing voice clips are reused on subsequent final renders, avoiding unnecessary API usage.
 
 Before submission, watch the MP4 once with sound and once muted, then upload it to a public URL that works while signed out.
-
