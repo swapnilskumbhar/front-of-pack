@@ -53,12 +53,29 @@ friend makes a small conversational gesture toward the shopper's phone, and the
 shopper looks curious. Calm friendly interaction with no spoken words and a
 slow documentary push-in.
 """.strip(),
+    "c2": """
+Continue in the same supermarket aisle with the same shopper. Her friend is
+already standing a few steps ahead and walks into the shot facing the camera
+in a clear three-quarter view. The friend has tied-back black hair and wears a
+teal overshirt over a white top. Both faces remain clearly visible as they smile
+and look at the package together. The friend gestures naturally toward the
+shopper's phone. Avoid rear views, obstructed faces and extreme profiles. Quick,
+confident commercial pacing with a smooth documentary push-in.
+""".strip(),
     "d": """
 Continue with the same two women in the same aisle. The shopper thoughtfully
 turns the second package around, examines its back panel, compares it with the
 first package, and places the option that fits her priorities into the basket.
 The friend gives a small approving nod. The moment feels informed and natural,
 not celebratory. Preserve wardrobe, faces, aisle and lighting.
+""".strip(),
+    "d2": """
+Continue with the same two friends in the same supermarket aisle, both shown
+from a flattering front three-quarter angle with their faces clearly visible.
+The shopper quickly turns the second package, scans its back panel, compares it
+with the first and confidently places the option matching her priorities into
+the basket. Her friend gives a small approving nod. Brisk commercial pacing,
+natural expressions, consistent wardrobe, faces, aisle and lighting.
 """.strip(),
 }
 

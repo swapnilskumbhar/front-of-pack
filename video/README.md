@@ -8,6 +8,9 @@ The final submission cut is rendered locally and deliberately excluded from Git.
 
 ## Outputs
 
+- `output/front-of-pack-cinematic-v2.mp4` — recommended 1:20 Start-with-WHY ad cut with faster pacing and corrected friend framing
+- `output/cinematic-v2-captions.srt` — matching captions for the recommended cut
+- `output/cinematic-v2-manifest.json` — recommended-cut timing and voice metadata
 - `output/front-of-pack-cinematic.mp4` — final 1:51 story-led cut with ElevenLabs video, narration, score and burned captions
 - `output/cinematic-captions.srt` — matching captions for the cinematic cut
 - `output/cinematic-manifest.json` — cinematic scene timing and voice metadata

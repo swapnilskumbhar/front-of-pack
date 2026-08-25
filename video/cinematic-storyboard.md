@@ -1,5 +1,18 @@
 # Front of Pack — cinematic demo film
 
+## Recommended V2 cut
+
+The submission candidate is now an 80-second Start-with-WHY advertisement:
+
+- **00:00–00:12 — WHY:** shoppers deserve evidence before packaging makes the choice.
+- **00:12–00:39 — HOW:** one WhatsApp photo becomes a linked, multilingual whole-pack brief.
+- **00:39–01:00 — VALUE:** informed choice, web access and six-product cart comparison.
+- **01:00–01:16 — TRUST:** published rules, evidence validation and consistent channels.
+- **01:16–01:20 — ACTION:** live Front of Pack call to action.
+
+The friend entrance begins two seconds into the approved source clip, avoiding
+the rear-angle facial artefact. No V2 shot exceeds twelve seconds.
+
 Target: 1 minute 55 seconds, 16:9, 1080p. The opening is a human story; the
 middle and ending use real product footage. AI-generated packaging must not
 show readable brands, nutrition values, certifications, or regulatory marks.
@@ -34,4 +47,3 @@ show readable brands, nutrition values, certifications, or regulatory marks.
   scenes; lower it by at least 18 dB beneath narration.
 - Use short kinetic captions only for: `WHOLE PACK`, `% DAILY REFERENCE`,
   `CLAIM CHECK`, `UP TO 6 PRODUCTS`, and `COST PER IMAGE`.
-

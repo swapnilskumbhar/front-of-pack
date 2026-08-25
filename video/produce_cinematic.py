@@ -14,7 +14,7 @@ from produce import FFMPEG, Scene, read_env, synthesize_scene
 
 
 ROOT = Path(__file__).resolve().parent
-WORK = ROOT / "work" / "cinematic"
+WORK = ROOT / "work" / "cinematic-v2"
 GENERATED = ROOT / "work" / "generated"
 CAPTURES = ROOT / "work" / "captures"
 ORIGINAL_SCENES = ROOT / "work" / "scenes"
@@ -29,32 +29,35 @@ class Cut:
     source: Path
     source_type: str
     narration: str
+    source_start: float = 0
 
 
 CUTS = [
-    Cut("01-seconds", 8, GENERATED / "clip-a.mp4", "video",
-        "Most shopping decisions happen in seconds. And the front of a pack is designed to win those seconds."),
-    Cut("02-claim", 8, GENERATED / "clip-b.mp4", "video",
-        "A confident claim, bright colours, a familiar promise. The shopper chooses before seeing what the whole pack contains."),
-    Cut("03-friend", 8, GENERATED / "clip-c.mp4", "video",
-        "Her friend asks one simple question: before you decide, why not check the evidence?"),
-    Cut("04-whatsapp", 12, CAPTURES / "09-whatsapp.png", "image",
-        "Send one photo to Front of Pack on WhatsApp. The answer stays linked to the image and returns in the shopper's chosen language."),
-    Cut("05-reveal", 16, CAPTURES / "04-alofrut.png", "image",
-        "Here, Front of Pack calculates bottle reality: thirty-one point five grams of added sugar, about sixty-three percent of the daily reference, plus six hundred seventy-eight milligrams of sodium."),
-    Cut("06-choice", 8, GENERATED / "clip-d.mp4", "video",
-        "Now she can choose for her priorities using evidence, not packaging."),
-    Cut("07-web", 8, CAPTURES / "01-home.png", "image",
-        "The same concise shopper brief works on the web with one upload."),
-    Cut("08-cart", 12, CAPTURES / "03-cart-results.png", "image",
-        "A cart screenshot can analyse up to six products, separating every result so comparison stays clear."),
-    Cut("09-method", 14, CAPTURES / "06-method-rating.png", "image",
-        "The model reads and researches. Published rules calculate whole-pack percentages, claim checks and rating deductions, with sources and uncertainty kept visible."),
-    Cut("10-architecture", 12, ORIGINAL_SCENES / "06-architecture.png", "image",
-        "One Terra response, strict evidence validation, then a versioned decision engine. Web and WhatsApp render the same stored result."),
-    Cut("11-close", 5, ORIGINAL_SCENES / "09-close.png", "image",
-        "One photo. Clearer choices. Front of Pack."),
+    Cut("01-why", 6, GENERATED / "clip-a.mp4", "video",
+        "Because shoppers deserve to know what they are truly buying—before packaging makes the choice for them."),
+    Cut("02-claim", 6, GENERATED / "clip-b.mp4", "video",
+        "A confident claim and bright colours can decide the purchase in seconds."),
+    Cut("03-friend", 6, GENERATED / "clip-c.mp4", "video",
+        "Front of Pack puts evidence back into that moment.", 2),
+    Cut("04-whatsapp", 9, CAPTURES / "09-whatsapp.png", "image",
+        "Send one photo on WhatsApp. The answer returns in your language, linked to the image."),
+    Cut("05-reveal", 12, CAPTURES / "04-alofrut.png", "image",
+        "It reveals the whole-pack reality: thirty-one point five grams of added sugar—about sixty-three percent of the daily reference—plus six hundred seventy-eight milligrams of sodium."),
+    Cut("06-choice", 6, GENERATED / "clip-d.mp4", "video",
+        "Now the shopper chooses for her priorities—not the packaging's."),
+    Cut("07-web", 6, CAPTURES / "01-home.png", "image",
+        "The same shopper brief works on the web."),
+    Cut("08-cart", 9, CAPTURES / "03-cart-results.png", "image",
+        "And one cart screenshot compares up to six products, with every result clearly separated."),
+    Cut("09-method", 9, CAPTURES / "06-method-rating.png", "image",
+        "Terra reads and researches. Published rules calculate whole-pack warnings, claim checks and rating deductions."),
+    Cut("10-architecture", 7, ORIGINAL_SCENES / "06-architecture.png", "image",
+        "One response, strict evidence validation, and a versioned engine—consistent across web and WhatsApp."),
+    Cut("11-close", 4, ORIGINAL_SCENES / "09-close.png", "image",
+        "See the pack. Understand the choice. Front of Pack."),
 ]
+
+TOTAL_DURATION = sum(cut.duration for cut in CUTS)
 
 
 def run(*args: str) -> None:
@@ -95,7 +98,7 @@ def make_visual(cut: Cut) -> Path:
     visual_dir.mkdir(parents=True, exist_ok=True)
     output = visual_dir / f"{cut.slug}.mp4"
     if cut.source_type == "video":
-        run("-i", str(cut.source), "-t", str(cut.duration),
+        run("-ss", str(cut.source_start), "-i", str(cut.source), "-t", str(cut.duration),
             "-vf", "scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,fps=30,format=yuv420p",
             "-an", "-c:v", "libx264", "-preset", "medium", "-crf", "18", output.as_posix())
     else:
@@ -126,7 +129,7 @@ def timestamp(seconds: float) -> str:
 
 
 def write_captions() -> Path:
-    path = OUTPUT / "cinematic-captions.srt"
+    path = OUTPUT / "cinematic-v2-captions.srt"
     entries: list[str] = []
     cursor = 0.0
     index = 1
@@ -144,19 +147,19 @@ def write_captions() -> Path:
 
 
 def make_music(key: str) -> Path:
-    music = WORK / "front-of-pack-score.mp3"
+    music = WORK / "front-of-pack-score-v2.mp3"
     if music.exists():
         return music
     client = ElevenLabs(api_key=key)
     audio = client.music.compose(
         prompt=(
-            "Instrumental underscore for a one-minute-fifty-one-second Indian public-interest technology demo. "
-            "Warm modern organic percussion, soft synth texture and restrained melodic pulses. Begin curious "
-            "and understated, gently reveal insight after twenty-four seconds, become hopeful around fifty-two "
-            "seconds, then use a precise light technology pulse before a clean resolved ending. Leave generous "
-            "space for narration. No vocals, no dramatic drops, no corporate jingle, no genre stereotypes."
+            "Punchy instrumental underscore for an eighty-second Indian public-interest technology advertisement. "
+            "Modern organic percussion, crisp soft synth pulse, warm bass and concise melodic hooks at 116 BPM. "
+            "Open with immediate curiosity, lift decisively at eighteen seconds when the product is introduced, "
+            "add momentum through the evidence reveal, then resolve with a confident clean final sting. Keep the "
+            "arrangement light beneath narration. No vocals, no dramatic drops, no corporate jingle or stereotypes."
         ),
-        music_length_ms=111_000,
+        music_length_ms=int(TOTAL_DURATION * 1000),
         model_id="music_v2",
         force_instrumental=True,
         output_format="mp3_48000_192",
@@ -180,17 +183,17 @@ def main() -> None:
     rendered = [make_scene(cut, key) for cut in CUTS]
     concat = WORK / "concat.txt"
     concat.write_text("\n".join(f"file '{p.as_posix()}'" for p in rendered), encoding="utf-8")
-    base = OUTPUT / "front-of-pack-cinematic-base.mp4"
+    base = OUTPUT / "front-of-pack-cinematic-v2-base.mp4"
     run("-f", "concat", "-safe", "0", "-i", str(concat), "-c", "copy", "-movflags", "+faststart", str(base))
     captions = write_captions()
     music = make_music(key)
-    final = OUTPUT / "front-of-pack-cinematic.mp4"
+    final = OUTPUT / "front-of-pack-cinematic-v2.mp4"
     subtitle_path = captions.resolve().as_posix().replace(":", "\\:")
     style = "FontName=Arial,FontSize=17,PrimaryColour=&H00FFFFFF,OutlineColour=&H0018251D,BorderStyle=3,Outline=1,Shadow=0,MarginV=45,Alignment=2"
     audio_mix = (
         "[0:a]loudnorm=I=-16:LRA=7:TP=-1.0[voice];"
         "[1:a]loudnorm=I=-24:LRA=8:TP=-2,volume=-10dB,"
-        "atrim=0:111,afade=t=in:st=0:d=2,afade=t=out:st=107:d=4[music];"
+        f"atrim=0:{TOTAL_DURATION},afade=t=in:st=0:d=1,afade=t=out:st={TOTAL_DURATION - 3}:d=3[music];"
         "[voice][music]amix=inputs=2:duration=first:dropout_transition=2,alimiter=limit=0.891[aout]"
     )
     run("-i", str(base), "-i", str(music),
@@ -199,9 +202,9 @@ def main() -> None:
         "-c:v", "libx264", "-preset", "medium", "-crf", "18",
         "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-ac", "2",
         "-movflags", "+faststart", str(final))
-    manifest = {"duration_seconds": sum(c.duration for c in CUTS), "voice_id": VOICE_ID,
+    manifest = {"duration_seconds": TOTAL_DURATION, "voice_id": VOICE_ID,
                 "scenes": [{"slug": c.slug, "duration": c.duration} for c in CUTS]}
-    (OUTPUT / "cinematic-manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    (OUTPUT / "cinematic-v2-manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     print(final)
 
 
