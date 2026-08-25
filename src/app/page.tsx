@@ -43,7 +43,7 @@ export default function Home() {
         <div className="section-heading"><p className="eyebrow">The public-service gap</p><h2 id="journey-title">Rules exist. Applying them while shopping is hard.</h2><p>Front of Pack turns FSSAI-style nutrition and label information into an evidence-backed citizen journey: understand, verify, then act.</p></div>
         <ol className="steps">
           <li><span>01</span><div><h3>Share the pack</h3><p>Upload one clear image containing one product or a shelf of up to six.</p></div></li>
-          <li><span>02</span><div><h3>One response researches it</h3><p>Terra reads the photo and exact-product sources; the versioned engine calculates RDA, whole-pack, claim, diet and allergen signals.</p></div></li>
+          <li><span>02</span><div><h3>One response researches it</h3><p>The system reads the photo and exact-product sources; published rules calculate RDA, whole-pack, claim, diet and allergen signals.</p></div></li>
           <li><span>03</span><div><h3>See what matters</h3><p>Warnings come first. Rating arithmetic, claims, evidence and the next step remain one tap away.</p></div></li>
         </ol>
       </section>

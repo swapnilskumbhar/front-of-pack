@@ -8,6 +8,9 @@ The final submission cut is rendered locally and deliberately excluded from Git.
 
 ## Outputs
 
+- `output/front-of-pack-cinematic-v3.mp4` — recommended model-agnostic 1:20 Start-with-WHY submission cut
+- `output/cinematic-v3-captions.srt` — matching captions for the recommended model-agnostic cut
+- `output/cinematic-v3-manifest.json` — recommended model-agnostic cut timing and voice metadata
 - `output/front-of-pack-cinematic-v2.mp4` — recommended 1:20 Start-with-WHY ad cut with faster pacing and corrected friend framing
 - `output/cinematic-v2-captions.srt` — matching captions for the recommended cut
 - `output/cinematic-v2-manifest.json` — recommended-cut timing and voice metadata

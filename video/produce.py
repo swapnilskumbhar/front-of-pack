@@ -232,7 +232,7 @@ def render_architecture(scene: Scene) -> Image.Image:
     draw.text((70, 190), scene.title, font=font(FONT_SERIF, 54), fill=INK)
     labels = [
         ("01", "ONE IMAGE", "Original bytes and selected language"),
-        ("02", "TERRA", "One multimodal response + hosted search"),
+        ("02", "READ + RESEARCH", "One structured response + product search"),
         ("03", "VALIDATE", "Strict schema, evidence and source links"),
         ("04", "DECISION ENGINE", "RDA, whole-pack, claims and rating"),
         ("05", "DELIVER", "Web + WhatsApp from one stored result"),

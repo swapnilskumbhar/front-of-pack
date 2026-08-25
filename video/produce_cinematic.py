@@ -49,8 +49,8 @@ CUTS = [
         "The same shopper brief works on the web."),
     Cut("08-cart", 9, CAPTURES / "03-cart-results.png", "image",
         "And one cart screenshot compares up to six products, with every result clearly separated."),
-    Cut("09-method", 9, CAPTURES / "06-method-rating.png", "image",
-        "Terra reads and researches. Published rules calculate whole-pack warnings, claim checks and rating deductions."),
+    Cut("09-method-v2", 9, CAPTURES / "06-method-rating.png", "image",
+        "The system reads and researches. Published rules calculate whole-pack warnings, claim checks and rating deductions."),
     Cut("10-architecture", 7, ORIGINAL_SCENES / "06-architecture.png", "image",
         "One response, strict evidence validation, and a versioned engine—consistent across web and WhatsApp."),
     Cut("11-close", 4, ORIGINAL_SCENES / "09-close.png", "image",
@@ -129,7 +129,7 @@ def timestamp(seconds: float) -> str:
 
 
 def write_captions() -> Path:
-    path = OUTPUT / "cinematic-v2-captions.srt"
+    path = OUTPUT / "cinematic-v3-captions.srt"
     entries: list[str] = []
     cursor = 0.0
     index = 1
@@ -183,11 +183,11 @@ def main() -> None:
     rendered = [make_scene(cut, key) for cut in CUTS]
     concat = WORK / "concat.txt"
     concat.write_text("\n".join(f"file '{p.as_posix()}'" for p in rendered), encoding="utf-8")
-    base = OUTPUT / "front-of-pack-cinematic-v2-base.mp4"
+    base = OUTPUT / "front-of-pack-cinematic-v3-base.mp4"
     run("-f", "concat", "-safe", "0", "-i", str(concat), "-c", "copy", "-movflags", "+faststart", str(base))
     captions = write_captions()
     music = make_music(key)
-    final = OUTPUT / "front-of-pack-cinematic-v2.mp4"
+    final = OUTPUT / "front-of-pack-cinematic-v3.mp4"
     subtitle_path = captions.resolve().as_posix().replace(":", "\\:")
     style = "FontName=Arial,FontSize=17,PrimaryColour=&H00FFFFFF,OutlineColour=&H0018251D,BorderStyle=3,Outline=1,Shadow=0,MarginV=45,Alignment=2"
     audio_mix = (
@@ -204,7 +204,7 @@ def main() -> None:
         "-movflags", "+faststart", str(final))
     manifest = {"duration_seconds": TOTAL_DURATION, "voice_id": VOICE_ID,
                 "scenes": [{"slug": c.slug, "duration": c.duration} for c in CUTS]}
-    (OUTPUT / "cinematic-v2-manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    (OUTPUT / "cinematic-v3-manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     print(final)
 
 

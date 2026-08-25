@@ -163,13 +163,12 @@ export default function OfficerClient() {
       </div>
       <div className="officer-table-wrap">
         <table className="officer-cost-table">
-          <thead><tr><th>Run</th><th>Completed (UTC)</th><th>Status</th><th>Language</th><th>Model</th><th>Input</th><th>Output</th><th>Searches</th><th>Latency</th><th>Estimated cost</th></tr></thead>
+          <thead><tr><th>Run</th><th>Completed (UTC)</th><th>Status</th><th>Language</th><th>Input</th><th>Output</th><th>Searches</th><th>Latency</th><th>Estimated cost</th></tr></thead>
           <tbody>{dashboard.recentAnalyses.map((row, index) => <tr key={`${row.completedAt ?? "pending"}-${index}`}>
             <td>#{index + 1}</td>
             <td>{formatTime(row.completedAt)}</td>
             <td><span className={`officer-status officer-status-${row.status}`}>{row.status}</span></td>
             <td>{row.language.toUpperCase()}</td>
-            <td><b>{row.modelId}</b><small>{row.serviceTier ?? "tier unknown"}</small></td>
             <td><b>{formatInteger(row.inputTokens)}</b><small>{formatInteger(row.cachedInputTokens)} cached · {formatInteger(row.cacheWriteTokens)} write</small></td>
             <td><b>{formatInteger(row.outputTokens)}</b><small>{formatInteger(row.reasoningTokens)} reasoning</small></td>
             <td>{formatInteger(row.webSearchCalls)}</td>

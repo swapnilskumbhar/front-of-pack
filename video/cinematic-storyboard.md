@@ -31,7 +31,7 @@ show readable brands, nutrition values, certifications, or regulatory marks.
 | 01:09–01:22 | Real five-product cart screenshot and clearly separated result cards. | "And one cart screenshot can analyse up to six products—without photographing every pack." |
 | 01:22–01:35 | `/how-we-decide`: whole-pack arithmetic, claim checks, sources and rating method. | "The model reads and researches. Published rules calculate the shopper signals, so the result is reproducible." |
 | 01:35–01:44 | Officer dashboard: volume, latency and per-image cost only; conceal identifiers. | "Officers can monitor usage, response time and cost per image." |
-| 01:44–01:50 | Architecture beat: Image → Terra + search → validation → decision engine → Web / WhatsApp. | "One photo. Clearer choices." |
+| 01:44–01:50 | Architecture beat: Image → read and research → validation → decision engine → Web / WhatsApp. | "One photo. Clearer choices." |
 | 01:50–01:55 | End card with live URL, WhatsApp CTA and QR code. | "Front of Pack." |
 
 ## Edit rules

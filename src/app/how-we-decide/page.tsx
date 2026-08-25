@@ -10,19 +10,19 @@ import { RULE_PACKS } from "@/knowledge/rule-packs";
 export default function HowWeDecidePage() {
   return <main className="service-page decision-page">
     <Link href="/">← Front of Pack</Link>
-    <p className="eyebrow">Open decision logic · {INTAKE_VERSION.prompt} · {INTAKE_VERSION.schema} · {ENGINE_VERSION}</p>
+    <p className="eyebrow">Open decision logic · {INTAKE_VERSION.schema} · {ENGINE_VERSION}</p>
     <h1>Every warning keeps its evidence.</h1>
-    <p>Terra reads the package and matched sources once. Code validates every evidence link, then adds reproducible package arithmetic without another model call.</p>
+    <p>The system reads the package and matched sources once. Code validates every evidence link, then adds reproducible package arithmetic without another analysis call.</p>
 
     <section className="service-card decision-flow">
       <h2>One model call, then reproducible decisions</h2>
-      <ol><li><b>Read + research</b><span>Package facts and exact-product sources in one Terra response.</span></li><li><b>Validate</b><span>Schema, bounds, provenance, citations, profile/claim evidence and source IDs.</span></li><li><b>Calculate</b><span>Warnings, RDA, rating, claim, diet and allergen functions—no second model call.</span></li></ol>
+      <ol><li><b>Read + research</b><span>Package facts and exact-product sources in one structured response.</span></li><li><b>Validate</b><span>Schema, bounds, provenance, citations, profile/claim evidence and source IDs.</span></li><li><b>Calculate</b><span>Warnings, RDA, rating, claim, diet and allergen functions—without repeating the analysis.</span></li></ol>
     </section>
 
     <section className="service-card" id="warning-authority">
       <p className="eyebrow">Required product-evidence search</p>
       <h2>What does online matching do?</h2>
-      <p>Every fresh analysis gives Terra hosted search access. It researches the exact Indian product and pack across nutrition, ingredients, additives, allergens, claims and warnings instead of stopping at identity or the first issue.</p>
+      <p>Every fresh analysis can research the exact Indian product and pack across nutrition, ingredients, additives, allergens, claims and warnings instead of stopping at identity or the first issue.</p>
       <div className="decision-grid">
         <article><span>01</span><h3>Package wins</h3><p>Clearly readable package facts take priority over conflicting online content.</p></article>
         <article><span>02</span><h3>Exact source first</h3><p>Manufacturer evidence is preferred; an exact-product retailer can fill a missing panel.</p></article>
@@ -36,7 +36,7 @@ export default function HowWeDecidePage() {
       <h2>What appears first?</h2>
       <div className="decision-grid">
         <article><span>🔴</span><h3>Engine warning</h3><p>Red is reserved for a high signal reproduced by published code. On the web, each red line links to its rule.</p></article>
-        <article><span>🟠</span><h3>Context or moderate signal</h3><p>Amber covers moderate calculations and evidence-backed package or search context. Terra cannot make a line red.</p></article>
+        <article><span>🟠</span><h3>Context or moderate signal</h3><p>Amber covers moderate calculations and evidence-backed package or search context. Only published code can make a line red.</p></article>
         <article><span>🟢</span><h3>Useful positives</h3><p>Fibre, whole grain, vegetarian marks and supported claims follow warnings and never cancel them.</p></article>
         <article><span>⚪</span><h3>Unknowns</h3><p>Missing evidence is stated once. It is never converted into a warning, pass or invented value.</p></article>
       </div>
@@ -46,7 +46,7 @@ export default function HowWeDecidePage() {
     <section className="service-card" id="rule-rating">
       <p className="eyebrow">Experimental rule-based rating</p>
       <h2>Why is it 5 and not 4?</h2>
-      <p>Terra does not author the score. The engine starts at 10, keeps the strongest deduction per topic, subtracts these fixed points and shows the arithmetic.</p>
+      <p>The published engine—not generated prose—starts at 10, keeps the strongest deduction per topic, subtracts these fixed points and shows the arithmetic.</p>
       <code>score = max(0, 10 − fixed deductions)</code>
       <div className="decision-grid">{RATING_DEDUCTION_RULES.map((rule) => <article key={rule.id}><span>−{rule.points}</span><h3>{rule.label}</h3><p>{rule.id.replaceAll("_", " ")}</p></article>)}</div>
       <p className="decision-note">Nutrition keeps only the strongest whole-pack/reference deduction for each nutrient. Each literal claim test is separate; overlapping explicit diet/veg-origin signals deduplicate, and the allergen profile deducts once.</p>
@@ -93,12 +93,12 @@ export default function HowWeDecidePage() {
         <small>{test.limitation}</small>
       </article>)}</div>
       <p className="decision-note">These checks report an apparent package inconsistency. They do not determine formulation, intent, legality, or enforcement liability.</p>
-      <p className="decision-note">The Claims section appears only when a claim is visibly printed in the submitted image. Terra compares that exact wording with package facts and sufficiently matched sources, then marks it supported, partly supported, contradicted, not established or not assessable. Online-only marketing copy never creates the section.</p>
+      <p className="decision-note">The Claims section appears only when a claim is visibly printed in the submitted image. The system compares that exact wording with package facts and sufficiently matched sources, then marks it supported, partly supported, contradicted, not established or not assessable. Online-only marketing copy never creates the section.</p>
     </section>
 
     <section className="service-card">
       <p className="eyebrow">Verified context</p>
-      <h2>Rule packs supplied to Terra</h2>
+      <h2>Rule packs used during analysis</h2>
       <ul className="source-list">{RULE_PACKS.map((rule) => <li key={rule.id}><div><b>{rule.title}</b><small>{rule.status} · accessed {rule.source.accessedDate}</small></div><a href={rule.source.url} target="_blank" rel="noreferrer">Source ↗</a></li>)}</ul>
       <p className="decision-note">The CCPA Greenwashing Guidelines apply to environmental claims. Front of Pack does not automatically label every “free-from” cosmetic claim as greenwashing. <a href="https://consumeraffairs.nic.in/latestnews/guidelines-prevention-and-regulation-greenwashing-or-misleading-environmental-claims-2024" target="_blank" rel="noreferrer">Official guidelines ↗</a></p>
     </section>
