@@ -433,7 +433,7 @@ test("successful delivery reads stored output and clears all routing ciphertext"
   assert.equal(acknowledged, true);
 });
 
-test("analysis failure notice replies to the originating image", async () => {
+test("analysis failure notice replies to the originating image without blaming image quality", async () => {
   const keyBytes = new Uint8Array(32).fill(10);
   const key = await crypto.subtle.importKey("raw", keyBytes, "AES-GCM", false, ["encrypt"]);
   const nonce = new Uint8Array(12).fill(4);
@@ -455,7 +455,9 @@ test("analysis failure notice replies to the originating image", async () => {
     return new Response("{}", { status: 200 });
   });
   assert.deepEqual(payload.context, { message_id: "wamid.failed-image==" });
-  assert.match(payload.text.body, /couldn't verify this label reliably/i);
+  assert.match(payload.text.body, /couldn't complete the analysis this time/i);
+  assert.match(payload.text.body, /resend the same image/i);
+  assert.doesNotMatch(payload.text.body, /label|back panel|clear(?:ly)?/i);
 });
 
 async function deliveryFixture({ attempts = 0 } = {}) {
