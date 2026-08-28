@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en">
-      <body>{children}<footer className="site-footer"><Link className="footer-brand" href="/"><span className="brand-mark" aria-hidden="true">F</span><strong>Front of Pack</strong></Link><p>Front of Pack is an independent consumer-information prototype. It is not affiliated with or endorsed by any government authority. Information is educational, not medical or legal advice.</p><Link href="/how-we-decide">How we decide →</Link></footer></body>
+      <body>{children}<footer className="site-footer"><Link className="footer-brand" href="/"><span className="brand-mark" aria-hidden="true">F</span><strong>Front of Pack</strong></Link><p>Front of Pack is an independent consumer-information prototype. It is not affiliated with or endorsed by any government authority. Information is educational, not medical or legal advice.</p><nav className="footer-links" aria-label="Optional prototype links"><Link href="/how-we-decide">Methodology</Link><Link href="/registry">Registry demo</Link><Link href="/grievance">Grievance draft</Link></nav></footer></body>
     </html>
   );
 }

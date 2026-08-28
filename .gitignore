@@ -23,6 +23,10 @@ tmp/
 *.log
 setup-codex-api-key.bat
 
+# Submission and media-production work stays local
+artifacts/
+video/
+
 # Operating-system files
 .DS_Store
 Thumbs.db

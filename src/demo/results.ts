@@ -3,7 +3,7 @@ import { attachDecisions } from "../engine/index.ts";
 
 const baseItem = (position: number, name: string, category: ProductAnalysis["category"]): ProductAnalysis => ({
   position,
-  identity: { nameAsPrinted: name, brandAsPrinted: "Demo Pack", variantAsPrinted: null, gtin: null, confidence: "high" },
+  identity: { nameAsPrinted: name, brandAsPrinted: "Demo Product", variantAsPrinted: null, gtin: null, confidence: "high" },
   category, nutrition: null, ingredientTokens: [], claimsAsPrinted: [],
   webResearchOutcome: "not_needed", webMatchEvidenceIds: [],
   webMatchConfidence: null, webMatchBasis: null,
@@ -233,13 +233,13 @@ cartBalaji.citations = [{ id: "c7", title: "Balaji Crunchem Cream & Onion Wafers
 export const DEMO_RESULTS: Record<string, AnalysisResult> = {
   alofrut: result([alofrut], "A 300 ml beverage demonstrates printed and whole-bottle RDA, ingredients and claim review."),
   haldirams: result([haldirams], "A front-only Haldiram’s pack triggers a provisional official-source lookup."),
-  bread: result([bread], "A real bread label supports whole-pack and allergen checks."),
+  bread: result([bread], "A real bread label supports total-quantity and allergen checks."),
   cart: result([cartBread, cartCocoa, cartBiscuit, cartKurkure, cartBalaji], "Five cart items analysed: bread, cocoa bar, biscuits and two savoury snacks."),
 };
 
 export const DEMO_LABELS = [
-  { id: "alofrut", label: "Sugar + RDA", detail: "Real pack · claims + additives", imageSrc: "/demo/alofrut-annar-aloevera.jpeg" },
-  { id: "bread", label: "Whole-pack reality", detail: "Real pack · RDA + allergens", imageSrc: "/demo/english-oven-fibre-up.jpeg" },
-  { id: "haldirams", label: "Front-only search", detail: "Real pack · online evidence", imageSrc: "/demo/haldirams-ratlami-sev.jpeg" },
+  { id: "alofrut", label: "Sugar and additives", detail: "Real product · label evidence", imageSrc: "/demo/alofrut-annar-aloevera.jpeg" },
+  { id: "bread", label: "Serving vs total", detail: "Real product · allergens", imageSrc: "/demo/english-oven-fibre-up.jpeg" },
+  { id: "haldirams", label: "Front-label photo", detail: "Real product · verified online", imageSrc: "/demo/haldirams-ratlami-sev.jpeg" },
   { id: "cart", label: "Five-item cart", detail: "User cart · cached result", imageSrc: "/demo/cart-five-items.jpeg" },
 ] as const;

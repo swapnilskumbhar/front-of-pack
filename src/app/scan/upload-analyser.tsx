@@ -129,15 +129,15 @@ export default function UploadAnalyser() {
   return (
     <>
       <form className="upload-card" id="upload" onSubmit={submit}>
-        <div className="card-heading"><div><p className="step-label">Start here</p><h2>Check a product label</h2></div><span className="private-pill">Temporary image</span></div>
+        <div className="card-heading"><div><p className="step-label">Live website analysis</p><h2>Upload a product photo</h2></div><span className="private-pill">Temporary image</span></div>
         <label className="language-field"><span>Response language</span><select name="language" value={language} onChange={(event) => changeLanguage(event.target.value as LanguageCode)}>{languages.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select><small>Your choice is remembered for next time.</small></label>
         <label className="drop-zone"><input type="file" name="image" required accept="image/jpeg,image/png,image/webp" onChange={(event) => setFileName(event.target.files?.[0]?.name ?? "")} /><span className="camera-icon"><CameraIcon /></span><strong>{fileName || "Take a photo or choose an image"}</strong><span>Show the label clearly · JPG, PNG or WebP · up to 12 MB</span></label>
-        <button type="submit" className="primary-button" disabled={pending} aria-describedby="upload-note">{pending ? "Analysing…" : "Analyse label"} {!pending && <ArrowIcon />}</button>
+        <button type="submit" className="primary-button" disabled={pending} aria-describedby="upload-note">{pending ? "Analysing…" : "Analyse product"} {!pending && <ArrowIcon />}</button>
         <p className="upload-note" id="upload-note">Your original image is validated, stored temporarily, then deleted after analysis.</p>
         <p className="analysis-message" aria-live="polite">{message}</p>
       </form>
       <div className="demo-row" aria-label="Cached demonstrations">
-        <span>Try instantly:</span>
+        <div className="demo-heading"><strong>Explore sample results</strong><span>Previously analysed examples · no new model call</span></div>
         {DEMO_LABELS.map((demo) => <button key={demo.id} type="button" onClick={() => {
           setResult(DEMO_RESULTS[demo.id]);
           setSelectedDemo(demo);
@@ -195,7 +195,6 @@ function AnalysisResultView({ result, demo }: { result: AnalysisResult; demo: De
             {indicator.origin === "engine" && indicator.ruleId && <a className="indicator-rule-link" href={`/how-we-decide#${indicator.ruleId}`}>How this was decided →</a>}
           </div>)}<p className="indicator-legend">Red is reserved for a high engine rule. Amber is evidence-backed context. Grey means there is not enough information to rate.</p></div>}
           <div className="analysis-overview">
-            <div className="rating-card"><small>Experimental rule-based rating</small><strong>{rating?.score === null || rating?.score === undefined ? ratingBand(null, checksRan) : `${rating.score}/10 · ${ratingBand(rating.score, checksRan)}`}</strong>{ratingRows.length ? <details><summary>{ratingArithmetic(rating?.score ?? null, ratingRows.map((deduction) => deduction.points))}</summary><ul>{ratingRows.map((deduction, index) => <li key={`${deduction.ruleId}-${index}`}>−{deduction.points}: {deduction.label}</li>)}</ul></details> : <span>{checksRan ? "Checks completed; no fixed deduction applied." : "Rating unavailable until a reproducible rule check can run."}</span>}</div>
             <div><small>Profile</small><strong>{item.profile?.length ? item.profile.map((tag) => tag.label).join(" · ") : "No reliable tags"}</strong></div>
             <div><small>{item.webResearchOutcome === "not_needed" ? "Image identification" : "Product match"}</small><strong>{productMatchConfidence(item)}</strong>{item.webMatchBasis && <span>{item.webMatchBasis}</span>}</div>
           </div>
@@ -208,6 +207,7 @@ function AnalysisResultView({ result, demo }: { result: AnalysisResult; demo: De
             const limitationFirst = status === "not_established" || status === "not_assessable";
             return <div className={`claim-status-${status}${engineClass}`} key={claim}><span>{claimStatusIcon(status, engineConfirmed)}</span><p>{limitationFirst ? <><strong>{audit.assessment}</strong><small>{claimStatusLabel(status, engineConfirmed)}</small><em>Printed claim: “{claim}”</em></> : <><strong>“{claim}”</strong><small>{claimStatusLabel(status, engineConfirmed)}</small>{audit.assessment && <em>{audit.assessment}</em>}</>}</p></div>;
           })}</div>}
+          <details className="rating-details"><summary>View experimental rating calculation</summary><div><strong>{rating?.score === null || rating?.score === undefined ? ratingBand(null, checksRan) : `${rating.score}/10 · ${ratingBand(rating.score, checksRan)}`}</strong>{ratingRows.length ? <><p>{ratingArithmetic(rating?.score ?? null, ratingRows.map((deduction) => deduction.points))}</p><ul>{ratingRows.map((deduction, index) => <li key={`${deduction.ruleId}-${index}`}>−{deduction.points}: {deduction.label}</li>)}</ul></> : <span>{checksRan ? "Checks completed; no fixed deduction applied." : "Rating unavailable until a reproducible rule check can run."}</span>}</div></details>
           {item.serviceRoute && <div className="analysis-next-step-card"><small>Verified next step</small><p>{item.serviceRoute.reason}</p><a className="analysis-next-step" href="/grievance">Prepare an editable draft →</a></div>}
           <details className="analysis-evidence">
             <summary>View full evidence</summary>
