@@ -1,16 +1,18 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { SITE_DESCRIPTION, SITE_ORIGIN, SITE_TITLE } from "@/site-metadata";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Front of Pack — Evidence-backed shopper briefs from one photo",
-  description:
-    "See every material warning, absolute nutrition plus %RDA, allergens, ingredients, claims, rating and official next steps on web or WhatsApp.",
+  metadataBase: new URL(SITE_ORIGIN),
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>{children}<footer className="site-footer"><Link className="footer-brand" href="/"><span className="brand-mark" aria-hidden="true">F</span><strong>Front of Pack</strong></Link><p>Front of Pack is an independent consumer-information prototype. It is not affiliated with or endorsed by any government authority. Information is educational, not medical or legal advice.</p><nav className="footer-links" aria-label="Optional prototype links"><Link href="/how-we-decide">Methodology</Link><Link href="/registry">Registry demo</Link><Link href="/grievance">Grievance draft</Link></nav></footer></body>
     </html>
   );
 }

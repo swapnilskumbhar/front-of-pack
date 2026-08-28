@@ -1,0 +1,6 @@
+.dev.vars
+tools/
+work/
+output/
+.python-packages/
+__pycache__/

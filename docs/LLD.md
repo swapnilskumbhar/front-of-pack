@@ -1,7 +1,7 @@
 # Front of Pack — Low Level Design
 
-> **Status:** v5.0 — deployed shopper-brief implementation contract
-> **Runtime pins:** `terra-analysis.v15` · `analysis-result.v2` · `decision-engine.v7`
+> **Status:** v6.0 — competition release-candidate implementation contract
+> **Runtime pins:** `terra-analysis.v17` · `analysis-result.v4` · `decision-engine.v8`
 > **Authority:** [FINAL_PLAN.md](./FINAL_PLAN.md) owns product scope, priority, schedule, demo, and cut decisions. This LLD explains how to implement that plan.
 > **Companions:** [HLD.md](./HLD.md); [EXECUTION_PIPELINE.md](./EXECUTION_PIPELINE.md) owns live task status and proof; [CLOUDFLARE_SETUP.md](./CLOUDFLARE_SETUP.md) owns platform onboarding commands
 > **Supersedes:** LLD v2 production-scale attempt/artifact/lease design.
@@ -12,19 +12,19 @@
 
 These rules override any conflicting implementation detail:
 
-1. The input is one original image and the language saved in the current channel profile.
+1. The input is one original image and the resolved channel language. WhatsApp explicitly resolves an unset language to English and analyzes the first image.
 2. One image may contain one or several supported packaged consumer products, including a mixed-category cart screenshot.
 3. A cache miss makes exactly one Responses API request to GPT-5.6 Terra.
 4. Hosted web search is required inside every fresh response for exact-product corroboration and comprehensive product evidence; package evidence still wins.
 5. The original image is analyzed as a whole. There are no crop, region, segment, cart-parser, or per-product model calls.
-6. Terra owns extraction, identification, regulatory reasoning, findings, claim checks, experimental presentation, and localized explanation.
-7. Application code validates without translating, paraphrasing, or repairing model prose; decision-engine v7 adds reproducible RDA, whole-pack, claim, diet and allergen signals.
+6. Terra owns extraction, identity, profile, summary/verdict, findings and their prose, claims, evidence, and localized explanation. It does not own the rating or final severity colour/order.
+7. Application code validates without translating, paraphrasing, or repairing model prose; decision-engine v8 adds reproducible RDA, whole-pack, claim, diet and allergen signals plus the fixed-deduction rating, then presentation code merges nutrient topics and applies structured cross-language ordering.
 8. Registry and grievance are separate deterministic surfaces. Synthetic identifier matches never rewrite Terra's finding or imply a live government query.
 9. A failed, refused, incomplete, or schema-invalid response fails atomically. There is no automatic provider retry.
 10. Every web-derived material fact must resolve to a source returned by the hosted web-search tool.
 11. Food/beverage is the judged hero, not the product boundary. Cosmetics, personal care, household, baby-care, pet-care, and supplements use the same call when their rule/service packs are enabled.
 12. A category without verified regulatory coverage may still receive label comprehension, but its regulatory status is unavailable and no specialist route is invented.
-13. The evidence-linked 0–10 shopper rating is always explicitly experimental, category-scoped, and null when evidence is insufficient; it is not an official FSSAI score, safety certification, medical finding, or legal conclusion.
+13. The 0–10 shopper rating is deterministic, experimental, and derived only from published fixed deductions. It is null when no reproducible deduction applies; it is not an official FSSAI score, safety certification, medical finding, or legal conclusion.
 14. The legacy LabelSensei n8n export is evidence only and is never shipped, imported, cloned, or deployed. Front of Pack does not use n8n.
 15. Every runtime component is deployed on Cloudflare Workers/OpenNext, D1, R2 or Queues. OpenAI and Meta remain external APIs.
 16. A Queue redelivery may never repeat a started Terra request. The consumer records `provider_started_at` before network I/O and treats an ambiguous redelivery as failure until an explicit user retry.
@@ -41,7 +41,7 @@ The build is optimized around one complete citizen journey:
 remembered language
 → upload one food-package image
 → one Terra response with required hosted product research
-→ every warning + absolute/%RDA + rating/profile/verdict/analysis/claims
+→ engine red warnings + model context + absolute/%RDA + rating/profile/verdict/analysis/claims
 → inspect package vs online evidence and match basis
 → optional editable grievance draft
 ~~~
@@ -73,9 +73,9 @@ front-of-pack/
 │   │   ├── registry/page.tsx
 │   │   ├── officer/page.tsx
 │   │   └── api/                         # analyses/profile/registry/officer/WhatsApp
-│   ├── domain/analysis.ts               # analysis-result.v2 domain contract
+│   ├── domain/analysis.ts               # analysis-result.v4 domain contract
 │   ├── validation/analysis-result.ts    # semantic/evidence validator
-│   ├── engine/                          # decision-engine.v7
+│   ├── engine/                          # decision-engine.v8 signals, rating, presentation
 │   ├── intake/                          # original-byte validation/cache identity
 │   ├── knowledge/                       # rules/services/ingredients/claim tests
 │   ├── data/                            # D1 repositories
@@ -83,8 +83,8 @@ front-of-pack/
 ├── workers/jobs/
 │   ├── src/index.ts                     # Queue consumers + pinned versions
 │   ├── src/openai/client.ts             # only Responses API call boundary
-│   ├── src/openai/prompt.ts             # terra-analysis.v15
-│   ├── src/openai/schema.ts             # strict analysis-result.v2 schema
+│   ├── src/openai/prompt.ts             # terra-analysis.v17
+│   ├── src/openai/schema.ts             # strict analysis-result.v4 schema
 │   ├── src/whatsapp/                    # Meta media/intake/delivery
 │   └── wrangler.jsonc
 ├── migrations/*.sql
@@ -108,11 +108,11 @@ There is one model call site: **`workers/jobs/src/openai/client.ts`**. Delivery 
 ~~~ts
 export const VERSION = {
   model: "gpt-5.6-terra",
-  prompt: "terra-analysis.v15",
-  schema: "analysis-result.v2",
+  prompt: "terra-analysis.v17",
+  schema: "analysis-result.v4",
   rules: "india-category-rules.v2",
   services: "india-consumer-services.v1",
-  engine: "decision-engine.v7",
+  engine: "decision-engine.v8",
   normalization: "validated-original.v2",
 } as const;
 
@@ -126,7 +126,7 @@ export const LIMITS = {
   maxCitationsPerItem: 8,
   maxClaimAuditsPerItem: 8,
   maxToolCalls: 3,
-  maxOutputTokens: 6_000,
+  maxOutputTokens: 8_000,
   maxWhatsAppCodePoints: 3_500,
   maxRetries: 0,
   mediaLifecycleEligibilityHours: 24,
@@ -302,6 +302,10 @@ CREATE TABLE analyses (
   local_matches_json         TEXT NOT NULL DEFAULT '[]' CHECK (json_valid(local_matches_json)),
   validation_report_json     TEXT CHECK (validation_report_json IS NULL OR json_valid(validation_report_json)),
   web_search_used            INTEGER NOT NULL DEFAULT 0 CHECK (web_search_used IN (0,1)),
+  provider_model_id          TEXT,
+  service_tier               TEXT,
+  web_search_call_count      INTEGER CHECK (web_search_call_count IS NULL OR web_search_call_count >= 0),
+  cost_basis_version         TEXT,
   model_id                   TEXT NOT NULL,
   prompt_version             TEXT NOT NULL,
   schema_version             TEXT NOT NULL,
@@ -404,9 +408,10 @@ en hi mr bn ta te kn gu ml pa or ur
 
 1. Normalize the sender to E.164 in memory.
 2. Store HMAC-SHA256(PROFILE_HMAC_SECRET, normalized number).
-3. Language remains null until the user selects it; never silently default to English.
-4. Support native/English language-name and language-code commands; the next image uses the saved language.
-5. Web and WhatsApp profiles remain separate for the submission. There is no silent or inferred linking.
+3. Create a new WhatsApp profile with `preferred_language = "en"`; resolve any legacy null value to `DEFAULT_LANGUAGE` (`en`).
+4. Analyze the first image immediately in English when the user has not sent a language command; do not gate it behind a language menu.
+5. Support native/English language names and language-code commands. A command updates the profile, and each subsequently received image job snapshots that language.
+6. A later command does not relabel or re-render an already queued job. Web and WhatsApp profiles remain separate; there is no silent or inferred linking.
 
 Profiles affect presentation only. They do not change evidence, rules, findings, or experimental scoring. No allergy, disease, pregnancy, age, diet, location, or other sensitive health profile is stored.
 
@@ -428,7 +433,7 @@ type AnalyzeInput = {
 };
 ~~~
 
-Language comes from the resolved profile. The public scan API does not trust a client-supplied language or channel.
+Language comes from the resolved profile. WhatsApp resolution uses English when unset; the public scan API does not trust a client-supplied language or channel.
 
 ### 7.2 Evidence
 
@@ -468,7 +473,7 @@ The deployed contract is camelCase and matches `src/domain/analysis.ts` plus the
 
 ~~~ts
 type AnalysisResult = {
-  schemaVersion: "analysis-result.v2";
+  schemaVersion: "analysis-result.v4";
   language: Language;
   analyzedCount: number;
   unknownCount: number;
@@ -478,7 +483,7 @@ type AnalysisResult = {
   strongestMaterialFinding: string | null;
   items: ProductAnalysis[]; // maximum six
   disclaimer: string;
-  derived?: { engineVersion: "decision-engine.v7"; items: DerivedItemDecision[] };
+  derived?: { engineVersion: "decision-engine.v8"; items: DerivedItemDecision[] };
 };
 
 type ProductAnalysis = {
@@ -492,10 +497,12 @@ type ProductAnalysis = {
   ingredientTokens: string[];
   claimsAsPrinted: string[]; // only claims visible in the submitted image
   printedVegMark: "veg" | "non_veg" | null;
+  webResearchOutcome: "not_needed" | "decision_facts_found" |
+    "identity_only" | "no_sufficient_match";
+  webMatchEvidenceIds: string[]; // cited identity/variant/pack-match evidence only
   webMatchConfidence: "high" | "medium" | "low" | null;
   webMatchBasis: string | null;
-  rating: { score: number | null; dimension: "nutrition" | "ingredients" | "claims" | "label_evidence";
-    label: string; basis: string; evidenceIds: string[]; experimental: true };
+  // No rating field: the model is not allowed to author the score.
   profile: Array<{ label: string; evidenceIds: string[] }>; // maximum six
   coverage: { tier: "category_rules" | "general_pack_rules" | "label_only";
     rulePackIds: string[]; limitations: string[] };
@@ -524,6 +531,9 @@ type ExtractedNutrition = {
 type Finding = {
   id: string;
   kind: "label_fact" | "ingredient" | "nutrition" | "claim_audit" | "regulatory_context" | "experimental_fop";
+  topic: "statutory_warning" | "allergen" | "added_sugars" | "total_sugars" |
+    "saturated_fat" | "sodium" | "total_fat" | "palm_oil" | "preservatives" |
+    "colours" | "claim" | "diet" | "nutrition" | "ingredient" | "label" | "other";
   level: "information" | "attention" | "unknown";
   title: string;
   explanation: string;
@@ -540,15 +550,57 @@ type ClaimAudit = {
 };
 ~~~
 
-Raw brand, product, claim, and label text remains verbatim. Consumer explanation, uncertainty, rating basis and next actions are in the selected language.
+The model owns this schema's identity, profile, summary/verdict, findings and their prose, claims, and evidence. `webMatchEvidenceIds` grounds identity/variant/pack scope separately; `decision_facts_found` requires at least one hosted evidence ID to reach a consumer-visible finding, usable nutrition value, profile tag, or assessable claim audit. Identity-only/unmatched evidence cannot silently carry a material fact into a hidden evidence bucket. Raw brand, product, decision-relevant claim, and label text remains verbatim; consumer explanation, uncertainty, and next actions are in the selected language. The application validates these fields but does not paraphrase them.
 
-Printed per-serving %RDA takes priority. When unavailable, decision-engine v7 calculates and labels %RDA using the FSSAI adult references for added sugar (50 g), saturated fat (22 g) and sodium (2,000 mg). The response pairs absolute and percentage values at the honest scope: per 100 g/ml, exact serving, or verified whole pack. Web nutrition remains labelled as an online match.
+Printed per-serving %RDA takes priority. When unavailable, decision-engine v8 calculates and labels %RDA using the FSSAI adult references for added sugar (50 g), saturated fat (22 g) and sodium (2,000 mg). The response pairs absolute and percentage values at the honest scope: per 100 g/ml, exact serving, or verified whole pack. Web nutrition remains labelled as an online match.
 
 The permanent experimental disclaimer is:
 
 > Experimental research presentation based on draft FSSAI front-of-pack policy context. Not an official FSSAI score, warning, approval, or legal determination.
 
-The required rating object uses `score: null` when evidence is insufficient. An experimental score or warning cannot, by itself, make a grievance ready for review.
+### 7.4 Derived decision and presentation contracts
+
+`ProductAnalysis` has no rating. After the model result passes validation, decision-engine v8 attaches one derived item per product:
+
+~~~ts
+type DerivedItemDecision = {
+  position: number;
+  signals: DerivedSignal[];
+  rating: {
+    score: number | null;
+    deductions: Array<{ ruleId: string; points: number; reason: string }>;
+  };
+};
+
+type ShopperIndicator = {
+  tone: "red" | "amber" | "green" | "grey";
+  origin: "engine" | "model";
+  topic: "statutory_warning" | "allergen" | "added_sugars" |
+    "total_sugars" | "saturated_fat" | "sodium" | "total_fat" | "palm_oil" |
+    "preservatives" | "colours" | "claim" | "diet" | "nutrition" |
+    "ingredient" | "label" | "other" | "unknown";
+  ruleId: string | null;
+  title: string;
+  detail: string;
+  evidenceIds: string[];
+};
+~~~
+
+The engine starts a reproducible rating at 10 and applies fixed deductions, deduplicated by nutrient or rule topic:
+
+| Derived signal | Deduction |
+|---|---:|
+| High whole-pack or FSSAI-reference nutrient signal | −3 |
+| Moderate whole-pack or FSSAI-reference nutrient signal | −2 |
+| Printed claim contradiction | −3 |
+| Vegetarian-mark conflict with explicit printed origin | −2 |
+| Common allergen from printed ingredients | −1 |
+| Explicit animal/insect-derived diet-profile match | −1 |
+| Informational diet/source-unclear signal | 0 |
+
+The score floors at 0 and is `null` with an empty deduction list—there is no unexplained 10/10 when no reproducible deduction exists. Presentation checks whether nutrition, ingredient, claim or derived checks actually ran and the image was not marked for retake. A null score renders no numeric fraction: the web card says `No deductions from checks that ran` or `Not enough information to rate`, and WhatsApp omits the rating row. `—/10` is forbidden. The rating is explicitly experimental, and neither it nor a warning can by itself make a grievance ready for review.
+
+Presentation combines model findings and engine signals as `ShopperIndicator` values. Only `origin: "engine"` may be red and link a non-null `ruleId`; model attention or uncertainty is amber, and a moderate engine signal is amber. The required model `Finding.topic` keeps total sugar distinct from added sugar and ingredient names such as sodium benzoate distinct from sodium nutrition. Nutrient/allergen signals merge only an exact structured topic and replace the visible title/detail with engine-formatted content; arbitrary title text never controls severity. Ordering uses structured topic/tone/origin fields, not translated title text, so all twelve languages follow the same priority.
 
 ---
 
@@ -585,18 +637,35 @@ async function callTerraOnce(
       },
     ],
     reasoning: { effort: "low" },
-    tools: [{ type: "web_search" }],
+    service_tier: "default",
+    tools: [{ type: "web_search", user_location: { type: "approximate", country: "IN" } }],
     tool_choice: "required",
-    max_tool_calls: 3,
+    max_tool_calls: 6,
     include: ["web_search_call.action.sources"],
     text: { verbosity: "low", format: strictStructuredOutput(AnalysisResultSchema) },
-    max_output_tokens: 6_000,
+    max_output_tokens: 8_000,
     }),
   });
 }
 ~~~
 
-The deployed Worker uses direct `fetch`; automatic provider retry is absent. The invariant is one Responses request with original-detail image input, one strict schema, verified rule context, and required hosted search.
+The deployed Worker uses direct `fetch`; automatic provider retry is absent. The invariant is one Responses request with original-detail image input, one strict schema, verified rule context, and required hosted search. `tool_choice: required` guarantees search runs but not that it finds a useful source, so schema v4 records `webResearchOutcome` per product and validates that any useful searched facts are actually consumed. Identity-only and unmatched outcomes remain valid, honest retake results rather than forced findings.
+
+The default service tier is explicit so a standard-price estimate is reproducible. The parser retains the actual returned model, service tier, token usage and the exact count of `web_search_call` output items. Source count is not used as a billing proxy.
+
+### 8.1.1 Successful-response cost estimate
+
+`src/cost/openai.ts` validates non-negative integer usage, treats cached and cache-write tokens as subsets of input, and rejects malformed usage instead of emitting zero. For Terra short-context requests:
+
+~~~text
+U = input_tokens - cached_tokens - cache_write_tokens
+estimated_usd_micros = round(
+  U × 2.0 + cached_tokens × 0.2 + cache_write_tokens × 2.5
+  + output_tokens × 12.0 + web_search_calls × 10,000
+)
+~~~
+
+Above 272,000 input tokens, the full-request rates are 4.0, 0.4, 5.0 and 18.0 USD micros per token respectively. The cost basis is pinned as `openai-standard-2026-08-24`; search is $10/1,000 calls. Output already includes reasoning tokens. The complete normalized usage and breakdown are stored in `token_usage_json`; `estimated_cost_usd_micros` stores the total. Missing usage/model/tier produces `NULL`. Historical `NULL` values are never backfilled from a boolean search flag.
 
 ### 8.2 Unified prompt requirements
 
@@ -614,10 +683,10 @@ Terra must:
 10. Use only supplied verified rule IDs and allow-listed service route IDs.
 11. Generate all consumer copy directly in the selected language.
 12. Avoid medical advice and definitive safe, unsafe, healthy, toxic, illegal, or violation wording.
-13. Return every independently useful substantiated warning, then useful nonduplicate positives/neutral facts.
-14. Author the evidence-linked experimental rating, factual profile and verdict; use a null score when evidence is insufficient.
+13. Return only independently useful, substantiated findings without padding to a quota; `Finding.level` supplies model context but never final colour or order.
+14. Author the evidence-linked factual profile and summary/verdict, but do not author a rating.
 15. Put only claims visibly printed in the submitted image into `claimsAsPrinted`; audit each and never create the section from online-only marketing.
-16. Populate nutrition with package/web provenance and exact values, but never calculate %RDA in the model; decision-engine v7 owns that calculation.
+16. Populate nutrition with package/web provenance and exact values, but never calculate %RDA in the model; decision-engine v8 owns that calculation.
 17. For medium web matches, keep reliable per-100 values but null serving/net quantity unless exact scope matches.
 18. For missing category coverage, explain the label only and state the limitation.
 19. Self-check schema, citations, rules, service routes, language, and product count before returning.
@@ -661,25 +730,29 @@ Required checks:
 
 1. Provider response completed without refusal or incompleteness.
 2. Strict schema parses and schema version matches.
-3. Returned language equals the saved requested language.
+3. Returned language equals the resolved requested language, including the WhatsApp English fallback.
 4. Items preserve order, use unique one-based positions, and number six or fewer; top-level counts are bounded and `analyzedCount` equals item count.
 5. Every evidence/citation ID is unique within its product and every evidence reference resolves locally.
 6. Every hosted-search evidence item resolves to a provider-returned HTTPS source ID/URL pair.
 7. Nutrition provenance resolves to package or hosted-search evidence; exact scope is required before serving/pack calculations.
-8. Rating and profile shapes are bounded, evidence-linked, and explicitly experimental; rating score is null or an integer from 0–10.
+8. The provider `ProductAnalysis` contains no rating; profile tags are bounded and every profile evidence reference resolves.
 9. Every visible-claim audit references a transcribed package claim and valid evidence; online-only marketing never creates `claimsAsPrinted`.
 10. Every rule ID exists, is enabled, and is verified in the supplied rule context.
 11. Every non-null service route ID exists in the allow-listed directory and is compatible with the item's category and issue type.
 12. Insufficient, conflicting, uncovered, and unreadable results contain no unsupported regulatory finding.
 13. Prohibited definitive, medical, legal, or government-affiliation wording is absent.
 14. Finding, evidence, citation, claim-audit, product-count and serialized-payload limits are enforced.
-15. Decision-engine v7 adds only provenance-linked RDA/whole-pack/claim/diet/allergen signals; printed RDA wins and duplicate nutrient topics merge.
+15. Decision-engine v8 adds only provenance-linked RDA/whole-pack/claim/diet/allergen signals and the fixed deductions derived from those signals.
+16. Derived ratings exactly reproduce the published arithmetic, floor at zero, and remain null when there are no deductions.
+17. Presentation never emits a red model-origin indicator, merges duplicate nutrient topics, and produces the same structured topic order in every language.
 
 On failure, save MODEL_OUTPUT_INVALID and show Retry. Do not coerce, repair, translate, or call another model.
 
 ### 9.1 Deterministic enrichment and separate demonstrations
 
-After validation, decision-engine v7 attaches calculation/dictionary signals without rewriting the model result. The public registry route is a separate exact identifier lookup against clearly synthetic demonstration data; it does not alter scan findings and never claims a live government check. Grievance drafting similarly uses stored validated facts plus fixed templates and never submits externally.
+After validation, decision-engine v8 attaches calculation/dictionary signals and the deterministic rating without rewriting model-owned identity, profile, summary, findings, claims, or evidence. Presentation then builds origin/topic/rule-linked indicators; engine warnings may be red, model context may be amber, and structured ordering is independent of translated text. The public registry route is a separate exact identifier lookup against clearly synthetic demonstration data; it does not alter scan findings and never claims a live government check. Grievance drafting similarly uses stored validated facts plus fixed templates and never submits externally.
+
+The current multi-product demonstration uses the user-provided five-item cart screenshot and a validated `analysis-result.v4` cached reconstruction from that exact image. The image contains no visible PII, all five products render through the production path, and selecting it makes no model call during recording. UI and submission copy must disclose the screenshot as third-party imagery; inclusion in the final recording remains conditional on confirmed ownership/permitted use and any required attribution.
 
 ---
 
@@ -797,15 +870,17 @@ WhatsApp is a must-have channel using the same Cloudflare API, Queue consumer an
 Meta → POST /api/whatsapp on the OpenNext Worker
 → verify raw-body signature before JSON parsing
 → normalize every entry/change/message envelope
-→ insert/reuse D1 whatsapp_job by provider message ID
+→ find/reuse any job already stored for the provider message ID
+→ resolve the profile language, defaulting an unset value to English
 → encrypt recipient and media ID with DELIVERY_ENCRYPTION_KEY
+→ insert the D1 whatsapp_job and snapshot the resolved language
 → publish whatsapp_job ID to Analysis Queue
 → return 200
 
 Jobs Worker
 → decrypt media ID in memory
 → retrieve and decode-validate media; preserve the original bytes in temporary private R2
-→ resolve saved language and cache
+→ use the job's snapshotted language and resolve the cache
 → call the shared Terra analyzer once only on a miss
 → store result and publish whatsapp_job ID to Delivery Queue
 → delivery handler decrypts recipient, renders stored chunks and sends through Graph
@@ -843,14 +918,15 @@ No bearer credential may ever be attached to a URL selected directly from incomi
 
 | Incoming state/message | Action |
 |---|---|
-| No saved language | Send native-script language menu |
-| Language selection | Save it and ask for one image |
-| Image before language | Repeat language menu; do not analyze |
-| Image after language | Create/reuse one idempotent scan request and analyze through the shared API |
-| Completed result | Send one localized, bounded shopper brief from the stored result |
-| Change language | Update profile; applies to next scan |
+| First image, no saved language | Default to English, create/reuse one idempotent scan request, and analyze immediately |
+| Language selection/command | Save it for subsequently received image jobs; do not alter an already queued job |
+| Image with saved language | Snapshot that language and analyze through the shared API |
+| Completed result | Send numbered product blocks; every chunk quotes the originating image via `context.message_id` |
+| Change language | Update the profile; applies to future image jobs |
 
-The renderer returns one message bounded at 3,500 Unicode code points: every retained warning first, then product, rating, profile, verdict, evidence confidence, supporting analysis, conditional visible claims and any service-route reason. Analysis and delivery have separate Queue states. Delivery may retry; it cannot import or invoke `workers/jobs/src/openai/client.ts`. A failed/expired delivery deletes the encrypted recipient after recording a non-sensitive error code.
+The renderer performs two global passes. For more than one product it emits closed warning blocks headed `⚠️ n/total · product` for every warning-bearing product, then closed detail blocks headed `📦 n/total · product` for every product. It omits false empty-warning blocks, repeats the same ordinal/name on continuations, and keeps every closed block within 3,500 Unicode code points. Thus a later product warning cannot be hidden behind an earlier product's verbose claims, and a chunk can never lose product identity. Single-product output stays compact and unnumbered. Red is engine-only; model context is at most amber. When no material fact is established, grey insufficiency leads; null ratings are omitted; product-match confidence is shown only with its explicit basis; not-established/not-assessable claims put the limitation before the quoted marketing wording; unaudited claims are omitted.
+
+The delivery query reads the already stored `whatsapp_jobs.inbound_message_id`. Every Graph text request—each success chunk and the analysis-failure notice—adds the documented root payload `context: { message_id: inbound_message_id }`. The opaque WAMID remains out of Queue payloads and logs. Two images from the same user can finish in either order: each response quotes its own original image rather than relying on arrival order. The delivery consumer sends stored chunks sequentially and never invokes the model. A retry is allowed only before any chunk has been sent; a later-chunk failure is terminal (`delivery_partial`) so earlier chunks are not duplicated. Failed/expired delivery deletes encrypted routing data after recording a non-sensitive code.
 
 ### 11.5 Legacy boundary
 
@@ -884,7 +960,13 @@ The user may edit, copy, print, or download it. Automatic submission, OTP handli
 
 The registry is intentionally minimal: it accepts an entered FSSAI licence or BIS CM/L identifier and exact-matches two clearly synthetic local records. It performs no fuzzy matching, consumes no user upload, and makes no live government query.
 
-The officer page is read-only, session-protected, noindex, and secondary to the citizen demo. It returns only redacted aggregate counts grouped by analysis status and language. It exposes no images, identifiers, profiles, evidence or model output. No location is collected or inferred.
+The officer page is read-only, signed-session-protected, noindex, and secondary to the citizen demo. It returns:
+
+- aggregate counts grouped by analysis status and language;
+- estimated OpenAI spend, average cost, telemetry coverage, measured token totals and exact search-call totals;
+- the latest 50 anonymous analysis rows with completion time, status, language, model/tier, token subsets, search calls, provider latency, cost and cost-basis version.
+
+The query and server mapper use an explicit allow-list. They never select or return images, cache/image hashes, database IDs, media keys, profile/scan/WhatsApp identifiers, product details, evidence, citations, source JSON, model output or OpenAI response IDs. `NULL` cost renders as `—`, not zero. A multi-product image remains one analysis row; a cache hit reuses the existing result and incurs no new model charge. The display labels these values as versioned successful-response estimates rather than invoice totals. No location is collected or inferred.
 
 ---
 
@@ -930,7 +1012,7 @@ Never turn a failure into a guessed result or expose partial provider JSON.
 - Rate-limit web by profile plus IP and WhatsApp by phone digest.
 - Keep secrets in Cloudflare Workers Secrets/Secrets Store bindings and out of Wrangler variables, logs and Git.
 - Use no official government logo or implied endorsement.
-- Real-package demos must remain factual, evidence-linked and non-accusatory; every synthetic fixture is labelled as synthetic and no demo declares a legal violation.
+- Real-package and cart demos must remain factual, evidence-linked and non-accusatory; every synthetic fixture is labelled as synthetic and no demo declares a legal violation. User-provided imagery is still a third-party asset unless rights are confirmed, so provenance must be disclosed and permission/attribution must pass the release checklist before recording.
 
 Standing result notice:
 
@@ -960,19 +1042,22 @@ Instrument callTerraOnce:
 
 - strict schema accepts single- and multi-product fixtures;
 - item limit and top-level counts are enforced;
-- prompt v15, schema v2 and engine v7 pins must match the queued analysis row;
+- prompt v17, schema v4 and engine v8 pins must match the queued analysis row;
 - Responses requests require hosted search, permit three tool calls and include provider source metadata;
 - orphan source and rule IDs fail;
 - invented hosted-search URLs fail;
 - low web matches cannot support conclusions; medium matches remain explicitly qualified;
 - nutrition provenance resolves; printed RDA wins; per-100/serve/whole-pack calculated fallbacks use exact scope and never duplicate a nutrient line;
-- every material warning survives model, engine and renderer limits;
+- every engine warning and retained model finding survives renderer limits;
 - claim audits appear only for visibly transcribed package claims and disappear when no claim is visible;
-- rating/profile evidence references resolve and insufficient evidence produces `score: null`;
+- the provider schema rejects a product-level rating, while profile evidence references resolve;
+- identical derived signals produce identical rating deductions and score; no deductions produce `score: null`;
+- only engine-origin indicators may be red; model attention/context is amber at most;
+- structured topic order is identical across languages, and model/engine nutrient topics merge;
 - source conflict and insufficient evidence cannot be decisive;
 - category coverage is explicit and uncovered categories cannot claim regulatory review;
 - service routes are allow-listed and category-compatible;
-- experimental ratings always have their badge, evidence, dimension and disclaimer;
+- experimental ratings show fixed-deduction arithmetic and the standing disclaimer;
 - experimental presentation cannot solely drive a grievance;
 - prohibited wording fails;
 - exact synthetic registry lookup never falls back to fuzzy matching.
@@ -981,6 +1066,8 @@ Instrument callTerraOnce:
 
 - first-use web language is saved and survives refresh;
 - language can be changed through the web selector or WhatsApp language commands;
+- a fresh or legacy-null WhatsApp profile analyzes its first image in English instead of returning a language menu;
+- a WhatsApp language command overrides subsequently received image jobs but not an already queued job;
 - English/localStorage is documented as the web offline fallback;
 - web and WhatsApp identities use HMAC digests;
 - Meta GET verification rejects a wrong token and POST verification rejects a changed raw body;
@@ -1022,8 +1109,9 @@ Instrument callTerraOnce:
 - `npm run preview` passes under the Cloudflare `workerd` runtime and the release runs on `workers.dev` or the custom domain;
 - local and remote D1 migrations, R2 cleanup and both Queue producer/consumer paths pass;
 - precomputed hero samples work without live model availability;
+- the user-provided five-item cart sample renders its validated current-schema cached reconstruction with no visible PII and zero recording-time model calls; its separate asset-rights/attribution gate is confirmed before recording;
 - no committed PII, credentials, or official branding;
-- `/how-we-decide` exposes formulas, rating anchors, evidence rules, sources and limitations;
+- `/how-we-decide` exposes formulas, fixed rating deductions, evidence rules, sources and limitations;
 - every feature shown in the video works in three consecutive clean runs.
 
 ---
@@ -1067,7 +1155,7 @@ Only after the winning citizen loop is proven:
 ## 19. TL;DR
 
 ~~~text
-saved anonymous language/profile
+resolved anonymous language/profile (WhatsApp defaults unset to English)
     → one image from web or direct verified Worker WhatsApp webhook
     → decode-validate, hash original bytes, private temporary R2, D1 cache
     → cache miss: Analysis Queue job with IDs + attempt number only
@@ -1075,7 +1163,9 @@ saved anonymous language/profile
        (whole image + strict schema + verified category rules/services
         + required hosted product-evidence search)
     → validate schema, evidence, returned citations, rules, wording
-    → decision-engine v7: printed/calculated RDA, whole-pack, claim, diet, allergen signals
+    → decision-engine v8: printed/calculated RDA, whole-pack, claim, diet, allergen signals
+      + deterministic fixed-deduction rating
+    → origin/topic/rule-linked indicators: engine-only red, merged nutrients, language-independent order
     → store one complete D1 analysis JSON and delete R2 media
     → render on web or Delivery Queue → WhatsApp
     → optionally generate an editable, unsubmitted grievance draft

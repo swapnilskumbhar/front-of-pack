@@ -4,7 +4,7 @@ import type { DerivedDecisionResult, ExtractedNutrition } from "../engine/types"
 
 export const MAX_PRODUCTS_PER_ANALYSIS = 6 as const;
 export const MAX_SERIALIZED_ANALYSIS_BYTES = 512 * 1024;
-export const ANALYSIS_SCHEMA_VERSION = "analysis-result.v2" as const;
+export const ANALYSIS_SCHEMA_VERSION = "analysis-result.v4" as const;
 
 export const ANALYSIS_STATUSES = [
   "queued",
@@ -36,6 +36,13 @@ export const COVERAGE_TIERS = [
 export type CoverageTier = (typeof COVERAGE_TIERS)[number];
 
 export type EvidenceOrigin = "package" | "hosted_web_search" | "verified_rule";
+export const WEB_RESEARCH_OUTCOMES = [
+  "not_needed",
+  "decision_facts_found",
+  "identity_only",
+  "no_sufficient_match",
+] as const;
+export type WebResearchOutcome = (typeof WEB_RESEARCH_OUTCOMES)[number];
 export type FindingKind =
   | "label_fact"
   | "ingredient"
@@ -44,6 +51,12 @@ export type FindingKind =
   | "regulatory_context"
   | "experimental_fop";
 export type FindingLevel = "information" | "attention" | "unknown";
+export const FINDING_TOPICS = [
+  "statutory_warning", "allergen", "added_sugars", "total_sugars", "saturated_fat",
+  "sodium", "total_fat", "palm_oil", "preservatives", "colours", "claim", "diet",
+  "nutrition", "ingredient", "label", "other",
+] as const;
+export type FindingTopic = (typeof FINDING_TOPICS)[number];
 
 export interface Citation {
   id: string;
@@ -66,6 +79,8 @@ export interface Evidence {
 export interface Finding {
   id: string;
   kind: FindingKind;
+  /** Required in provider schema v4; optional here only for cached-result compatibility. */
+  topic?: FindingTopic;
   level: FindingLevel;
   title: string;
   explanation: string;
@@ -102,15 +117,6 @@ export interface ProductIdentity {
   confidence: "high" | "medium" | "low" | "unknown";
 }
 
-export interface ProductRating {
-  score: number | null;
-  dimension: "nutrition" | "ingredients" | "claims" | "label_evidence";
-  label: string;
-  basis: string;
-  evidenceIds: string[];
-  experimental: true;
-}
-
 export interface ProductProfileTag {
   label: string;
   evidenceIds: string[];
@@ -124,9 +130,10 @@ export interface ProductAnalysis {
   ingredientTokens?: string[];
   claimsAsPrinted?: string[];
   printedVegMark?: "veg" | "non_veg" | null;
-  webMatchConfidence?: "high" | "medium" | "low" | null;
-  webMatchBasis?: string | null;
-  rating: ProductRating;
+  webResearchOutcome: WebResearchOutcome;
+  webMatchEvidenceIds: string[];
+  webMatchConfidence: "high" | "medium" | "low" | null;
+  webMatchBasis: string | null;
   profile: ProductProfileTag[];
   coverage: Coverage;
   summary: string;
@@ -140,8 +147,8 @@ export interface ProductAnalysis {
 }
 
 /**
- * Complete consumer-facing semantic output. Terra authors this result in one response;
- * application code validates and renders it without semantic repair or paraphrasing.
+ * Complete consumer-facing result. Terra authors the semantic provider fields in one response;
+ * application code validates them and attaches reproducible decisions without paraphrasing.
  */
 export interface AnalysisResult {
   schemaVersion: string;
@@ -170,6 +177,11 @@ export interface AnalysisRecord {
   openAiResponseId: string | null;
   result: AnalysisResult | null;
   webSearchUsed: boolean;
+  providerModelId: string | null;
+  serviceTier: string | null;
+  webSearchCallCount: number | null;
+  costBasisVersion: string | null;
+  estimatedCostUsdMicros: number | null;
   expiresAt: string | null;
   errorCode: string | null;
   createdAt: string;

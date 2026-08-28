@@ -16,10 +16,11 @@ data, ciphertext, model output, and secrets must never be placed on a queue.
 3. Install dependencies with `npm install` from this directory.
 4. Run `npm run dev`, then request `GET /health`.
 
-The current consumers intentionally fail rather than acknowledge messages: no
-analysis or delivery implementation exists yet. Do not connect production
-queues until conditional D1 claims, persistence, and explicit retry semantics
-are implemented and tested.
+Both consumers are implemented and deployed. Analysis is conditionally claimed
+before the single provider call; delivery reads only stored output, emits
+closed numbered product blocks, and replies every chunk to the originating
+image with Meta `context.message_id`. Delivery retries only before any chunk
+has been sent, preventing duplicate partial responses.
 
 Production D1, R2, Queue/DLQ bindings, and their generated IDs are provisioned
 later. Store `OPENAI_API_KEY` as a secret on this Jobs Worker only—for example,
@@ -27,4 +28,4 @@ with `npx wrangler secret put OPENAI_API_KEY`. Never commit `.dev.vars`, never
 place a real key in `.dev.vars.example`, and never bind this secret to the
 public web/API Worker.
 
-Deployment is intentionally not part of this shell task.
+Deploy with `npm run deploy` only after the worker tests and typecheck pass.

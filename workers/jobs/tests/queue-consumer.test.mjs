@@ -15,7 +15,7 @@ const worker = await import(`data:text/javascript;base64,${Buffer.from(bundled.o
 const { consumeWebAnalysis, parseWebAnalysisMessage } = worker;
 
 const validResult = {
-  schemaVersion: "analysis-result.v2",
+  schemaVersion: "analysis-result.v4",
   language: "en",
   analyzedCount: 0,
   unknownCount: 0,
@@ -29,18 +29,22 @@ const validResult = {
 
 const pinnedVersions = {
   model_id: "gpt-5.6-terra",
-  prompt_version: "terra-analysis.v15",
-  schema_version: "analysis-result.v2",
+  prompt_version: "terra-analysis.v17",
+  schema_version: "analysis-result.v4",
   rules_version: "india-category-rules.v2",
   services_version: "india-consumer-services.v1",
-  engine_version: "decision-engine.v7",
+  engine_version: "decision-engine.v8",
 };
 
 function createDb({
   status = "queued", attempt = 1, mediaKey = "media/a", versions = pinnedVersions,
   failCompletionPersistence = false,
 } = {}) {
-  const state = { status, attempt, providerStartedAt: null, errorCode: null, complete: false };
+  const state = {
+    status, attempt, providerStartedAt: null, errorCode: null, complete: false,
+    tokenUsage: null, providerModelId: null, serviceTier: null,
+    webSearchCallCount: null, costBasisVersion: null, estimatedCostUsdMicros: null,
+  };
   return {
     state,
     prepare(query) {
@@ -73,6 +77,12 @@ function createDb({
             if (failCompletionPersistence) throw new Error("D1 completion unavailable");
             state.status = "complete";
             state.complete = true;
+            state.tokenUsage = JSON.parse(bindings[5]);
+            state.providerModelId = bindings[8];
+            state.serviceTier = bindings[9];
+            state.webSearchCallCount = bindings[10];
+            state.costBasisVersion = bindings[11];
+            state.estimatedCostUsdMicros = bindings[12];
             return { success: true, meta: { changes: 1 } };
           }
           if (query.includes("status = 'failed'")) {
@@ -116,7 +126,20 @@ function createHarness(db = createDb()) {
     assert.match(JSON.stringify(request.input), /data:image\/png;base64,AQID/);
     assert.match(JSON.stringify(request.input), /in\.fssai\.labelling-display-2020\.v1/);
     assert.match(JSON.stringify(request.input), /in\.consumer-affairs\.nch\.v1/);
-    return Response.json({ id: "resp_1", output_text: JSON.stringify(validResult), output: [] });
+    return Response.json({
+      id: "resp_1",
+      model: "gpt-5.6-terra",
+      service_tier: "default",
+      output_text: JSON.stringify(validResult),
+      usage: {
+        input_tokens: 10_000,
+        input_tokens_details: { cached_tokens: 2_000, cache_write_tokens: 1_000 },
+        output_tokens: 500,
+        output_tokens_details: { reasoning_tokens: 300 },
+        total_tokens: 10_500,
+      },
+      output: [{ type: "web_search_call", action: { sources: [] } }, { type: "web_search_call", action: { sources: [] } }],
+    });
   };
   return { calls, db, env, message, okFetch };
 }
@@ -136,6 +159,13 @@ test("successful processing makes one provider call, persists, deletes media, an
   await consumeWebAnalysis(harness.message, harness.env, harness.okFetch);
   assert.equal(harness.calls.fetch, 1);
   assert.equal(harness.db.state.complete, true);
+  assert.equal(harness.db.state.providerModelId, "gpt-5.6-terra");
+  assert.equal(harness.db.state.serviceTier, "default");
+  assert.equal(harness.db.state.webSearchCallCount, 2);
+  assert.equal(harness.db.state.costBasisVersion, "openai-standard-2026-08-24");
+  assert.equal(harness.db.state.estimatedCostUsdMicros, 42_900);
+  assert.equal(harness.db.state.tokenUsage.web_search_calls, 2);
+  assert.equal(harness.db.state.tokenUsage.cost_estimate.totalCostUsdMicros, 42_900);
   assert.deepEqual(harness.calls.deleted, ["media/a"]);
   assert.equal(harness.calls.ack, 1);
 });
@@ -146,7 +176,8 @@ test("WhatsApp-style processing requires hosted search", async () => {
     harness.calls.fetch += 1;
     const request = JSON.parse(init.body);
     assert.equal(request.tool_choice, "required");
-    assert.equal(request.max_tool_calls, 3);
+    assert.equal(request.max_tool_calls, 6);
+    assert.deepEqual(request.tools[0].user_location, { type: "approximate", country: "IN" });
     return Response.json({ id: "resp_1", output_text: JSON.stringify(validResult), output: [] });
   };
   await consumeWebAnalysis(harness.message, harness.env, requiredSearchFetch, {}, true);
@@ -219,10 +250,12 @@ test("hosted citation accepts a returned canonical URL when provider source id i
   const harness = createHarness();
   const result = { ...validResult, analyzedCount: 1, items: [{
     position: 1, identity: { nameAsPrinted: "Product", brandAsPrinted: "Brand", variantAsPrinted: null, gtin: null, confidence: "high" },
-    category: "food", coverage: { tier: "category_rules", rulePackIds: [], limitations: [] }, summary: "Product",
-    rating: { score: null, dimension: "label_evidence", label: "Not rated", basis: "Insufficient evidence.", evidenceIds: [], experimental: true },
+    category: "food", webResearchOutcome: "decision_facts_found", webMatchEvidenceIds: ["e1"], webMatchConfidence: "high",
+    webMatchBasis: "Exact brand, product and Indian pack.",
+    coverage: { tier: "category_rules", rulePackIds: [], limitations: [] }, summary: "Product",
     profile: [],
-    findings: [], claimAudits: [], serviceRoute: null, needsClearerImage: false, retakeGuidance: null,
+    findings: [{ id: "f1", kind: "ingredient", topic: "ingredient", level: "information", title: "INGREDIENT FACT", explanation: "Exact source provides a useful ingredient fact.", evidenceIds: ["e1"], ruleIds: [], experimental: false }],
+    claimAudits: [], serviceRoute: null, needsClearerImage: false, retakeGuidance: null,
     citations: [{ id: "citation-1", title: "Official", url: "https://official.example/product", providerSourceId: "https://official.example/product/?utm_source=openai" }],
     evidence: [{ id: "e1", origin: "hosted_web_search", excerptOrObservation: "Online fact", citationId: "citation-1", visibleOnPackage: false }],
   }] };

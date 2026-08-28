@@ -7,8 +7,8 @@ export const NORMALIZATION_VERSION = "validated-original.v2";
 
 export const INTAKE_VERSION = {
   model: "gpt-5.6-terra",
-  prompt: "terra-analysis.v15",
-  schema: "analysis-result.v2",
+  prompt: "terra-analysis.v17",
+  schema: "analysis-result.v4",
   rules: "india-category-rules.v2",
   services: "india-consumer-services.v1",
   engine: ENGINE_VERSION,

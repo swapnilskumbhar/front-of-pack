@@ -1,5 +1,5 @@
 import type { D1DatabaseLike } from "../../data/d1.ts";
-import type { LanguageCode } from "../../domain/language.ts";
+import { DEFAULT_LANGUAGE, type LanguageCode } from "../../domain/language.ts";
 
 export interface WhatsAppAnalysisJob {
   version: 1;
@@ -20,11 +20,11 @@ export class WhatsAppRepository {
     if (existing) {
       await this.db.prepare(`UPDATE profile_identities SET last_seen_at = ? WHERE channel = 'whatsapp' AND subject_digest = ?`)
         .bind(now, subjectDigest).run();
-      return { profileId: existing.id, language: existing.preferred_language ?? "en" };
+      return { profileId: existing.id, language: existing.preferred_language ?? DEFAULT_LANGUAGE };
     }
     const profileId = crypto.randomUUID();
-    await this.db.prepare(`INSERT OR IGNORE INTO profiles (id, preferred_language, created_at, updated_at) VALUES (?, 'en', ?, ?)`)
-      .bind(profileId, now, now).run();
+    await this.db.prepare(`INSERT OR IGNORE INTO profiles (id, preferred_language, created_at, updated_at) VALUES (?, ?, ?, ?)`)
+      .bind(profileId, DEFAULT_LANGUAGE, now, now).run();
     await this.db.prepare(`INSERT OR IGNORE INTO profile_identities (id, profile_id, channel, subject_digest, created_at, last_seen_at) VALUES (?, ?, 'whatsapp', ?, ?, ?)`)
       .bind(crypto.randomUUID(), profileId, subjectDigest, now, now).run();
     const winner = await this.db.prepare(`
@@ -32,7 +32,7 @@ export class WhatsAppRepository {
       WHERE i.channel = 'whatsapp' AND i.subject_digest = ? LIMIT 1
     `).bind(subjectDigest).first<{ id: string; preferred_language: LanguageCode | null }>();
     if (!winner) throw new Error("whatsapp_profile_persistence_failed");
-    return { profileId: winner.id, language: winner.preferred_language ?? "en" };
+    return { profileId: winner.id, language: winner.preferred_language ?? DEFAULT_LANGUAGE };
   }
 
   async findJob(messageId: string): Promise<{ id: string; status: string } | null> {

@@ -61,15 +61,28 @@ export async function downloadWhatsAppMedia(
 
 export async function sendWhatsAppText(
   recipient: string, body: string, config: GraphConfig, fetcher: typeof fetch = fetch,
+  options: { replyToMessageId?: string } = {},
 ): Promise<void> {
   if (!/^\d{7,15}$/.test(recipient)) throw new Error("invalid_whatsapp_recipient");
   if (!/^[A-Za-z0-9_-]{1,256}$/.test(config.phoneNumberId)) throw new Error("invalid_phone_number_id");
+  if (options.replyToMessageId !== undefined &&
+      (options.replyToMessageId.length === 0 || options.replyToMessageId.length > 1_024 || /[^\x21-\x7e]/u.test(options.replyToMessageId))) {
+    throw new Error("invalid_reply_message_id");
+  }
+  const payload = {
+    messaging_product: "whatsapp",
+    recipient_type: "individual",
+    to: recipient,
+    ...(options.replyToMessageId ? { context: { message_id: options.replyToMessageId } } : {}),
+    type: "text",
+    text: { preview_url: false, body },
+  };
   const response = await fetcher(
     `https://graph.facebook.com/${config.apiVersion}/${encodeURIComponent(config.phoneNumberId)}/messages`,
     {
       method: "POST", redirect: "manual",
       headers: { authorization: `Bearer ${config.accessToken}`, "content-type": "application/json" },
-      body: JSON.stringify({ messaging_product: "whatsapp", to: recipient, type: "text", text: { body } }),
+      body: JSON.stringify(payload),
     },
   );
   if (!response.ok) throw new GraphSendError(response.status);

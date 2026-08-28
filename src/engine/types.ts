@@ -1,4 +1,4 @@
-export const ENGINE_VERSION = "decision-engine.v7" as const;
+export const ENGINE_VERSION = "decision-engine.v8" as const;
 
 export type NutritionBasis = "per_100g" | "per_100ml";
 export type DerivedNutrient = "added_sugars" | "saturated_fat" | "sodium" | "total_fat";
@@ -105,9 +105,21 @@ export type DietarySignal = DietProfileSignal | VegMarkConflictSignal | SourceUn
 
 export type DerivedSignal = WholePackSignal | ReferenceRdaSignal | ClaimContradictionSignal | DietarySignal;
 
+export interface RatingDeduction {
+  ruleId: string;
+  points: number;
+  reason: string;
+}
+
+export interface DerivedRating {
+  score: number | null;
+  deductions: RatingDeduction[];
+}
+
 export interface DerivedItemDecision {
   position: number;
   signals: DerivedSignal[];
+  rating: DerivedRating;
 }
 
 export interface DerivedDecisionResult {

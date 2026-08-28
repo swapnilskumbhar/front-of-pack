@@ -147,11 +147,11 @@ Important packaged-product declarations and claims are difficult for ordinary co
 #### Demo safety
 
 - three precomputed schema-valid hero samples;
-- at least one multi-product sample;
+- at least one multi-product sample; the current release candidate uses a validated current-schema cached reconstruction for the user-provided five-item cart screenshot;
 - at least one cosmetic and one household/personal-care sample porting and revalidating predecessor scenarios;
 - one unreadable/unknown sample;
 - no real personal/order data;
-- no recorded accusation against a real brand.
+- real-brand package/cart evidence may be recorded only when the result is factual, evidence-linked and non-accusatory. The current five-item cart screenshot contains no visible PII and must be disclosed as third-party imagery; ownership/permitted-use and attribution remain a release gate.
 
 ### 4.2 Required but intentionally minimal
 
@@ -442,7 +442,7 @@ The first minute is the citizen experience. The second explains architecture, tr
 |---|---|
 | 0:00–0:08 | “The law and label data exist, but ordinary shoppers still do not have a usable front-of-pack interface.” |
 | 0:08–0:15 | Open the public mobile site; show Marathi already remembered. |
-| 0:15–0:24 | Upload one clear fictional packaged-food image. |
+| 0:15–0:24 | Open the cached user-provided five-item cart screenshot and disclose that it is third-party imagery. |
 | 0:24–0:38 | Show the experimental panel, plain-language finding, and evidence badge. |
 | 0:38–0:48 | Open claim-versus-evidence and a real rule/source citation. |
 | 0:48–0:56 | Show a synthetic recall/licence card and its obvious demo warning. |
@@ -454,7 +454,7 @@ The first minute is the citizen experience. The second explains architecture, tr
 | 1:49–1:56 | Show honesty/built-with: synthetic data, no government access, reused work, Codex contribution. |
 | 1:56–2:00 | “One image, one response, one understandable public-service journey.” |
 
-Use cached fictional samples during recording. A live scan can be shown separately only if it is stable. Never demonstrate a feature that does not work in the submitted public build.
+Prefer cached fictional or neutral samples during recording. The specific user-provided five-item real-brand cart screenshot may be recorded because its result is factual and non-accusatory and the image contains no visible PII, provided the video discloses its third-party provenance and ownership/permitted-use plus attribution are confirmed first. Its validated current-schema cached reconstruction identifies five products and makes no model call during recording. A live scan can be shown separately only if it is stable. Never demonstrate a feature that does not work in the submitted public build.
 
 ---
 
@@ -467,7 +467,7 @@ Use cached fictional samples during recording. A live scan can be shown separate
 3. physical image with three products;
 4. cosmetic or personal-care label;
 5. household or BIS-marked packaged product;
-6. mixed-category cart/name-only screenshot;
+6. mixed-category cart/name-only screenshot (current cached cart demo: five products);
 7. unreadable/glare image;
 8. covered label with no specialist route;
 9. conflicting web sources;
@@ -611,7 +611,7 @@ The registry/officer **surfaces** remain because they are explicit product requi
 | Twelve-language quality varies | Reviewed fixed UI; deeper QA for four; disclose unreviewed AI wording |
 | Broad categories weaken the pitch | Keep the recorded hero food/FSSAI-first; present other categories as platform leverage, not separate stories |
 | Officer dashboard distracts judges | Keep it brief and after the citizen loop |
-| Real-brand finding creates reputational risk | Fictional/neutral recorded samples and cautious wording |
+| Real-brand finding creates reputational risk | Prefer fictional/neutral samples; allow the disclosed user-provided five-item cart only with factual, evidence-linked, non-accusatory wording and a completed image-rights/attribution gate |
 | Public deployment/model outage | Precomputed schema-valid samples and honest live-status handling |
 | Existing LabelSensei work creates eligibility ambiguity | Precise before/during disclosure on built-with and submission |
 

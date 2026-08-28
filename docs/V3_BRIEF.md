@@ -101,6 +101,8 @@ signal already shows.
 
 ## A5 Demo fixtures are synthetic and have no image
 
+> **Status — superseded and fulfilled on 24 August 2026:** The six-product cart request below is retained as historical review feedback. An interim public BigBasket three-product grid was subsequently replaced by a user-provided five-item cart screenshot with no visible PII and its validated current-schema cached reconstruction. The result identifies five products and makes no model call on click or during recording. The screenshot is disclosed as third-party imagery; ownership/permitted-use and any required attribution remain open release-checklist items until confirmed.
+
 `src/demo/results.ts` is hand-authored (`"Cached demonstration from a fixed synthetic pack fixture."`),
 honestly labelled but weaker than it needs to be, and `public/` contains no demo images at all — a
 reviewer sees a verdict with no pack.

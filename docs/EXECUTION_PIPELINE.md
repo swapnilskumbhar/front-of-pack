@@ -327,6 +327,7 @@ Update this table before copying any predecessor file or behavior.
 | R-013 | Privacy/terms copy | LabelSensei page.tsx | User-owned | Rewrite completely | Honesty/privacy pages | Match actual processors and retention | REJECTED_COPY |
 | R-014 | 1–10 rating and safe legend | Static JSX + legacy prompt | Pre-existing and unsafe | Remove | None | Evidence-linked restrained findings | REJECTED |
 | R-015 | Meta account/test infrastructure | n8n credential references | User-controlled | Operational reuse only after rotation | Cloudflare Workers Secrets | Separate Meta test setup preferred | BLOCKED_USER |
+| R-016 | Five-item cart screenshot | User-provided reference on 24 August 2026 | User supplied; underlying third-party imagery rights not yet confirmed | Cached demo with explicit third-party disclosure | Multi-product homepage demonstration | Keep findings factual and non-accusatory; verify permitted use and attribution before recording | PENDING_RIGHTS_GATE |
 
 For every APPROVED_COPY added later, record:
 
@@ -459,19 +460,19 @@ Cut tiers:
 | MEDIA-001 | PLATFORM-001,QUEUE-001 | Workers-runtime image validation/R2 lifecycle | Images binding validates decode dimensions/pixels while original encoded bytes and resolution are preserved; real-product fixture proof remains | Codex | IN_PROGRESS | C0 |
 | CLEANUP-001 | DATA-001,QUEUE-001 | Hourly/lazy expiry cleanup | Expired ciphertext/nonces cleared, orphan R2 removed, operation idempotent | Codex | TODO | C0 |
 | DOMAIN-001 | PLATFORM-001 | Stable TLS hostname | Custom domain works without Access; `workers.dev` remains release fallback | User + Codex | BLOCKED_USER | C1 |
-| BUDGET-001 | CF-001 | Cloudflare/OpenAI budget telemetry | Billing exclusions, Worker/D1/R2/Queue use and OpenAI spend documented separately | Codex | TODO | C1 |
-| OBS-001 | DATA-001 | Structured request metrics | Response ID, latency, search use, tokens/cost stored without PII | Codex | TODO | C1 |
+| BUDGET-001 | CF-001 | Cloudflare/OpenAI budget telemetry | Versioned successful-response OpenAI estimate is shown per anonymous image and in aggregate; Cloudflare/Meta/domain exclusions are explicit; invoice reconciliation remains | Codex | IN_PROGRESS | C1 |
+| OBS-001 | DATA-001 | Structured request metrics | Response ID remains private; latency, exact search-call count, normalized usage, cost basis and USD-micro estimate are persisted without PII | Codex | DONE | C1 |
 
 ### 9.3 Model, rules, and services
 
 | ID | Depends on | Output | Acceptance/proof | Owner | Status | Cut |
 |---|---|---|---|---|---|---|
 | MODEL-001 | PLATFORM-002,QUEUE-001,MEDIA-001 | Terra image/schema spike in Jobs Worker | On 2026-08-23 one R2-backed simulated Analysis Queue job completed in about 3.9s with exactly one Responses request and a persisted response ID; hosted-search/usage evidence and production bindings remain | Codex | IN_PROGRESS | C0 |
-| MODEL-002 | MODEL-001 | Hosted-search spike | Optional in-call web-search configuration exists; name-only image must still prove tool-sourced URLs in the same response | Codex | IN_PROGRESS | C0 |
+| MODEL-002 | MODEL-001 | Hosted-search spike | Required India-scoped search, up to six bounded calls and schema-v4 research outcomes are implemented; final live Vedaka/name-only rehearsal remains | Codex | IN_PROGRESS | C0 |
 | RULES-001 | ELIG-003 | Verified knowledge packs | FSSAI, Legal Metrology, CDSCO and experimental INR packs are wired into Terra and validator; real-product fixture review remains | Codex | IN_PROGRESS | C0 |
 | RULES-002 | RULES-001 | Cosmetics/general-pack baseline | Golden cosmetic and general-pack fixtures pass coverage policy | Codex | TODO | C1 |
 | SERVICES-001 | ELIG-003 | Allow-listed service directory | FoSCoS, BIS Care and NCH routes are wired into Terra and validator with category constraints | Codex | DONE | C0 |
-| CORE-001 | MODEL-001,RULES-001,SERVICES-001 | Strict AnalysisResult schema | Provider strict schema exists and is covered by Jobs tests; full single, multi, unknown and label_only fixtures remain | Codex | IN_PROGRESS | C0 |
+| CORE-001 | MODEL-001,RULES-001,SERVICES-001 | Strict AnalysisResult schema | v4 validates useful/identity-only/unmatched research, consumed hosted evidence, match confidence and claim completeness; broader live fixtures remain | Codex | IN_PROGRESS | C0 |
 | CORE-002 | CORE-001,MODEL-002 | Unified prompt and only call site | Direct Responses call site exists in the Jobs Worker with no automatic retry; durable one-attempt integration remains | Codex | IN_PROGRESS | C0 |
 | CORE-003 | CORE-001 | Contract validator | Strict shape, allow-list, citation, wording, size and failure validation are wired; real-product regression fixtures remain | Codex | IN_PROGRESS | C0 |
 | CORE-004 | CORE-002,CORE-003,DATA-001,QUEUE-001,MEDIA-001 | One-call queued analysis/cache | Production proof covers miss=1, identical hit=0, failure persistence and explicit new-attempt resubmission; broader real-product regression remains | Codex | IN_PROGRESS | C0 |
@@ -485,7 +486,7 @@ Cut tiers:
 | PROFILE-002 | PROFILE-001 | Settings/delete | Preference persists; delete rotates identity and detaches scan history | Codex | TODO | C0 |
 | WEB-001 | PLATFORM-001,PROFILE-001 | Mobile landing/onboarding | First-use language works at 360px | Codex | TODO | C0 |
 | WEB-002 | WEB-001,CORE-004 | Upload/camera/paste/sample | One input starts one idempotent scan | Codex | TODO | C0 |
-| WEB-003 | WEB-002 | Result renderer | Multi-category cards, evidence, citations, coverage, experimental/synthetic notices | Codex | TODO | C0 |
+| WEB-003 | WEB-002 | Result renderer | Warning-first cards, honest null-rating state, scoped product match, limitation-first claims, evidence/citations and responsive cached demos pass automated checks | Codex | IN_PROGRESS | C0 |
 | WEB-004 | WEB-003,PROFILE-002 | Returning-user loop | Refresh/reopen uses saved language; change/delete pass | Codex | TODO | C0 |
 | ACCESS-001 | WEB-003 | Read-aloud and structural accessibility | Keyboard/screen-reader/focus checks pass | Codex | TODO | C1 |
 
@@ -507,7 +508,7 @@ Cut tiers:
 | PUBLIC-001 | CORE-003,SERVICES-001,WEB-003 | Editable grievance draft | Local editable, allow-listed route selection, explicit no-submit/no-docket behavior and zero calls are tested | Codex | DONE | C0 |
 | REGISTRY-001 | CORE-003,DATA-002 | Minimal registry/product page | Exact synthetic identifier lookup only; private image is never exposed | Codex | DONE | C1 |
 | REGISTRY-002 | REGISTRY-001 | Synthetic licence/recall cards | Exact seed match and synthetic/non-live warning are tested | Codex | DONE | C1 |
-| OFFICER-001 | REGISTRY-001 | Minimal officer page | Protected redacted aggregate dashboard exists; release-fixture filters/drill-down remain | Codex | IN_PROGRESS | C1 |
+| OFFICER-001 | REGISTRY-001 | Minimal officer page | Protected noindex dashboard shows redacted aggregates plus latest-50 anonymous per-image token/search/latency/cost rows; no product or identity data | Codex | DONE | C1 |
 | TRUST-001 | RULES-001,SERVICES-001 | Thresholds/services pages | Public sources, policy status, coverage limitations visible | Codex | TODO | C0 |
 | TRUST-002 | ELIG-004,OBS-001 | Honesty/built-with pages | Reuse/new ledger, data, cost, limitations, Codex role accurate | Codex | TODO | C0 |
 
@@ -548,7 +549,7 @@ The scaffold must expose these stable commands so later agents do not invent dif
 
 Until a script exists, the owning task cannot be DONE. CI runs lint, typecheck, tests and build on every release candidate.
 
-Current verification snapshot (2026-08-24): production proves public TLS, R2/D1/Queues/Jobs/Terra, cache hits, hosted search and live WhatsApp delivery. The release candidate uses prompt v15, schema v2 and decision-engine v7. Identifiable products receive comprehensive required web research, up to twelve validated findings and twenty evidence facts. No warning is dropped by model, engine or renderer count limits. Nutrition facts retain provenance; absolute values include printed %RDA when available or a clearly scoped calculated percentage using published FSSAI adult references. Web and WhatsApp show warnings first, then an explicitly experimental evidence-linked rating, factual profile, verdict, supporting analysis, a conditional audit of claims visibly printed in the submitted image, and any verified citizen-service next step. Missing facts remain unknown; experimental scores never claim to be official FSSAI, medical, safety or compliance decisions. Real Haldiram and English Oven demos include photographs; the cart fixture remains synthetic. Personalised dietary profiles, delivery callbacks, a real six-product fixture, custom domain and submission artifacts remain.
+Current verification snapshot (2026-08-24): production proves public TLS, R2/D1/Queues/Jobs/Terra, cache hits, hosted search and live WhatsApp delivery. The next release candidate uses prompt v17, schema v4 and decision-engine v8. Terra still performs comprehensive one-call reading, research, profile, verdict and claim analysis, but no longer authors rating or final severity. Schema v4 separates product-match evidence from visible decision evidence, records identity-only/unmatched outcomes, and rejects hidden, low-match or orphaned searched conclusions. The engine reserves red for reproducible high signals, orders indicators by structured topic in every language, merges duplicate nutrient topics, and computes an experimental rating from visible fixed deductions. Nutrition retains provenance and absolute values plus printed or calculated %RDA. WhatsApp defaults to English when unset, remembers later language commands, renders multi-product results as closed numbered warning/detail blocks, and replies every success chunk or failure notice to the correct inbound image WAMID. Regression coverage proves two images completing out of order never cross-link. The user-provided five-item cart screenshot has no visible PII and now has a validated current-schema cached reconstruction for five products. Opening it during recording makes no model call. The cart is disclosed as third-party imagery; its ownership/permitted-use and attribution checklist remains open. The submission script/summary is drafted; final v17/v4 deployment, repeated rehearsal, video and custom domain remain.
 
 ---
 
