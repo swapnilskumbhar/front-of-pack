@@ -33,6 +33,8 @@ test("public WhatsApp CTA uses the configured live number", () => {
   assert.match(aboveFold, />WhatsApp</);
   assert.match(aboveFold, /Send a product photo/);
   assert.match(aboveFold, /Exact-product web search/);
+  assert.match(aboveFold, /Indian regulations require product disclosures/);
+  assert.doesNotMatch(aboveFold, /experimental rating|fixed deduction/i);
   assert.doesNotMatch(aboveFold, /Primary channel|How it works|What you get|How we decide/);
   assert.ok((aboveFold.match(/href=\{WHATSAPP_URL\}/g) ?? []).length >= 2);
 });

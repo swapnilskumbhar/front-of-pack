@@ -157,7 +157,7 @@ function AnalysisResultView({ result, demo }: { result: AnalysisResult; demo: De
       <h2 id="analysis-result-title">Your shopper brief</h2>
       {demo?.imageSrc && <figure className="analysis-demo-input"><div className="analysis-demo-input-frame"><Image src={demo.imageSrc} alt={`${demo.label} cached demo input`} fill sizes="(max-width: 700px) 90vw, 440px" /></div><figcaption>Cached demo input · no model call on click</figcaption></figure>}
       <p className="analysis-result-summary">{result.wholeImageSummary}</p>
-      <div className="analysis-result-stats"><span><b>{result.analyzedCount}</b> products analysed</span><span><b>{result.flaggedCount}</b> engine-flagged products</span><span><b>{result.unknownCount}</b> unknown products</span><span>{INTAKE_VERSION.prompt} · {INTAKE_VERSION.engine}</span></div>
+      <div className="analysis-result-stats"><span><b>{result.analyzedCount}</b> products analysed</span><span><b>{result.flaggedCount}</b> needing attention</span><span><b>{result.unknownCount}</b> unidentified</span></div>
       {result.truncated && <p className="analysis-truncated">The image contained more products than this result could include.</p>}
       <div className="analysis-items">{result.items.map((item) => {
         const decision = result.derived?.items.find((entry) => entry.position === item.position);

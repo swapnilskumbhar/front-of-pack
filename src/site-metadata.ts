@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 
 export const SITE_ORIGIN = "https://front-of-pack.front-of-pack-jobs-worker.workers.dev";
 export const WHATSAPP_URL = "https://wa.me/919325835971";
-export const SITE_TITLE = "Front of Pack — Understand a product label on WhatsApp";
-export const SITE_DESCRIPTION = "Send a product photo on WhatsApp and get clear nutrition, ingredient, allergen and claim warnings with supporting evidence.";
+export const SITE_TITLE = "Front of Pack — Product-label answers on WhatsApp";
+export const SITE_DESCRIPTION = "Turn required product-label information into clear nutrition, ingredient, allergen and claim warnings on WhatsApp, with supporting evidence.";
 export const HOME_SHARE_TITLE = "Know what you’re buying. See the facts that matter.";
 export const HOME_CANONICAL_URL = `${SITE_ORIGIN}/`;
 export const HOME_OG_IMAGE = {
