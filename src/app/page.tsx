@@ -16,13 +16,13 @@ const categories = [
   ["Nutrition that adds up", "See sugar, sodium, fat and other useful values for one serving and the total quantity."],
   ["Ingredients that matter", "Spot allergens, vegetarian markings, additives and dietary-source uncertainty without guesswork."],
   ["Claims worth checking", "Compare visible marketing claims with the label and reliable information for the exact product."],
-  ["Useful next steps", "Inspect the method, try an identifier lookup or prepare confirmed facts for an official service."],
+  ["Honest uncertainty", "When a label or product match is unclear, the result says so instead of inventing an answer."],
 ];
 
 const outputFeatures = [
   ["Warnings first", "Important nutrition, allergen, ingredient and claim concerns appear before supporting detail."],
   ["Values in context", "Compare one serving with the total quantity, using the label's own values whenever possible."],
-  ["A rating you can inspect", "See each fixed deduction and the arithmetic behind the experimental rating."],
+  ["Reasons you can inspect", "See the calculation or evidence behind every important finding."],
   ["Ingredients and diet", "Review allergens, additives, vegetarian markings and dietary-source uncertainty."],
   ["Visible claims checked", "Claims are assessed only when they can actually be seen in the submitted photo."],
   ["Evidence included", "Sources, limitations and useful next steps remain available without crowding the warnings."],
@@ -40,7 +40,7 @@ export default function Home() {
         <div className="hero-copy">
           <p className="eyebrow"><span /> Required label information, made usable</p>
           <h1>Know what you’re buying. <em>See the facts that matter.</em></h1>
-          <p className="hero-intro">Product labels carry information citizens need, but understanding it is still difficult. Send a photo on WhatsApp for clear nutrition, ingredient, allergen and claim warnings—with evidence.</p>
+          <p className="hero-intro">Indian regulations require product disclosures, but citizens are still left to interpret them unaided. Send a photo on WhatsApp for clear nutrition, ingredient, allergen and claim warnings—with evidence.</p>
           <div className="hero-actions">
             <a className="whatsapp-primary" href={WHATSAPP_URL} target="_blank" rel="noreferrer"><WhatsAppIcon /><span>Send a product photo</span></a>
             <a className="web-secondary" href="#upload">Prefer the website? Upload here <DownArrowIcon /></a>
